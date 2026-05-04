@@ -70,7 +70,7 @@ export default function About() {
             </p>
             <p className="text-base leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
               Notre ambition : devenir la référence de la maintenance automobile à domicile
-              au Maroc, comme CAFU l&apos;a fait aux Émirats. Casablanca d&apos;abord. Tout le Maroc ensuite.
+              au Maroc, comme les meilleures plateformes mondiales l&apos;ont fait. Casablanca d&apos;abord. Tout le Maroc ensuite.
             </p>
 
             <div
