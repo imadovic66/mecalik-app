@@ -1,0 +1,36 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Navbar from './components/layout/Navbar'
+import Footer from './components/layout/Footer'
+import Home from './pages/Home'
+import Services from './pages/Services'
+import Fleet from './pages/Fleet'
+import About from './pages/About'
+import Login from './pages/auth/Login'
+import Signup from './pages/auth/Signup'
+import CustomerDashboard from './pages/dashboard/CustomerDashboard'
+import FleetDashboard from './pages/fleet/FleetDashboard'
+import AdminDashboard from './pages/admin/AdminDashboard'
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Navbar />
+      <div className="pt-20">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/fleet" element={<Fleet />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/dashboard" element={<CustomerDashboard />} />
+          <Route path="/fleet-dashboard" element={<FleetDashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
+        <Footer />
+      </div>
+    </BrowserRouter>
+  )
+}
+
+export default App

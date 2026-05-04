@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-family: 'Outfit', sans-serif; background: #080808; color: rgba(255,255,255,0.88); -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  ::selection { background: rgba(67,188,201,0.3); }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #080808; }
+  ::-webkit-scrollbar-thumb { background: #43BCC9; border-radius: 2px; }
+}
+
+@layer utilities {
+  .text-gradient { background: linear-gradient(135deg, #43BCC9, #2FA8B5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.06); }
+  .glow-cyan { box-shadow: 0 0 40px rgba(67,188,201,0.15); }
+  .animate-float { animation: float 6s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+  .animate-pulse-slow { animation: pulse 3s ease-in-out infinite; }
+}
