@@ -5,7 +5,6 @@ import {
   MessageSquare, CheckCircle, MapPin,
   CreditCard, Clock3,
 } from 'lucide-react'
-import BookingModal from '../components/ui/BookingModal'
 
 const stats: { value: string; label: string }[] = [
   { value: '1,1M+', label: 'Voitures au Maroc' },
@@ -71,18 +70,10 @@ const services: Service[] = [
 
 export default function Home() {
   const [visible, setVisible] = useState(false)
-  const [bookingOpen, setBookingOpen] = useState(false)
-  const [bookingService, setBookingService] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 100)
     return () => clearTimeout(t)
-  }, [])
-
-  useEffect(() => {
-    const handler = () => { setBookingService(undefined); setBookingOpen(true) }
-    window.addEventListener('openBooking', handler)
-    return () => window.removeEventListener('openBooking', handler)
   }, [])
 
   return (
@@ -140,7 +131,7 @@ export default function Home() {
               {/* CTA buttons */}
               <div className="flex gap-4 flex-wrap">
                 <button
-                  onClick={() => { setBookingService(undefined); setBookingOpen(true) }}
+                  onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
                   className="flex items-center gap-2 bg-[#43BCC9] text-[#080808] font-semibold px-8 py-4 rounded-full hover:bg-[#2FA8B5] transition-colors duration-200"
                 >
                   Demander un devis
@@ -255,7 +246,7 @@ export default function Home() {
             {services.map((service) => (
               <div
                 key={service.title}
-                onClick={() => { setBookingService(service.id); setBookingOpen(true) }}
+                onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
                 className={`group bg-[#0F0F0F] border rounded-2xl p-8 hover:bg-[#111111] transition-all duration-300 cursor-pointer ${
                   service.special
                     ? 'border-[rgba(240,192,64,0.2)] hover:border-[rgba(240,192,64,0.4)]'
@@ -382,7 +373,7 @@ export default function Home() {
             {/* CTA */}
             <div className="mt-10">
               <button
-                onClick={() => { setBookingService(undefined); setBookingOpen(true) }}
+                onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
                 className="inline-flex items-center gap-2 font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm"
                 style={{ background: '#43BCC9', color: '#080808' }}
               >
@@ -601,11 +592,6 @@ export default function Home() {
         </div>
       </section>
 
-      <BookingModal
-        isOpen={bookingOpen}
-        onClose={() => setBookingOpen(false)}
-        preselectedService={bookingService}
-      />
     </main>
   )
 }

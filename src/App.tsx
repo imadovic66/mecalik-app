@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import WhatsAppFAB from './components/ui/WhatsAppFAB'
+import BookingModal from './components/ui/BookingModal'
 import Home from './pages/Home'
 import Services from './pages/Services'
 import Fleet from './pages/Fleet'
@@ -13,6 +15,14 @@ import FleetDashboard from './pages/fleet/FleetDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
 
 function App() {
+  const [bookingOpen, setBookingOpen] = useState(false)
+
+  useEffect(() => {
+    const handler = () => setBookingOpen(true)
+    window.addEventListener('openBooking', handler)
+    return () => window.removeEventListener('openBooking', handler)
+  }, [])
+
   return (
     <BrowserRouter>
       <Navbar />
@@ -30,6 +40,7 @@ function App() {
         </Routes>
         <Footer />
         <WhatsAppFAB />
+        <BookingModal isOpen={bookingOpen} onClose={() => setBookingOpen(false)} />
       </div>
     </BrowserRouter>
   )
