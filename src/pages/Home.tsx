@@ -5,6 +5,7 @@ import {
   MessageSquare, CheckCircle, MapPin,
   CreditCard, Clock3,
 } from 'lucide-react'
+import BookingModal from '../components/ui/BookingModal'
 
 const stats: { value: string; label: string }[] = [
   { value: '1,1M+', label: 'Voitures au Maroc' },
@@ -14,6 +15,7 @@ const stats: { value: string; label: string }[] = [
 ]
 
 type Service = {
+  id: string
   icon: React.ReactNode
   duration: string
   title: string
@@ -23,36 +25,42 @@ type Service = {
 
 const services: Service[] = [
   {
+    id: 'lavage',
     icon: <Droplets size={22} color="#43BCC9" />,
     duration: '~45 min',
     title: 'Lavage Auto',
     desc: 'Lavage extérieur et intérieur à votre emplacement. Produits professionnels, résultat showroom.',
   },
   {
+    id: 'vidange',
     icon: <Droplets size={22} color="#43BCC9" />,
     duration: '~60 min',
     title: 'Vidange & Filtres',
     desc: "Vidange moteur avec filtre à huile d'origine. Vérification des niveaux incluse.",
   },
   {
+    id: 'batterie',
     icon: <Battery size={22} color="#43BCC9" />,
     duration: '~30 min',
     title: 'Batterie',
     desc: 'Diagnostic, remplacement et installation de batterie. Toutes marques et gabarits.',
   },
   {
+    id: 'pneus',
     icon: <Wrench size={22} color="#43BCC9" />,
     duration: '~45 min',
     title: 'Pneus',
     desc: 'Changement, équilibrage et contrôle de pression. Intervention sur place, sans lever de pont.',
   },
   {
+    id: 'diagnostic',
     icon: <Search size={22} color="#43BCC9" />,
     duration: '~30 min',
     title: 'Diagnostic',
     desc: "Lecture des codes erreur, bilan complet de l'état du véhicule. Rapport détaillé fourni.",
   },
   {
+    id: 'urgence',
     icon: <AlertTriangle size={22} color="#F0C040" />,
     duration: 'Urgence',
     title: 'Urgence 24/7',
@@ -63,10 +71,18 @@ const services: Service[] = [
 
 export default function Home() {
   const [visible, setVisible] = useState(false)
+  const [bookingOpen, setBookingOpen] = useState(false)
+  const [bookingService, setBookingService] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 100)
     return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    const handler = () => { setBookingService(undefined); setBookingOpen(true) }
+    window.addEventListener('openBooking', handler)
+    return () => window.removeEventListener('openBooking', handler)
   }, [])
 
   return (
@@ -123,7 +139,10 @@ export default function Home() {
 
               {/* CTA buttons */}
               <div className="flex gap-4 flex-wrap">
-                <button className="flex items-center gap-2 bg-[#43BCC9] text-[#080808] font-semibold px-8 py-4 rounded-full hover:bg-[#2FA8B5] transition-colors duration-200">
+                <button
+                  onClick={() => { setBookingService(undefined); setBookingOpen(true) }}
+                  className="flex items-center gap-2 bg-[#43BCC9] text-[#080808] font-semibold px-8 py-4 rounded-full hover:bg-[#2FA8B5] transition-colors duration-200"
+                >
                   Demander un devis
                   <ChevronRight size={18} />
                 </button>
@@ -236,6 +255,7 @@ export default function Home() {
             {services.map((service) => (
               <div
                 key={service.title}
+                onClick={() => { setBookingService(service.id); setBookingOpen(true) }}
                 className={`group bg-[#0F0F0F] border rounded-2xl p-8 hover:bg-[#111111] transition-all duration-300 cursor-pointer ${
                   service.special
                     ? 'border-[rgba(240,192,64,0.2)] hover:border-[rgba(240,192,64,0.4)]'
@@ -362,6 +382,7 @@ export default function Home() {
             {/* CTA */}
             <div className="mt-10">
               <button
+                onClick={() => { setBookingService(undefined); setBookingOpen(true) }}
                 className="inline-flex items-center gap-2 font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm"
                 style={{ background: '#43BCC9', color: '#080808' }}
               >
@@ -579,6 +600,12 @@ export default function Home() {
 
         </div>
       </section>
+
+      <BookingModal
+        isOpen={bookingOpen}
+        onClose={() => setBookingOpen(false)}
+        preselectedService={bookingService}
+      />
     </main>
   )
 }

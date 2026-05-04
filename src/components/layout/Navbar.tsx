@@ -96,13 +96,13 @@ export default function Navbar() {
           </div>
 
           {/* CTA */}
-          <a
-            href="/#booking"
-            className="flex items-center gap-1.5 px-5 py-2 rounded-full text-sm font-semibold transition-opacity duration-200 hover:opacity-90 active:scale-95"
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+            className="hidden md:inline-flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full hover:opacity-90 transition-colors duration-200 text-sm"
             style={{ background: '#43BCC9', color: '#080808' }}
           >
-            📲 Devis Gratuit
-          </a>
+            Devis Gratuit
+          </button>
         </div>
 
         {/* Mobile: lang + hamburger */}

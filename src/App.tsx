@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
+import WhatsAppFAB from './components/ui/WhatsAppFAB'
 import Home from './pages/Home'
 import Services from './pages/Services'
 import Fleet from './pages/Fleet'
@@ -28,6 +29,7 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
         <Footer />
+        <WhatsAppFAB />
       </div>
     </BrowserRouter>
   )
