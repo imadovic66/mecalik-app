@@ -19,22 +19,21 @@ import {
 type Vehicle = {
   id: string
   company_id: string
-  make: string
+  brand: string
   model: string
   year: number
   plate: string | null
   status: 'ok' | 'service_due' | 'in_service' | 'alert'
-  last_service: string | null
-  next_service: string | null
-  notes: string | null
+  driver_name: string | null
+  mileage: number | null
   created_at: string
 }
 
 type Company = {
   id: string
   name: string
-  email: string | null
-  phone: string | null
+  contact_email: string | null
+  contact_phone: string | null
 }
 
 const VEHICLE_STATUS = {
@@ -80,7 +79,7 @@ export default function FleetDashboard() {
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAddVehicle, setShowAddVehicle] = useState(false)
-  const [newVehicle, setNewVehicle] = useState({ make: '', model: '', year: '', plate: '' })
+  const [newVehicle, setNewVehicle] = useState({ brand: '', model: '', year: '', plate: '' })
   const [addingVehicle, setAddingVehicle] = useState(false)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
 
@@ -112,14 +111,14 @@ export default function FleetDashboard() {
   useEffect(() => { if (user && profile) fetchData() }, [user, profile, fetchData])
 
   const addVehicle = async () => {
-    if (!newVehicle.make || !newVehicle.model || !newVehicle.year) return
+    if (!newVehicle.brand || !newVehicle.model || !newVehicle.year) return
     setAddingVehicle(true)
     const companyId = profile?.company_id || company?.id
     if (!companyId) { setAddingVehicle(false); return }
 
     await supabase.from('fleet_vehicles').insert({
       company_id: companyId,
-      make: newVehicle.make,
+      brand: newVehicle.brand,
       model: newVehicle.model,
       year: parseInt(newVehicle.year),
       plate: newVehicle.plate || null,
@@ -127,7 +126,7 @@ export default function FleetDashboard() {
     })
     const { data } = await supabase.from('fleet_vehicles').select('*').eq('company_id', companyId).order('created_at', { ascending: false })
     setVehicles(data ?? [])
-    setNewVehicle({ make: '', model: '', year: '', plate: '' })
+    setNewVehicle({ brand: '', model: '', year: '', plate: '' })
     setShowAddVehicle(false)
     setAddingVehicle(false)
   }
@@ -206,11 +205,11 @@ export default function FleetDashboard() {
         </nav>
 
         <div className="p-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          {company?.email && (
-            <div className="text-xs mb-1 px-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{company.email}</div>
+          {company?.contact_email && (
+            <div className="text-xs mb-1 px-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{company.contact_email}</div>
           )}
-          {company?.phone && (
-            <div className="text-xs mb-3 px-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{company.phone}</div>
+          {company?.contact_phone && (
+            <div className="text-xs mb-3 px-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{company.contact_phone}</div>
           )}
           <button onClick={async () => { await signOut(); navigate('/') }}
             className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm w-full transition-colors"
@@ -319,9 +318,9 @@ export default function FleetDashboard() {
                   }
                 })
 
-                const upcomingVehicles = vehicles
-                  .filter(v => v.next_service)
-                  .sort((a, b) => new Date(a.next_service!).getTime() - new Date(b.next_service!).getTime())
+                const mileageSorted = vehicles
+                  .filter(v => v.mileage !== null)
+                  .sort((a, b) => (b.mileage ?? 0) - (a.mileage ?? 0))
                   .slice(0, 5)
 
                 const tooltipStyle = {
@@ -442,69 +441,47 @@ export default function FleetDashboard() {
                       </ResponsiveContainer>
                     </div>
 
-                    {/* Chart 4 — Upcoming services (full width) */}
+                    {/* Chart 4 — Mileage list (full width) */}
                     <div className="rounded-2xl p-6 lg:col-span-2"
                       style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="font-heading font-semibold text-base" style={{ color: 'white' }}>
-                          Prochaines interventions
+                          État des véhicules par kilométrage
                         </h3>
                         <button onClick={() => setActiveTab('fleet')}
                           className="text-sm" style={{ color: '#43BCC9' }}>
                           Voir tout →
                         </button>
                       </div>
-                      {upcomingVehicles.length === 0 ? (
+                      {mileageSorted.length === 0 ? (
                         <div className="text-sm text-center py-6" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                          Aucune intervention planifiée. Utilisez le Planning pour en ajouter.
+                          Kilométrage non renseigné
                         </div>
                       ) : (
                         <div>
-                          {upcomingVehicles.map(v => {
-                            const cfg = VEHICLE_STATUS[v.status]
-                            const daysUntil = Math.ceil(
-                              (new Date(v.next_service!).getTime() - Date.now()) / 86400000
-                            )
-                            return (
-                              <div key={v.id}
-                                className="flex items-center justify-between py-3"
-                                style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                <div className="flex items-center gap-4">
-                                  <div
-                                    className="w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0"
-                                    style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}
-                                  >
-                                    <div className="font-heading font-bold text-sm" style={{ color: cfg.color }}>
-                                      {new Date(v.next_service!).getDate()}
-                                    </div>
-                                    <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                                      {new Date(v.next_service!).toLocaleDateString('fr-FR', { month: 'short' })}
-                                    </div>
+                          {mileageSorted.map(v => (
+                            <div key={v.id}
+                              className="flex items-center justify-between py-3"
+                              style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                              <div className="flex items-center gap-4">
+                                <VehicleStatusIcon status={v.status} />
+                                <div>
+                                  <div className="font-medium text-sm" style={{ color: 'white' }}>
+                                    {v.brand} {v.model} {v.year}
                                   </div>
-                                  <div>
-                                    <div className="font-medium text-sm" style={{ color: 'white' }}>
-                                      {v.make} {v.model} {v.year}
-                                    </div>
-                                    <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                                      {v.plate || 'Sans immatriculation'}
-                                    </div>
+                                  <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                                    {v.plate || 'Sans immatriculation'}
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-3 flex-shrink-0">
-                                  {daysUntil < 0 ? (
-                                    <span className="text-xs" style={{ color: '#FF4444' }}>En retard</span>
-                                  ) : daysUntil === 0 ? (
-                                    <span className="text-xs" style={{ color: '#F0C040' }}>{"Aujourd'hui"}</span>
-                                  ) : daysUntil <= 7 ? (
-                                    <span className="text-xs" style={{ color: '#F0C040' }}>Dans {daysUntil} j</span>
-                                  ) : (
-                                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Dans {daysUntil} j</span>
-                                  )}
-                                  <StatusPill status={v.status} />
                                 </div>
                               </div>
-                            )
-                          })}
+                              <div className="flex items-center gap-3 flex-shrink-0">
+                                <span className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                  {v.mileage!.toLocaleString('fr-FR')} km
+                                </span>
+                                <StatusPill status={v.status} />
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -555,7 +532,7 @@ export default function FleetDashboard() {
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     {[
-                      { key: 'make',  label: 'Marque *',        type: 'text',   placeholder: 'Ex: Renault' },
+                      { key: 'brand', label: 'Marque *',        type: 'text',   placeholder: 'Ex: Renault' },
                       { key: 'model', label: 'Modèle *',        type: 'text',   placeholder: 'Ex: Kangoo' },
                       { key: 'year',  label: 'Année *',         type: 'number', placeholder: '2021' },
                       { key: 'plate', label: 'Immatriculation', type: 'text',   placeholder: '123-A-45' },
@@ -616,7 +593,7 @@ export default function FleetDashboard() {
                             <VehicleStatusIcon status={vehicle.status} />
                             <div>
                               <div className="font-heading font-semibold" style={{ color: '#ffffff' }}>
-                                {vehicle.make} {vehicle.model}
+                                {vehicle.brand} {vehicle.model}
                               </div>
                               <div className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
                                 {vehicle.year}{vehicle.plate ? ' · ' + vehicle.plate : ''}
@@ -627,21 +604,16 @@ export default function FleetDashboard() {
                         </div>
 
                         <div className="mt-4 space-y-2">
-                          {vehicle.last_service && (
+                          {vehicle.mileage !== null && (
                             <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                              <Calendar size={12} />
-                              Dernier service : {new Date(vehicle.last_service).toLocaleDateString('fr-FR')}
-                            </div>
-                          )}
-                          {vehicle.next_service && (
-                            <div className="flex items-center gap-2 text-xs" style={{ color: cfg.color }}>
                               <Clock size={12} />
-                              Prochain : {new Date(vehicle.next_service).toLocaleDateString('fr-FR')}
+                              {vehicle.mileage.toLocaleString('fr-FR')} km
                             </div>
                           )}
-                          {vehicle.notes && (
-                            <div className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                              {vehicle.notes}
+                          {vehicle.driver_name && (
+                            <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                              <Car size={12} />
+                              {vehicle.driver_name}
                             </div>
                           )}
                         </div>
@@ -741,12 +713,12 @@ export default function FleetDashboard() {
                     const monthName = new Date(year, parseInt(month) - 1, 1).toLocaleDateString('fr-FR', { month: 'long' })
                     generateInvoice({
                       companyName: company?.name || 'Votre Entreprise',
-                      companyEmail: company?.email || null,
+                      companyEmail: company?.contact_email || null,
                       month: monthName,
                       year,
                       vehicles: vehicles.slice(0, 5).map(v => ({
                         plate: v.plate,
-                        make: v.make,
+                        make: v.brand,
                         model: v.model,
                         services: [{
                           date: new Date().toISOString(),

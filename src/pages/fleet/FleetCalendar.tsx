@@ -27,7 +27,7 @@ type CalendarEvent = {
 
 type Vehicle = {
   id: string
-  make: string
+  brand: string
   model: string
   year: number
   plate: string | null
@@ -44,8 +44,6 @@ export default function FleetCalendar() {
     date: '',
     notes: '',
   })
-  const [saving, setSaving] = useState(false)
-
   useEffect(() => {
     if (profile?.company_id) {
       fetchVehicles()
@@ -62,29 +60,7 @@ export default function FleetCalendar() {
   }
 
   const fetchEvents = async () => {
-    const { data } = await supabase
-      .from('fleet_vehicles')
-      .select('id, make, model, year, plate, next_service')
-      .eq('company_id', profile!.company_id!)
-      .not('next_service', 'is', null)
-
-    if (data) {
-      const calEvents: CalendarEvent[] = data
-        .filter(v => v.next_service)
-        .map(v => ({
-          id: v.id,
-          title: `${v.make} ${v.model} — Service`,
-          start: new Date(v.next_service),
-          end: new Date(new Date(v.next_service).getTime() + 60 * 60 * 1000),
-          resource: {
-            vehicle_id: v.id,
-            vehicle_name: `${v.make} ${v.model} ${v.year}`,
-            service_type: 'service',
-            status: 'planned',
-          },
-        }))
-      setEvents(calEvents)
-    }
+    setEvents([])
   }
 
   const handleSelectSlot = ({ start }: { start: Date }) => {
@@ -95,19 +71,14 @@ export default function FleetCalendar() {
     setShowAddEvent(true)
   }
 
-  const saveEvent = async () => {
+  const saveEvent = () => {
     if (!newEvent.vehicle_id || !newEvent.date) return
-    setSaving(true)
-
-    await supabase
-      .from('fleet_vehicles')
-      .update({ next_service: newEvent.date })
-      .eq('id', newEvent.vehicle_id)
-
-    await fetchEvents()
+    const vehicle = vehicles.find(v => v.id === newEvent.vehicle_id)
+    const serviceLabel = SERVICE_TYPES.find(s => s.value === newEvent.service_type)?.label ?? newEvent.service_type
+    const msg = `Bonjour MecaLIK, je souhaite planifier un service pour:\nVéhicule: ${vehicle?.brand} ${vehicle?.model} (${vehicle?.plate})\nService: ${serviceLabel}\nDate souhaitée: ${newEvent.date}`
+    window.open('https://wa.me/212667101341?text=' + encodeURIComponent(msg), '_blank')
     setShowAddEvent(false)
     setNewEvent({ vehicle_id: '', service_type: 'vidange', date: '', notes: '' })
-    setSaving(false)
   }
 
   const SERVICE_TYPES = [
@@ -215,7 +186,7 @@ export default function FleetCalendar() {
                   <option value="">Sélectionner un véhicule</option>
                   {vehicles.map(v => (
                     <option key={v.id} value={v.id}>
-                      {v.make} {v.model} {v.year}{v.plate ? ` (${v.plate})` : ''}
+                      {v.brand} {v.model} {v.year}{v.plate ? ` (${v.plate})` : ''}
                     </option>
                   ))}
                 </select>
@@ -259,15 +230,10 @@ export default function FleetCalendar() {
               </button>
               <button
                 onClick={saveEvent}
-                disabled={saving}
                 className="flex-1 py-3 rounded-full text-sm font-bold transition-colors"
-                style={{
-                  background: saving ? 'rgba(240,192,64,0.5)' : '#F0C040',
-                  color: '#080808',
-                  cursor: saving ? 'not-allowed' : 'pointer',
-                }}
+                style={{ background: '#F0C040', color: '#080808' }}
               >
-                {saving ? 'Enregistrement...' : 'Planifier'}
+                Envoyer sur WhatsApp
               </button>
             </div>
           </div>
