@@ -1,1 +1,553 @@
-export default function AdminDashboard(){return <div>Admin</div>}
+import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
+import {
+  LayoutDashboard, ShoppingBag, Users,
+  LogOut, Clock, CheckCircle,
+  Search, Eye, X,
+  TrendingUp, Wrench, Phone, MapPin,
+  Calendar, RefreshCw, MessageSquare, Tag,
+} from 'lucide-react'
+
+type Booking = {
+  id: string
+  user_id: string
+  service: string
+  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+  address: string
+  scheduled_at: string | null
+  price: number | null
+  notes: string | null
+  created_at: string
+  profiles?: { full_name: string | null; phone: string | null }
+}
+
+type Customer = {
+  id: string
+  full_name: string | null
+  phone: string | null
+  role: string
+  created_at: string
+}
+
+const STATUS_CONFIG = {
+  pending:     { label: 'En attente',  color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },
+  confirmed:   { label: 'Confirmé',    color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
+  in_progress: { label: 'En cours',    color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
+  completed:   { label: 'Terminé',     color: '#00DD88', bg: 'rgba(0,221,136,0.1)',   border: 'rgba(0,221,136,0.25)'   },
+  cancelled:   { label: 'Annulé',      color: '#FF4444', bg: 'rgba(255,68,68,0.1)',   border: 'rgba(255,68,68,0.25)'   },
+}
+
+const SERVICE_LABELS: Record<string, string> = {
+  lavage: 'Lavage Auto', vidange: 'Vidange & Filtres', batterie: 'Batterie',
+  pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
+}
+
+type Tab = 'overview' | 'bookings' | 'customers'
+
+const STATUS_KEYS = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] as const
+
+function getInitials(name: string | null | undefined): string {
+  if (!name) return '?'
+  const parts = name.trim().split(' ')
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? '?'
+  return ((parts[0][0] ?? '') + (parts[parts.length - 1][0] ?? '')).toUpperCase()
+}
+
+function StatusPill({ status }: { status: keyof typeof STATUS_CONFIG }) {
+  const cfg = STATUS_CONFIG[status]
+  return (
+    <span
+      className="px-3 py-1 rounded-full text-xs font-medium"
+      style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}
+    >
+      {cfg.label}
+    </span>
+  )
+}
+
+export default function AdminDashboard() {
+  const { user, profile, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+
+  useEffect(() => { if (!user) navigate('/login') }, [user, navigate])
+  useEffect(() => { if (profile && profile.role !== 'admin') navigate('/dashboard') }, [profile, navigate])
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    const [{ data: bookingData }, { data: customerData }] = await Promise.all([
+      supabase
+        .from('bookings')
+        .select('*, profiles(full_name, phone)')
+        .order('created_at', { ascending: false })
+        .limit(100),
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'customer')
+        .order('created_at', { ascending: false }),
+    ])
+    setBookings(bookingData ?? [])
+    setCustomers(customerData ?? [])
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { if (user) fetchData() }, [user, fetchData])
+
+  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
+    setUpdatingStatus(true)
+    await supabase.from('bookings').update({ status: newStatus }).eq('id', bookingId)
+    setBookings(prev =>
+      prev.map(b => b.id === bookingId ? { ...b, status: newStatus as Booking['status'] } : b)
+    )
+    if (selectedBooking?.id === bookingId) {
+      setSelectedBooking(prev => prev ? { ...prev, status: newStatus as Booking['status'] } : null)
+    }
+    setUpdatingStatus(false)
+  }
+
+  const filteredBookings = bookings.filter(b => {
+    const matchSearch = !searchQuery ||
+      b.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (SERVICE_LABELS[b.service] ?? b.service).toLowerCase().includes(searchQuery.toLowerCase())
+    const matchStatus = statusFilter === 'all' || b.status === statusFilter
+    return matchSearch && matchStatus
+  })
+
+  const stats = {
+    total: bookings.length,
+    pending: bookings.filter(b => b.status === 'pending').length,
+    inProgress: bookings.filter(b => b.status === 'in_progress').length,
+    completed: bookings.filter(b => b.status === 'completed').length,
+    revenue: bookings
+      .filter(b => b.status === 'completed' && b.price)
+      .reduce((sum, b) => sum + (b.price ?? 0), 0),
+  }
+
+  const tabTitles: Record<Tab, string> = {
+    overview: 'Vue d\'ensemble',
+    bookings: 'Réservations',
+    customers: 'Clients',
+  }
+
+  const navItems: { tab: Tab; icon: React.ReactNode; label: string }[] = [
+    { tab: 'overview',  icon: <LayoutDashboard size={18} />, label: 'Vue d\'ensemble' },
+    { tab: 'bookings',  icon: <ShoppingBag size={18} />,     label: 'Réservations' },
+    { tab: 'customers', icon: <Users size={18} />,           label: 'Clients' },
+  ]
+
+  const BookingRow = ({ booking }: { booking: Booking }) => (
+    <div
+      className="rounded-xl p-4 mb-3 grid grid-cols-1 md:grid-cols-4 gap-4 items-center"
+      style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}
+    >
+      <div>
+        <div className="font-medium text-sm" style={{ color: '#ffffff' }}>
+          {SERVICE_LABELS[booking.service] ?? booking.service}
+        </div>
+        <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          {booking.profiles?.full_name || 'Client'}
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <MapPin size={12} style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
+        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          {booking.address.length > 30 ? booking.address.slice(0, 30) + '…' : booking.address}
+        </span>
+      </div>
+      <div><StatusPill status={booking.status} /></div>
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          {new Date(booking.created_at).toLocaleDateString('fr-FR')}
+        </span>
+        <button
+          onClick={() => setSelectedBooking(booking)}
+          className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+          style={{ background: 'rgba(255,255,255,0.05)' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(67,188,201,0.1)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+        >
+          <Eye size={14} style={{ color: 'rgba(255,255,255,0.5)' }} />
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-[#080808] flex">
+
+      {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
+      <aside
+        className="hidden lg:flex fixed left-0 top-0 h-full w-64 flex-col z-40"
+        style={{ background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        <div className="p-6">
+          <img src="/logo.jpg" alt="MecaLIK"
+            style={{ height: '36px', width: '120px', objectFit: 'cover', borderRadius: '6px' }} />
+          <div className="mt-2 px-1">
+            <div className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              Administration
+            </div>
+          </div>
+        </div>
+
+        <nav className="flex-1 px-3 mt-2 space-y-1">
+          {navItems.map(({ tab, icon, label }) => {
+            const isActive = activeTab === tab
+            return (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+                style={{
+                  color: isActive ? '#43BCC9' : 'rgba(255,255,255,0.5)',
+                  background: isActive ? 'rgba(67,188,201,0.1)' : 'transparent',
+                  border: isActive ? '1px solid rgba(67,188,201,0.15)' : '1px solid transparent',
+                }}
+              >
+                {icon}{label}
+              </button>
+            )
+          })}
+        </nav>
+
+        <div className="p-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="text-xs mb-3 px-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            {user?.email}
+          </div>
+          <button
+            onClick={async () => { await signOut(); navigate('/') }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors"
+            style={{ color: 'rgba(255,255,255,0.4)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
+          >
+            <LogOut size={18} />Déconnexion
+          </button>
+        </div>
+      </aside>
+
+      {/* ── MAIN ─────────────────────────────────────────────────────── */}
+      <div className="lg:ml-64 flex-1 flex flex-col min-h-screen">
+
+        {/* Top bar */}
+        <div className="px-6 py-4 flex items-center justify-between"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#080808' }}>
+          <div>
+            <h1 className="font-heading font-bold text-xl" style={{ color: '#ffffff' }}>
+              {tabTitles[activeTab]}
+            </h1>
+            <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Tableau de bord administrateur
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchData}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              style={{ background: 'rgba(255,255,255,0.06)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+            >
+              <RefreshCw size={16} style={{ color: 'rgba(255,255,255,0.5)' }} />
+            </button>
+            <span
+              className="px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.2)', color: '#43BCC9' }}
+            >
+              Admin
+            </span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-6">
+
+          {/* ── OVERVIEW ── */}
+          {activeTab === 'overview' && (
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {[
+                  { label: 'Réservations totales', value: stats.total,              color: '#ffffff',  icon: <ShoppingBag size={18} />, iconBg: 'rgba(255,255,255,0.05)' },
+                  { label: 'En attente',            value: stats.pending,            color: '#F0C040',  icon: <Clock size={18} />,       iconBg: 'rgba(240,192,64,0.08)'  },
+                  { label: 'En cours',              value: stats.inProgress,         color: '#43BCC9',  icon: <Wrench size={18} />,      iconBg: 'rgba(67,188,201,0.08)'  },
+                  { label: "Chiffre d'affaires",    value: `${stats.revenue} MAD`,   color: '#00DD88',  icon: <TrendingUp size={18} />,  iconBg: 'rgba(0,221,136,0.08)'   },
+                ].map(kpi => (
+                  <div key={kpi.label} className="rounded-2xl p-6 flex items-start justify-between"
+                    style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div>
+                      <div className="text-sm mb-2" style={{ color: 'rgba(255,255,255,0.45)' }}>{kpi.label}</div>
+                      <div className="font-heading font-bold text-3xl" style={{ color: kpi.color }}>{kpi.value}</div>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: kpi.iconBg, color: kpi.color }}>
+                      {kpi.icon}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <h2 className="font-heading font-semibold text-lg mb-4" style={{ color: '#ffffff' }}>
+                Dernières réservations
+              </h2>
+              {loading ? (
+                <div className="space-y-3">
+                  {[1,2,3,4,5].map(i => (
+                    <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: '#141414' }} />
+                  ))}
+                </div>
+              ) : (
+                bookings.slice(0, 5).map(b => <BookingRow key={b.id} booking={b} />)
+              )}
+            </>
+          )}
+
+          {/* ── BOOKINGS ── */}
+          {activeTab === 'bookings' && (
+            <>
+              <div className="flex items-center gap-3 mb-6 flex-wrap">
+                <div className="relative flex-1 min-w-48">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2"
+                    style={{ color: 'rgba(255,255,255,0.3)' }} />
+                  <input
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Rechercher par service, adresse..."
+                    className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none"
+                    style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.08)', color: '#ffffff' }}
+                    onFocus={e => (e.target.style.borderColor = '#43BCC9')}
+                    onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
+                  />
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {['all', ...STATUS_KEYS].map(s => (
+                    <button key={s} onClick={() => setStatusFilter(s)}
+                      className="rounded-full px-4 py-2 text-xs font-medium transition-all"
+                      style={statusFilter === s
+                        ? { background: '#43BCC9', color: '#080808' }
+                        : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }
+                      }
+                    >
+                      {s === 'all' ? 'Tous' : STATUS_CONFIG[s as keyof typeof STATUS_CONFIG].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="space-y-3">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: '#141414' }} />
+                  ))}
+                </div>
+              ) : filteredBookings.length === 0 ? (
+                <div className="text-center py-20">
+                  <Search size={40} style={{ color: 'rgba(255,255,255,0.1)', margin: '0 auto 16px' }} />
+                  <div className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Aucune réservation trouvée</div>
+                </div>
+              ) : (
+                filteredBookings.map(b => <BookingRow key={b.id} booking={b} />)
+              )}
+            </>
+          )}
+
+          {/* ── CUSTOMERS ── */}
+          {activeTab === 'customers' && (
+            <>
+              <div className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                {customers.length} client{customers.length !== 1 ? 's' : ''} enregistré{customers.length !== 1 ? 's' : ''}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {customers.map(customer => (
+                  <div key={customer.id} className="rounded-2xl p-6"
+                    style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
+                        <span className="font-heading font-bold text-sm" style={{ color: '#43BCC9' }}>
+                          {getInitials(customer.full_name)}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm" style={{ color: '#ffffff' }}>
+                          {customer.full_name || 'Sans nom'}
+                        </div>
+                        <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          {customer.phone || 'Pas de téléphone'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                        Inscrit {new Date(customer.created_at).toLocaleDateString('fr-FR')}
+                      </div>
+                      <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                        {bookings.filter(b => b.user_id === customer.id).length} réservation(s)
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── BOOKING DETAIL MODAL ─────────────────────────────────────── */}
+      {selectedBooking && (
+        <div
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setSelectedBooking(null)}
+        >
+          <div
+            className="relative z-10 w-full md:max-w-lg rounded-t-2xl md:rounded-2xl p-6 mx-0 md:mx-4 overflow-y-auto"
+            style={{
+              background: '#0F0F0F',
+              border: '1px solid rgba(255,255,255,0.08)',
+              maxHeight: '90vh',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-heading font-bold text-lg" style={{ color: '#ffffff' }}>
+                Détail réservation
+              </h2>
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.06)' }}
+              >
+                <X size={16} style={{ color: 'rgba(255,255,255,0.6)' }} />
+              </button>
+            </div>
+
+            {/* Info rows */}
+            {[
+              { icon: <Wrench size={16} style={{ color: '#43BCC9' }} />,   label: 'Service',   value: SERVICE_LABELS[selectedBooking.service] ?? selectedBooking.service },
+              { icon: <Users size={16} style={{ color: '#43BCC9' }} />,    label: 'Client',    value: selectedBooking.profiles?.full_name || 'Inconnu' },
+              { icon: <MapPin size={16} style={{ color: '#43BCC9' }} />,   label: 'Adresse',   value: selectedBooking.address },
+              { icon: <Calendar size={16} style={{ color: '#43BCC9' }} />, label: 'Date',      value: selectedBooking.scheduled_at ? new Date(selectedBooking.scheduled_at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Dès que possible' },
+            ].map(row => (
+              <div key={row.label} className="flex items-start gap-3 mb-4">
+                <div className="mt-0.5 flex-shrink-0">{row.icon}</div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>{row.label}</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: '#ffffff' }}>{row.value}</div>
+                </div>
+              </div>
+            ))}
+
+            {selectedBooking.profiles?.phone && (
+              <div className="flex items-start gap-3 mb-4">
+                <Phone size={16} style={{ color: '#43BCC9', marginTop: '2px', flexShrink: 0 }} />
+                <div>
+                  <div className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Téléphone</div>
+                  <a href={`tel:${selectedBooking.profiles.phone}`}
+                    className="text-sm font-medium mt-0.5 block" style={{ color: '#43BCC9' }}>
+                    {selectedBooking.profiles.phone}
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {selectedBooking.price && (
+              <div className="flex items-start gap-3 mb-4">
+                <Tag size={16} style={{ color: '#43BCC9', marginTop: '2px', flexShrink: 0 }} />
+                <div>
+                  <div className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Prix</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: '#ffffff' }}>{selectedBooking.price} MAD</div>
+                </div>
+              </div>
+            )}
+
+            {selectedBooking.notes && (
+              <div className="flex items-start gap-3 mb-4">
+                <MessageSquare size={16} style={{ color: '#43BCC9', marginTop: '2px', flexShrink: 0 }} />
+                <div>
+                  <div className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Notes</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: '#ffffff' }}>{selectedBooking.notes}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Current status */}
+            <div className="mb-6">
+              <StatusPill status={selectedBooking.status} />
+            </div>
+
+            {/* Status update */}
+            <div>
+              <p className="text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Modifier le statut
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {STATUS_KEYS.filter(s => s !== selectedBooking.status).map(status => {
+                  const cfg = STATUS_CONFIG[status]
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => updateBookingStatus(selectedBooking.id, status)}
+                      disabled={updatingStatus}
+                      className="py-2.5 px-3 rounded-xl text-xs font-medium transition-all"
+                      style={{
+                        color: cfg.color,
+                        background: cfg.bg,
+                        border: `1px solid ${cfg.border}`,
+                        opacity: updatingStatus ? 0.5 : 1,
+                        cursor: updatingStatus ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {cfg.label}
+                    </button>
+                  )
+                })}
+              </div>
+              {updatingStatus && (
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="w-4 h-4 rounded-full border-2 border-[#43BCC9] border-t-transparent animate-spin" />
+                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Mise à jour...</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setSelectedBooking(null)}
+              className="mt-6 w-full py-3 rounded-full text-sm transition-colors"
+              style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MOBILE BOTTOM NAV ─────────────────────────────────────────── */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 flex items-center justify-around px-4 py-3 z-40"
+        style={{ background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        {navItems.map(({ tab, icon, label }) => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className="flex flex-col items-center gap-1 transition-colors"
+            style={{ color: activeTab === tab ? '#43BCC9' : 'rgba(255,255,255,0.4)' }}
+          >
+            {icon}
+            <span className="text-xs">{label}</span>
+          </button>
+        ))}
+      </nav>
+
+    </div>
+  )
+}
