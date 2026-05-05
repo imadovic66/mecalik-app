@@ -18,7 +18,7 @@ export default function Signup() {
 
     if (!form.fullName.trim()) { setError('Nom complet requis.'); return }
     if (!form.email.trim()) { setError('Email requis.'); return }
-    if (form.password.length < 6) { setError('Mot de passe : 6 caractères minimum.'); return }
+    if (form.password.length < 8) { setError('Mot de passe : 8 caractères minimum.'); return }
     if (form.password !== form.confirmPassword) { setError('Les mots de passe ne correspondent pas.'); return }
 
     setLoading(true)
@@ -117,6 +117,11 @@ export default function Signup() {
                 <label className="block text-xs font-medium uppercase tracking-wide mb-2"
                        style={{ color: 'rgba(255,255,255,0.5)' }}>
                   {key === 'password' ? 'Mot de passe' : 'Confirmer le mot de passe'}
+                  {key === 'password' && (
+                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', marginLeft: '4px' }}>
+                      (8 caractères minimum, avec majuscule et chiffre)
+                    </span>
+                  )}
                 </label>
                 <div className="relative">
                   <input
