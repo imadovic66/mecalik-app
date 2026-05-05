@@ -102,7 +102,6 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
       `\n\nMerci !`
 
     const url = 'https://wa.me/212667101341?text=' + encodeURIComponent(msg)
-    window.open(url, '_blank')
 
     setSubmitting(true)
     const { data: newBooking } = await supabase
@@ -123,10 +122,15 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
       .single()
     setSubmitting(false)
 
-    onClose()
-
     if (newBooking && user) {
-      navigate('/booking/' + newBooking.id)
+      window.open(url, '_blank')
+      onClose()
+      setTimeout(() => {
+        navigate('/booking/' + newBooking.id)
+      }, 500)
+    } else {
+      window.open(url, '_blank')
+      onClose()
     }
   }
 
