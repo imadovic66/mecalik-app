@@ -104,22 +104,26 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
     const url = 'https://wa.me/212667101341?text=' + encodeURIComponent(msg)
 
     setSubmitting(true)
-    const { data: newBooking } = await supabase
+    const { data: newBooking, error: insertError } = await supabase
       .from('bookings')
       .insert({
-        user_id: user?.id ?? null,
+        user_id: user?.id || null,
         service_name: selectedService,
-        status: 'pending',
-        address: form.address.trim(),
-        notes_admin: form.note.trim() || null,
-        preferred_date: form.date === 'today'
-          ? null
-          : form.date === 'tomorrow'
-          ? new Date(Date.now() + 86400000).toISOString()
+        address: form.address,
+        notes_admin: form.note || null,
+        preferred_date: form.date === 'tomorrow'
+          ? new Date(Date.now() + 86400000).toISOString().split('T')[0]
           : null,
       })
-      .select()
+      .select('id')
       .single()
+
+    if (insertError) {
+      console.error('Booking insert error:', insertError.message, insertError.code)
+    }
+
+    console.log('Booking created:', newBooking)
+
     setSubmitting(false)
 
     if (newBooking && user) {
