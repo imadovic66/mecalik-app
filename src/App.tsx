@@ -15,6 +15,7 @@ import BookingConfirmation from './pages/dashboard/BookingConfirmation'
 import FleetDashboard from './pages/fleet/FleetDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ProtectedRoute from './components/ui/ProtectedRoute'
+import PublicRoute from './components/ui/PublicRoute'
 
 function App() {
   const [bookingOpen, setBookingOpen] = useState(false)
@@ -28,14 +29,14 @@ function App() {
   return (
     <BrowserRouter>
       <Navbar />
-      <div className="pt-20">
+      <div className="pt-16">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/fleet" element={<Fleet />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
+          <Route path="/services" element={<PublicRoute><Services /></PublicRoute>} />
+          <Route path="/fleet" element={<PublicRoute><Fleet /></PublicRoute>} />
+          <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/booking/:id" element={<BookingConfirmation />} />
           <Route path="/dashboard" element={
             <ProtectedRoute requiredRole="customer"><CustomerDashboard /></ProtectedRoute>
