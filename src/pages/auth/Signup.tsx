@@ -24,29 +24,54 @@ export default function Signup() {
       setError('Le mot de passe doit contenir au moins 6 caractères.')
       return
     }
+    if (!form.email.trim()) {
+      setError('Email requis.')
+      return
+    }
 
     setLoading(true)
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    console.log('Attempting signup with:', {
       email: form.email.trim(),
-      password: form.password,
+      passwordLength: form.password.length,
+      fullName: form.fullName,
+    })
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: form.email.trim().toLowerCase(),
+      password: form.password.trim(),
       options: {
-        data: { full_name: form.fullName, phone: form.phone },
+        data: {
+          full_name: form.fullName.trim(),
+          phone: form.phone.trim(),
+        },
       },
     })
 
+    console.log('Signup response:', { data, error: signUpError })
+
     if (signUpError) {
+      console.error('Signup error details:', signUpError)
       setError(signUpError.message)
       setLoading(false)
       return
     }
 
     if (data.user) {
-      await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: form.email.trim(),
         password: form.password,
       })
+      if (signInError) {
+        console.error('Auto signin error:', signInError)
+        setError(signInError.message)
+        setLoading(false)
+        return
+      }
       navigate('/dashboard')
+    } else {
+      setError('Compte créé. Vérifiez votre email pour confirmer.')
+      setLoading(false)
     }
   }
 
