@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 
 type Lang = 'FR' | 'EN' | 'AR'
@@ -13,7 +13,6 @@ const navLinks: { label: string; to: string }[] = [
 
 export default function Navbar() {
   const location = useLocation()
-  const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [lang, setLang] = useState<Lang>('FR')
