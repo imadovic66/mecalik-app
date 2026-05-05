@@ -8,6 +8,8 @@ import {
   BarChart3, Calendar, FileText,
   ChevronRight, RefreshCw,
 } from 'lucide-react'
+import FleetCalendar from './FleetCalendar'
+import { generateInvoice } from '../../utils/generateInvoice'
 
 type Vehicle = {
   id: string
@@ -37,7 +39,7 @@ const VEHICLE_STATUS = {
   alert:       { label: 'Alerte',         color: '#FF4444', bg: 'rgba(255,68,68,0.1)',  border: 'rgba(255,68,68,0.25)',  icon: AlertTriangle },
 }
 
-type Tab = 'overview' | 'fleet' | 'bookings' | 'reports'
+type Tab = 'overview' | 'fleet' | 'calendar' | 'bookings' | 'reports'
 type StatusFilter = 'all' | 'ok' | 'service_due' | 'in_service' | 'alert'
 
 const WA_FLEET_URL = 'https://wa.me/212667101341?text=' +
@@ -140,16 +142,20 @@ export default function FleetDashboard() {
   const tabTitles: Record<Tab, string> = {
     overview: "Vue d'ensemble",
     fleet:    'Ma flotte',
+    calendar: 'Planning',
     bookings: 'Interventions',
     reports:  'Rapports',
   }
 
   const navItems: { tab: Tab; icon: React.ReactNode; label: string }[] = [
-    { tab: 'overview', icon: <BarChart3 size={18} />, label: "Vue d'ensemble" },
-    { tab: 'fleet',    icon: <Car size={18} />,       label: 'Ma flotte' },
-    { tab: 'bookings', icon: <Wrench size={18} />,    label: 'Interventions' },
-    { tab: 'reports',  icon: <FileText size={18} />,  label: 'Rapports' },
+    { tab: 'overview',  icon: <BarChart3 size={18} />,  label: "Vue d'ensemble" },
+    { tab: 'fleet',     icon: <Car size={18} />,        label: 'Ma flotte' },
+    { tab: 'calendar',  icon: <Calendar size={18} />,   label: 'Planning' },
+    { tab: 'bookings',  icon: <Wrench size={18} />,     label: 'Interventions' },
+    { tab: 'reports',   icon: <FileText size={18} />,   label: 'Rapports' },
   ]
+
+  const mobileNavItems = navItems.filter(item => item.tab !== 'reports')
 
   const inputStyle = {
     background: '#141414',
@@ -474,6 +480,11 @@ export default function FleetDashboard() {
             </>
           )}
 
+          {/* ── CALENDAR ── */}
+          {activeTab === 'calendar' && (
+            <FleetCalendar />
+          )}
+
           {/* ── BOOKINGS ── */}
           {activeTab === 'bookings' && (
             <div className="rounded-2xl p-12 text-center"
@@ -495,14 +506,88 @@ export default function FleetDashboard() {
 
           {/* ── REPORTS ── */}
           {activeTab === 'reports' && (
-            <div className="rounded-2xl p-12 text-center"
-              style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <BarChart3 size={40} style={{ color: 'rgba(255,255,255,0.1)', margin: '0 auto 16px' }} />
-              <div className="font-medium mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Rapports & Analytics
+            <div className="space-y-6">
+              <div className="rounded-2xl p-8"
+                style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <h3 className="font-heading font-semibold text-lg mb-2" style={{ color: 'white' }}>
+                  Facture mensuelle
+                </h3>
+                <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  Générez une facture PDF de vos interventions du mois.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-xs font-medium uppercase tracking-wide mb-2"
+                      style={{ color: 'rgba(255,255,255,0.5)' }}>Mois</label>
+                    <select
+                      id="invoice-month"
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                      style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)', color: 'white' }}
+                    >
+                      {['01','02','03','04','05','06','07','08','09','10','11','12'].map((m, i) => (
+                        <option key={m} value={m}>
+                          {new Date(2024, i, 1).toLocaleDateString('fr-FR', { month: 'long' })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium uppercase tracking-wide mb-2"
+                      style={{ color: 'rgba(255,255,255,0.5)' }}>Année</label>
+                    <select
+                      id="invoice-year"
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                      style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)', color: 'white' }}
+                    >
+                      <option value="2026">2026</option>
+                      <option value="2025">2025</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const month = (document.getElementById('invoice-month') as HTMLSelectElement)?.value || '05'
+                    const year = parseInt((document.getElementById('invoice-year') as HTMLSelectElement)?.value || '2026')
+                    const monthName = new Date(year, parseInt(month) - 1, 1).toLocaleDateString('fr-FR', { month: 'long' })
+                    generateInvoice({
+                      companyName: company?.name || 'Votre Entreprise',
+                      companyEmail: company?.email || null,
+                      month: monthName,
+                      year,
+                      vehicles: vehicles.slice(0, 5).map(v => ({
+                        plate: v.plate,
+                        make: v.make,
+                        model: v.model,
+                        services: [{
+                          date: new Date().toISOString(),
+                          service: 'Service MecaLIK',
+                          amount_ht: 250,
+                        }],
+                      })),
+                      totals: {
+                        ht: vehicles.length * 250,
+                        tva: vehicles.length * 250 * 0.2,
+                        ttc: vehicles.length * 250 * 1.2,
+                      },
+                    })
+                  }}
+                  className="w-full py-4 rounded-full font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+                  style={{ background: '#F0C040', color: '#080808' }}
+                >
+                  <FileText size={18} />
+                  Télécharger la facture PDF
+                </button>
               </div>
-              <div className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                Les rapports détaillés seront disponibles prochainement.
+
+              <div className="rounded-2xl p-8 text-center"
+                style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <BarChart3 size={40} style={{ color: 'rgba(255,255,255,0.1)', margin: '0 auto 16px' }} />
+                <div style={{ color: 'rgba(255,255,255,0.5)' }}>Analytics détaillés</div>
+                <div className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  Statistiques par véhicule disponibles prochainement.
+                </div>
               </div>
             </div>
           )}
@@ -513,7 +598,7 @@ export default function FleetDashboard() {
       {/* ── MOBILE BOTTOM NAV ─────────────────────────────────────────── */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex items-center justify-around px-4 py-3 z-40"
         style={{ background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        {navItems.map(({ tab, icon, label }) => (
+        {mobileNavItems.map(({ tab, icon, label }) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className="flex flex-col items-center gap-1 transition-colors"
             style={{ color: activeTab === tab ? '#F0C040' : 'rgba(255,255,255,0.4)' }}>
