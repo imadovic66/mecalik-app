@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, ShoppingBag, Users,
-  LogOut, Clock, CheckCircle,
+  LogOut, Clock,
   Search, Eye, X,
   TrendingUp, Wrench, Phone, MapPin,
   Calendar, RefreshCw, MessageSquare, Tag,
