@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Car, CheckCircle, AlertTriangle, Clock,
   Wrench, Plus, LogOut,
-  BarChart3, Calendar, FileText, Building2,
+  BarChart3, Calendar, FileText,
   ChevronRight, RefreshCw,
 } from 'lucide-react'
 
