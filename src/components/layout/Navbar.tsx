@@ -99,13 +99,12 @@ export default function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="font-semibold px-5 py-2.5 rounded-full text-sm transition-colors duration-200"
-                style={{ background: '#43BCC9', color: '#080808' }}
+              <Link
+                to="/dashboard"
+                className="hidden md:inline-flex items-center bg-[#43BCC9] text-[#080808] font-semibold px-5 py-2.5 rounded-full hover:bg-[#2FA8B5] transition-colors duration-200 text-sm"
               >
                 Mon espace
-              </button>
+              </Link>
               <button
                 onClick={signOut}
                 className="text-xs transition-colors duration-200"
