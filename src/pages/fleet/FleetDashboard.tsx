@@ -89,22 +89,36 @@ export default function FleetDashboard() {
     if (!user || !profile) return
     setLoading(true)
 
-    if (profile.role === 'fleet_manager' && profile.company_id) {
-      const [{ data: companyData }, { data: vehicleData }] = await Promise.all([
-        supabase.from('companies').select('*').eq('id', profile.company_id).single(),
-        supabase.from('fleet_vehicles').select('*').eq('company_id', profile.company_id).order('created_at', { ascending: false }),
-      ])
-      setCompany(companyData)
-      setVehicles(vehicleData ?? [])
-    } else if (profile.role === 'admin') {
-      const { data: firstCompany } = await supabase.from('companies').select('*').limit(1).single()
-      if (firstCompany) {
-        setCompany(firstCompany)
-        const { data: vehicleData } = await supabase
-          .from('fleet_vehicles').select('*').eq('company_id', firstCompany.id).order('created_at', { ascending: false })
-        setVehicles(vehicleData ?? [])
-      }
+    let companyId = profile.company_id
+
+    if (!companyId && profile.role === 'admin') {
+      const { data: firstCompany } = await supabase
+        .from('companies')
+        .select('id')
+        .limit(1)
+        .single()
+      companyId = firstCompany?.id || null
     }
+
+    if (!companyId) {
+      setLoading(false)
+      return
+    }
+
+    const { data: companyData } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('id', companyId)
+      .single()
+    setCompany(companyData)
+
+    const { data: vehiclesData } = await supabase
+      .from('fleet_vehicles')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false })
+    setVehicles(vehiclesData || [])
+
     setLoading(false)
   }, [user, profile])
 
