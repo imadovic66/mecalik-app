@@ -14,6 +14,7 @@ import {
   Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts'
+import { notifyCustomerByWhatsApp, getNotifiableStatuses } from '../../utils/whatsappNotify'
 
 type Booking = {
   id: string
@@ -113,13 +114,29 @@ export default function AdminDashboard() {
 
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     setUpdatingStatus(true)
+
     await supabase.from('bookings').update({ status: newStatus }).eq('id', bookingId)
+
     setBookings(prev =>
       prev.map(b => b.id === bookingId ? { ...b, status: newStatus as Booking['status'] } : b)
     )
     if (selectedBooking?.id === bookingId) {
       setSelectedBooking(prev => prev ? { ...prev, status: newStatus as Booking['status'] } : null)
     }
+
+    if (getNotifiableStatuses().includes(newStatus)) {
+      const booking = bookings.find(b => b.id === bookingId)
+      if (booking) {
+        notifyCustomerByWhatsApp({
+          customerName: booking.profiles?.full_name || null,
+          customerPhone: booking.profiles?.phone || null,
+          serviceLabel: SERVICE_LABELS[booking.service_name] || booking.service_name,
+          bookingRef: bookingId.slice(0, 8).toUpperCase(),
+          status: newStatus,
+        })
+      }
+    }
+
     setUpdatingStatus(false)
   }
 
@@ -198,9 +215,7 @@ export default function AdminDashboard() {
         <select
           value={booking.status}
           onChange={async (e) => {
-            const newStatus = e.target.value
-            await supabase.from('bookings').update({ status: newStatus }).eq('id', booking.id)
-            setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: newStatus as Booking['status'] } : b))
+            await updateBookingStatus(booking.id, e.target.value)
           }}
           className="rounded-lg px-2 py-1.5 text-xs outline-none cursor-pointer"
           style={{
@@ -712,11 +727,32 @@ export default function AdminDashboard() {
                   <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Mise à jour...</span>
                 </div>
               )}
+              <div
+                className="mt-4 p-3 rounded-xl"
+                style={{ background: 'rgba(37,211,102,0.05)', border: '1px solid rgba(37,211,102,0.15)' }}
+              >
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  Confirmer, En cours, Terminé et Annulé envoient automatiquement un WhatsApp au client.
+                </p>
+              </div>
             </div>
+
+            {selectedBooking.profiles?.phone && (
+              <a
+                href={`https://wa.me/${selectedBooking.profiles.phone.replace(/\s/g, '').replace(/^0/, '212')}?text=${encodeURIComponent('Bonjour, je vous contacte de la part de MecaLIK concernant votre réservation réf: ' + selectedBooking.id.slice(0, 8).toUpperCase())}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full mt-3 py-3 rounded-full text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                style={{ background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.2)', color: '#25D366' }}
+              >
+                <Phone size={16} />
+                Contacter le client sur WhatsApp
+              </a>
+            )}
 
             <button
               onClick={() => setSelectedBooking(null)}
-              className="mt-6 w-full py-3 rounded-full text-sm transition-colors"
+              className="mt-3 w-full py-3 rounded-full text-sm transition-colors"
               style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
