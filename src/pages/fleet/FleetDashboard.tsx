@@ -168,30 +168,6 @@ export default function FleetDashboard() {
     color: '#ffffff',
   }
 
-  const VehicleRow = ({ vehicle }: { vehicle: Vehicle }) => (
-    <div className="rounded-xl p-4 mb-3 flex items-center justify-between gap-4"
-      style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <div className="flex items-center gap-4">
-        <VehicleStatusIcon status={vehicle.status} />
-        <div>
-          <div className="font-medium text-sm" style={{ color: '#ffffff' }}>
-            {vehicle.make} {vehicle.model} {vehicle.year}
-          </div>
-          <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            {vehicle.plate || 'Sans plaque'}
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <StatusPill status={vehicle.status} />
-        {vehicle.next_service && (
-          <div className="text-xs hidden md:block" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            Prochain : {new Date(vehicle.next_service).toLocaleDateString('fr-FR')}
-          </div>
-        )}
-      </div>
-    </div>
-  )
 
   return (
     <div className="min-h-screen bg-[#080808] flex">
@@ -391,7 +367,7 @@ export default function FleetDashboard() {
                               </Pie>
                               <Tooltip
                                 contentStyle={tooltipStyle}
-                                formatter={(value: number, name: string) => [`${value} véhicule(s)`, name]}
+                                formatter={(value: unknown, name: unknown) => [`${value} véhicule(s)`, String(name)]}
                               />
                             </PieChart>
                           </ResponsiveContainer>
@@ -454,7 +430,7 @@ export default function FleetDashboard() {
                             tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
                             axisLine={false} tickLine={false} />
                           <Tooltip contentStyle={tooltipStyle}
-                            formatter={(val: number) => [`${val} MAD`]} />
+                            formatter={(val: unknown) => [`${val} MAD`]} />
                           <Legend wrapperStyle={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }} />
                           <Line type="monotone" dataKey="ht" name="Coût HT"
                             stroke="#43BCC9" strokeWidth={2}
