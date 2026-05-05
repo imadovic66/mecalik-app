@@ -9,6 +9,11 @@ import {
   TrendingUp, Wrench, Phone, MapPin,
   Calendar, RefreshCw, MessageSquare, Tag,
 } from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from 'recharts'
 
 type Booking = {
   id: string
@@ -134,6 +139,26 @@ export default function AdminDashboard() {
       .reduce((sum, b) => sum + (b.amount_ttc ?? 0), 0),
   }
 
+  const now = new Date()
+  const revenueData = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+    const monthLabel = d.toLocaleDateString('fr-FR', { month: 'short' })
+    const monthBookings = bookings.filter(b => {
+      const bDate = new Date(b.created_at)
+      return bDate.getMonth() === d.getMonth() && bDate.getFullYear() === d.getFullYear() && b.status === 'completed'
+    })
+    const revenue = monthBookings.reduce((sum, b) => sum + (b.amount_ttc || 0), 0)
+    return { month: monthLabel, revenue }
+  })
+
+  const bookingStatusData = [
+    { name: 'En attente',  value: bookings.filter(b => b.status === 'pending').length,     color: '#F0C040' },
+    { name: 'Confirmé',    value: bookings.filter(b => b.status === 'confirmed').length,   color: '#43BCC9' },
+    { name: 'En cours',    value: bookings.filter(b => b.status === 'in_progress').length, color: '#7B6CF6' },
+    { name: 'Terminé',     value: bookings.filter(b => b.status === 'completed').length,   color: '#00DD88' },
+    { name: 'Annulé',      value: bookings.filter(b => b.status === 'cancelled').length,   color: '#FF4444' },
+  ].filter(d => d.value > 0)
+
   const tabTitles: Record<Tab, string> = {
     overview: 'Vue d\'ensemble',
     bookings: 'Réservations',
@@ -148,8 +173,9 @@ export default function AdminDashboard() {
 
   const BookingRow = ({ booking }: { booking: Booking }) => (
     <div
-      className="rounded-xl p-4 mb-3 grid grid-cols-1 md:grid-cols-4 gap-4 items-center"
+      className="rounded-xl p-4 mb-3 grid grid-cols-1 md:grid-cols-4 gap-4 items-center cursor-pointer"
       style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}
+      onClick={() => setSelectedBooking(booking)}
     >
       <div>
         <div className="font-medium text-sm" style={{ color: '#ffffff' }}>
@@ -166,12 +192,37 @@ export default function AdminDashboard() {
         </span>
       </div>
       <div><StatusPill status={booking.status} /></div>
-      <div className="flex items-center justify-end gap-2">
-        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
-          {new Date(booking.created_at).toLocaleDateString('fr-FR')}
-        </span>
+      <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
+        <select
+          value={booking.status}
+          onChange={async (e) => {
+            const newStatus = e.target.value
+            await supabase.from('bookings').update({ status: newStatus }).eq('id', booking.id)
+            setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: newStatus as Booking['status'] } : b))
+          }}
+          className="rounded-lg px-2 py-1.5 text-xs outline-none cursor-pointer"
+          style={{
+            background: '#141414',
+            border: '1px solid rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.6)',
+          }}
+        >
+          <option value="pending">En attente</option>
+          <option value="confirmed">Confirmer</option>
+          <option value="in_progress">En cours</option>
+          <option value="completed">Terminer</option>
+          <option value="cancelled">Annuler</option>
+        </select>
+        {booking.profiles?.phone && (
+          <a
+            href={`tel:${booking.profiles.phone}`}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+            style={{ background: 'rgba(0,221,136,0.08)', border: '1px solid rgba(0,221,136,0.15)' }}
+          >
+            <Phone size={14} style={{ color: '#00DD88' }} />
+          </a>
+        )}
         <button
-          onClick={() => setSelectedBooking(booking)}
           className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
           style={{ background: 'rgba(255,255,255,0.05)' }}
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(67,188,201,0.1)')}
@@ -274,6 +325,7 @@ export default function AdminDashboard() {
           {/* ── OVERVIEW ── */}
           {activeTab === 'overview' && (
             <>
+              {/* KPI cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {[
                   { label: 'Réservations totales', value: stats.total,              color: '#ffffff',  icon: <ShoppingBag size={18} />, iconBg: 'rgba(255,255,255,0.05)' },
@@ -295,18 +347,135 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
-              <h2 className="font-heading font-semibold text-lg mb-4" style={{ color: '#ffffff' }}>
-                Dernières réservations
-              </h2>
-              {loading ? (
-                <div className="space-y-3">
-                  {[1,2,3,4,5].map(i => (
-                    <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: '#141414' }} />
-                  ))}
+              {/* Charts row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+                {/* Revenue bar chart */}
+                <div className="rounded-2xl p-6"
+                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <h3 className="font-heading font-semibold text-base mb-6" style={{ color: 'white' }}>
+                    Revenus (6 derniers mois)
+                  </h3>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={revenueData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="month" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', fontSize: '12px' }}
+                        formatter={(val: unknown) => [`${val} MAD`, 'Revenus']}
+                        cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                      />
+                      <Bar dataKey="revenue" name="Revenus" fill="#43BCC9" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              ) : (
-                bookings.slice(0, 5).map(b => <BookingRow key={b.id} booking={b} />)
-              )}
+
+                {/* Booking status donut */}
+                <div className="rounded-2xl p-6"
+                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <h3 className="font-heading font-semibold text-base mb-6" style={{ color: 'white' }}>
+                    Répartition des réservations
+                  </h3>
+                  {bookingStatusData.length === 0 ? (
+                    <div className="text-center py-8 text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      Aucune réservation pour le moment
+                    </div>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={bookingStatusData}
+                            cx="50%" cy="50%"
+                            innerRadius={55} outerRadius={80}
+                            paddingAngle={3} dataKey="value"
+                          >
+                            {bookingStatusData.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} stroke="transparent" />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{ background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', fontSize: '12px' }}
+                            formatter={(val: unknown, name: unknown) => [`${val}`, name as string]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="flex flex-wrap justify-center gap-3 mt-2">
+                        {bookingStatusData.map((entry, i) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: entry.color }} />
+                            <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                              {entry.name} ({entry.value})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Recent activity */}
+              <div className="rounded-2xl p-6"
+                style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-heading font-semibold text-base" style={{ color: 'white' }}>
+                    Activité récente
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab('bookings')}
+                    className="text-sm transition-colors"
+                    style={{ color: '#43BCC9' }}
+                  >
+                    Voir tout →
+                  </button>
+                </div>
+
+                {loading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <div key={i} className="h-12 rounded-xl animate-pulse" style={{ background: '#141414' }} />
+                    ))}
+                  </div>
+                ) : bookings.length === 0 ? (
+                  <div className="text-center py-8 text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    Aucune réservation pour le moment
+                  </div>
+                ) : (
+                  bookings.slice(0, 5).map(booking => (
+                    <div
+                      key={booking.id}
+                      className="flex items-center justify-between py-2.5 border-b last:border-0 cursor-pointer"
+                      style={{ borderColor: 'rgba(255,255,255,0.04)' }}
+                      onClick={() => setSelectedBooking(booking)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: 'rgba(67,188,201,0.08)' }}
+                        >
+                          <Wrench size={14} style={{ color: '#43BCC9' }} />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium" style={{ color: 'white' }}>
+                            {SERVICE_LABELS[booking.service_name] || booking.service_name}
+                          </div>
+                          <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            {booking.profiles?.full_name || 'Client anonyme'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <StatusPill status={booking.status} />
+                        <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                          {new Date(booking.created_at).toLocaleDateString('fr-FR')}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </>
           )}
 
