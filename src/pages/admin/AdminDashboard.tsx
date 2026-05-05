@@ -7,7 +7,7 @@ import {
   LogOut, Clock,
   Search, Eye, X,
   TrendingUp, Wrench, Phone, MapPin,
-  Calendar, RefreshCw, MessageSquare, Tag,
+  Calendar, RefreshCw, MessageSquare, Tag, Star,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -24,6 +24,8 @@ type Booking = {
   preferred_date: string | null
   amount_ttc: number | null
   notes_admin: string | null
+  rating: number | null
+  rating_comment: string | null
   created_at: string
   profiles?: { full_name: string | null; phone: string | null }
 }
@@ -645,6 +647,30 @@ export default function AdminDashboard() {
                   <div className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Notes</div>
                   <div className="text-sm font-medium mt-0.5" style={{ color: '#ffffff' }}>{selectedBooking.notes_admin}</div>
                 </div>
+              </div>
+            )}
+
+            {selectedBooking.rating && (
+              <div
+                className="mt-4 p-4 rounded-xl mb-4"
+                style={{ background: 'rgba(240,192,64,0.05)', border: '1px solid rgba(240,192,64,0.15)' }}
+              >
+                <div className="text-xs uppercase tracking-wide mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  Évaluation client
+                </div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  {Array.from({ length: selectedBooking.rating }, (_, i) => (
+                    <Star key={i} size={14} style={{ color: '#F0C040' }} fill="#F0C040" />
+                  ))}
+                  <span className="text-sm font-bold ml-1" style={{ color: '#F0C040' }}>
+                    {selectedBooking.rating}/5
+                  </span>
+                </div>
+                {selectedBooking.rating_comment && (
+                  <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    {selectedBooking.rating_comment}
+                  </p>
+                )}
               </div>
             )}
 

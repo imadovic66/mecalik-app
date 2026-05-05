@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { CheckCircle, Car, MapPin, Calendar, MessageSquare, Clock } from 'lucide-react'
+import { CheckCircle, Car, MapPin, Calendar, MessageSquare, Clock, Star } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import RatingModal from '../../components/ui/RatingModal'
 
 type Booking = {
   id: string
@@ -10,6 +11,8 @@ type Booking = {
   preferred_date: string | null
   notes_admin: string | null
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+  rating: number | null
+  rating_comment: string | null
   created_at: string
 }
 
@@ -27,6 +30,7 @@ export default function BookingConfirmation() {
   const [booking, setBooking] = useState<Booking | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [showRating, setShowRating] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -266,7 +270,52 @@ export default function BookingConfirmation() {
           </p>
         </div>
 
+        {booking.status === 'completed' && !booking.rating && (
+          <div
+            className="p-5 rounded-2xl text-center"
+            style={{ background: 'rgba(240,192,64,0.05)', border: '1px solid rgba(240,192,64,0.15)' }}
+          >
+            <p className="text-sm font-medium mb-3" style={{ color: '#F0C040' }}>
+              Votre service est terminé. Comment s'est-il passé ?
+            </p>
+            <button
+              onClick={() => setShowRating(true)}
+              className="px-8 py-3 rounded-full text-sm font-bold transition-colors"
+              style={{ background: '#F0C040', color: '#080808' }}
+            >
+              Laisser un avis
+            </button>
+          </div>
+        )}
+
+        {booking.rating && (
+          <div
+            className="p-5 rounded-2xl"
+            style={{ background: 'rgba(0,221,136,0.05)', border: '1px solid rgba(0,221,136,0.15)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              {Array.from({ length: booking.rating }, (_, i) => (
+                <Star key={i} size={16} style={{ color: '#F0C040' }} fill="#F0C040" />
+              ))}
+            </div>
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              {booking.rating_comment || 'Avis soumis'}
+            </p>
+          </div>
+        )}
+
       </div>
+
+      <RatingModal
+        bookingId={booking.id}
+        serviceName={booking.service_name}
+        isOpen={showRating}
+        onClose={() => setShowRating(false)}
+        onSubmitted={() => {
+          setBooking(prev => prev ? { ...prev, rating: 1 } : prev)
+          setShowRating(false)
+        }}
+      />
     </div>
   )
 }

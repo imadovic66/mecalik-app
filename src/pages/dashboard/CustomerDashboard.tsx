@@ -5,8 +5,9 @@ import { useAuth } from '../../hooks/useAuth'
 import {
   Car, Clock, CheckCircle, ChevronRight,
   Plus, MapPin, Calendar, LogOut, User,
-  Wrench, History,
+  Wrench, History, Star,
 } from 'lucide-react'
+import RatingModal from '../../components/ui/RatingModal'
 
 type Booking = {
   id: string
@@ -16,6 +17,8 @@ type Booking = {
   preferred_date: string | null
   amount_ttc: number | null
   notes_admin: string | null
+  rating: number | null
+  rating_comment: string | null
   created_at: string
 }
 
@@ -71,6 +74,8 @@ export default function CustomerDashboard() {
   const [showAddCar, setShowAddCar] = useState(false)
   const [newCar, setNewCar] = useState({ make: '', model: '', year: '', plate: '' })
   const [addingCar, setAddingCar] = useState(false)
+  const [showRating, setShowRating] = useState(false)
+  const [selectedBookingForRating, setSelectedBookingForRating] = useState<Booking | null>(null)
 
   useEffect(() => {
     if (!user) navigate('/login')
@@ -150,6 +155,24 @@ export default function CustomerDashboard() {
             </span>
           </div>
         </div>
+
+        {booking.status === 'completed' && booking.rating && (
+          <div className="flex gap-0.5 mt-2">
+            {Array.from({ length: booking.rating }, (_, i) => (
+              <Star key={i} size={12} style={{ color: '#F0C040' }} fill="#F0C040" />
+            ))}
+          </div>
+        )}
+
+        {booking.status === 'completed' && !booking.rating && (
+          <button
+            onClick={() => { setSelectedBookingForRating(booking); setShowRating(true) }}
+            className="text-xs mt-2 transition-colors"
+            style={{ color: '#43BCC9' }}
+          >
+            Laisser un avis →
+          </button>
+        )}
       </div>
     )
   }
@@ -534,6 +557,18 @@ export default function CustomerDashboard() {
         ))}
       </nav>
 
+      <RatingModal
+        bookingId={selectedBookingForRating?.id || ''}
+        serviceName={selectedBookingForRating?.service_name || ''}
+        isOpen={showRating}
+        onClose={() => setShowRating(false)}
+        onSubmitted={() => {
+          setBookings(prev =>
+            prev.map(b => b.id === selectedBookingForRating?.id ? { ...b, rating: 1 } : b)
+          )
+          setShowRating(false)
+        }}
+      />
     </div>
   )
 }
