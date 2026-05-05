@@ -109,7 +109,6 @@ export default function CustomerDashboard() {
 
   const activeCount = bookings.filter(b => ['pending', 'confirmed', 'in_progress'].includes(b.status)).length
   const completedCount = bookings.filter(b => b.status === 'completed').length
-  const firstName = profile?.full_name?.split(' ')[0] || 'là'
 
   const BookingCard = ({ booking, detailed = false }: { booking: Booking; detailed?: boolean }) => {
     const st = statusConfig[booking.status]
