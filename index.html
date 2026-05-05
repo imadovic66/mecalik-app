@@ -1,11 +1,84 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>app</title>
-  </head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/jpeg" href="/logo.jpg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary Meta -->
+  <title>MecaLIK — Mécanicien à Domicile Casablanca | Votre voiture, votre lieu.</title>
+  <meta name="description" content="MecaLIK est le premier service de mécanique à domicile à Casablanca. Un technicien certifié vient à votre voiture — domicile, bureau, parking. Devis gratuit, paiement après service." />
+  <meta name="keywords" content="mécanicien domicile casablanca, mécanique mobile maroc, vidange domicile, batterie voiture domicile, dépannage auto casablanca, mecalik" />
+  <meta name="author" content="MecaLIK" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://mecalik.com" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://mecalik.com" />
+  <meta property="og:title" content="MecaLIK — Mécanicien à Domicile Casablanca" />
+  <meta property="og:description" content="Un technicien certifié vient à votre voiture. Devis gratuit sur WhatsApp. Paiement après service." />
+  <meta property="og:image" content="https://mecalik.com/hero-photo.png" />
+  <meta property="og:locale" content="fr_MA" />
+  <meta property="og:site_name" content="MecaLIK" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="MecaLIK — Mécanicien à Domicile Casablanca" />
+  <meta name="twitter:description" content="Un technicien certifié vient à votre voiture. Devis gratuit sur WhatsApp." />
+  <meta name="twitter:image" content="https://mecalik.com/hero-photo.png" />
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "MecaLIK",
+    "description": "Service de mécanique automobile à domicile à Casablanca. Technicien certifié qui vient à votre voiture.",
+    "url": "https://mecalik.com",
+    "telephone": "+212667101341",
+    "email": "contact@mecalik.com",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Casablanca",
+      "addressCountry": "MA"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "33.5731",
+      "longitude": "-7.5898"
+    },
+    "openingHours": "Mo-Su 00:00-24:00",
+    "priceRange": "MAD",
+    "image": "https://mecalik.com/hero-photo.png",
+    "sameAs": [
+      "https://instagram.com/mecalik.ma"
+    ],
+    "serviceArea": {
+      "@type": "City",
+      "name": "Casablanca"
+    },
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Services Auto à Domicile",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Lavage Auto à Domicile" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Vidange à Domicile" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Remplacement Batterie à Domicile" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Changement Pneus à Domicile" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Diagnostic Auto à Domicile" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Dépannage Urgence 24/7" } }
+      ]
+    }
+  }
+  </script>
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#080808" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MecaLIK" />
+</head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

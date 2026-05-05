@@ -1,5 +1,8 @@
 import { X, ChevronRight, Car, MapPin, Calendar, User, Phone, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../hooks/useAuth'
 
 type Service = {
   id: string
@@ -39,7 +42,10 @@ type ErrorState = {
 }
 
 export default function BookingModal({ isOpen, onClose, preselectedService }: BookingModalProps) {
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [step, setStep] = useState(1)
+  const [submitting, setSubmitting] = useState(false)
   const [selectedService, setSelectedService] = useState(preselectedService || '')
   const [form, setForm] = useState<FormState>({
     name: '',
@@ -65,7 +71,7 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors: ErrorState = {
       name: !form.name.trim(),
       phone: !form.phone.trim(),
@@ -97,7 +103,30 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
 
     const url = 'https://wa.me/212667101341?text=' + encodeURIComponent(msg)
     window.open(url, '_blank')
+
+    setSubmitting(true)
+    const { data: newBooking } = await supabase
+      .from('bookings')
+      .insert({
+        service_type: service?.name ?? selectedService,
+        customer_name: form.name.trim(),
+        customer_phone: form.phone.trim(),
+        car_info: form.car.trim(),
+        address: form.address.trim(),
+        preferred_date: dateLabel,
+        note: form.note.trim() || null,
+        status: 'pending',
+        user_id: user?.id ?? null,
+      })
+      .select()
+      .single()
+    setSubmitting(false)
+
     onClose()
+
+    if (newBooking && user) {
+      navigate('/booking/' + newBooking.id)
+    }
   }
 
   const selectedServiceData = SERVICES.find((s) => s.id === selectedService)
@@ -393,11 +422,15 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
             <div className="px-6 pb-6 pt-2">
               <button
                 onClick={handleSubmit}
+                disabled={submitting}
                 className="w-full flex items-center justify-center gap-2 font-bold py-4 rounded-full transition-colors duration-200 text-sm"
-                style={{ background: '#43BCC9', color: '#080808' }}
+                style={{
+                  background: submitting ? 'rgba(67,188,201,0.5)' : '#43BCC9',
+                  color: '#080808',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                }}
               >
-                Envoyer sur WhatsApp
-                <ChevronRight size={18} />
+                {submitting ? 'Envoi...' : <><span>Envoyer sur WhatsApp</span><ChevronRight size={18} /></>}
               </button>
               <p className="text-center text-xs mt-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
                 Vous recevrez une réponse en moins de 5 minutes

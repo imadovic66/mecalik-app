@@ -11,6 +11,7 @@ import About from './pages/About'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
 import CustomerDashboard from './pages/dashboard/CustomerDashboard'
+import BookingConfirmation from './pages/dashboard/BookingConfirmation'
 import FleetDashboard from './pages/fleet/FleetDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ProtectedRoute from './components/ui/ProtectedRoute'
@@ -35,6 +36,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/booking/:id" element={<BookingConfirmation />} />
           <Route path="/dashboard" element={
             <ProtectedRoute requiredRole="customer"><CustomerDashboard /></ProtectedRoute>
           } />
