@@ -247,7 +247,7 @@ export default function CustomerDashboard() {
               {tabTitles[activeTab]}
             </h1>
             <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {`Bonjour, ${firstName} 👋`}
+              {"Bonjour" + (profile?.full_name ? ', ' + profile.full_name.split(' ')[0] : '') + " 👋"}
             </p>
           </div>
           <button

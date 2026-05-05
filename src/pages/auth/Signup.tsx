@@ -16,61 +16,39 @@ export default function Signup() {
     e.preventDefault()
     setError(null)
 
-    if (form.password !== form.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.')
-      return
-    }
-    if (form.password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères.')
-      return
-    }
-    if (!form.email.trim()) {
-      setError('Email requis.')
-      return
-    }
+    if (!form.fullName.trim()) { setError('Nom complet requis.'); return }
+    if (!form.email.trim()) { setError('Email requis.'); return }
+    if (form.password.length < 6) { setError('Mot de passe : 6 caractères minimum.'); return }
+    if (form.password !== form.confirmPassword) { setError('Les mots de passe ne correspondent pas.'); return }
 
     setLoading(true)
 
-    console.log('Attempting signup with:', {
-      email: form.email.trim(),
-      passwordLength: form.password.length,
-      fullName: form.fullName,
-    })
-
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: form.email.trim().toLowerCase(),
-      password: form.password.trim(),
-      options: {
-        data: {
-          full_name: form.fullName.trim(),
-          phone: form.phone.trim(),
-        },
-      },
-    })
-
-    console.log('Signup response:', { data, error: signUpError })
-
-    if (signUpError) {
-      console.error('Signup error details:', signUpError)
-      setError(signUpError.message)
-      setLoading(false)
-      return
-    }
-
-    if (data.user) {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: form.email.trim(),
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: form.email.trim().toLowerCase(),
         password: form.password,
+        options: {
+          data: {
+            full_name: form.fullName.trim(),
+            phone: form.phone.trim(),
+          },
+        },
       })
-      if (signInError) {
-        console.error('Auto signin error:', signInError)
-        setError(signInError.message)
+
+      if (signUpError) {
+        setError(signUpError.message)
         setLoading(false)
         return
       }
-      navigate('/dashboard')
-    } else {
-      setError('Compte créé. Vérifiez votre email pour confirmer.')
+
+      if (data?.user) {
+        navigate('/dashboard')
+      } else {
+        setError('Vérifiez votre email pour confirmer votre compte.')
+        setLoading(false)
+      }
+    } catch (err) {
+      setError('Une erreur est survenue. Réessayez.')
       setLoading(false)
     }
   }
