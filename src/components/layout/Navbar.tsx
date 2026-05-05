@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 
 type Lang = 'FR' | 'EN' | 'AR'
 
@@ -12,9 +13,11 @@ const navLinks: { label: string; to: string }[] = [
 
 export default function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [lang, setLang] = useState<Lang>('FR')
+  const { user, signOut } = useAuth()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -86,8 +89,7 @@ export default function Navbar() {
                 className="text-xs font-medium px-2 py-1 rounded transition-colors duration-200"
                 style={{
                   color: lang === l ? '#43BCC9' : 'rgba(255,255,255,0.42)',
-                  background:
-                    lang === l ? 'rgba(67,188,201,0.08)' : 'transparent',
+                  background: lang === l ? 'rgba(67,188,201,0.08)' : 'transparent',
                 }}
               >
                 {l}
@@ -95,14 +97,43 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* CTA */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-            className="hidden md:inline-flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full hover:opacity-90 transition-colors duration-200 text-sm"
-            style={{ background: '#43BCC9', color: '#080808' }}
-          >
-            Devis Gratuit
-          </button>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="font-semibold px-5 py-2.5 rounded-full text-sm transition-colors duration-200"
+                style={{ background: '#43BCC9', color: '#080808' }}
+              >
+                Mon espace
+              </button>
+              <button
+                onClick={signOut}
+                className="text-xs transition-colors duration-200"
+                style={{ color: 'rgba(255,255,255,0.4)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
+              >
+                Déconnexion
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link
+                to="/login"
+                className="text-sm font-medium transition-colors duration-200"
+                style={{ color: 'rgba(255,255,255,0.55)' }}
+              >
+                Connexion
+              </Link>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+                className="font-semibold px-5 py-2.5 rounded-full text-sm transition-colors duration-200"
+                style={{ background: '#43BCC9', color: '#080808' }}
+              >
+                Devis Gratuit
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile: lang + hamburger */}
@@ -162,13 +193,41 @@ export default function Navbar() {
               {label}
             </Link>
           ))}
-          <a
-            href="/#booking"
-            className="mt-3 flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold"
-            style={{ background: '#43BCC9', color: '#080808' }}
-          >
-            📲 Devis Gratuit
-          </a>
+          {user ? (
+            <>
+              <Link
+                to="/dashboard"
+                className="mt-3 flex items-center justify-center px-5 py-2.5 rounded-full text-sm font-semibold"
+                style={{ background: '#43BCC9', color: '#080808' }}
+              >
+                Mon espace
+              </Link>
+              <button
+                onClick={signOut}
+                className="mt-2 text-sm text-center w-full py-2"
+                style={{ color: 'rgba(255,255,255,0.4)' }}
+              >
+                Déconnexion
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="mt-3 flex items-center justify-center px-5 py-2.5 rounded-full text-sm font-medium border"
+                style={{ borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
+              >
+                Connexion
+              </Link>
+              <button
+                onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent('openBooking')) }}
+                className="mt-2 flex items-center justify-center px-5 py-2.5 rounded-full text-sm font-semibold w-full"
+                style={{ background: '#43BCC9', color: '#080808' }}
+              >
+                Devis Gratuit
+              </button>
+            </>
+          )}
         </nav>
       </div>
     </header>

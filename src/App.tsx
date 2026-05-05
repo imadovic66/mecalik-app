@@ -13,6 +13,7 @@ import Signup from './pages/auth/Signup'
 import CustomerDashboard from './pages/dashboard/CustomerDashboard'
 import FleetDashboard from './pages/fleet/FleetDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import ProtectedRoute from './components/ui/ProtectedRoute'
 
 function App() {
   const [bookingOpen, setBookingOpen] = useState(false)
@@ -34,9 +35,15 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard" element={<CustomerDashboard />} />
-          <Route path="/fleet-dashboard" element={<FleetDashboard />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute requiredRole="customer"><CustomerDashboard /></ProtectedRoute>
+          } />
+          <Route path="/fleet-dashboard" element={
+            <ProtectedRoute requiredRole="fleet_manager"><FleetDashboard /></ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>
+          } />
         </Routes>
         <Footer />
         <WhatsAppFAB />
