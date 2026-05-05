@@ -13,12 +13,12 @@ import {
 type Booking = {
   id: string
   user_id: string
-  service: string
+  service_name: string
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
   address: string
-  scheduled_at: string | null
-  price: number | null
-  notes: string | null
+  preferred_date: string | null
+  amount_ttc: number | null
+  notes_admin: string | null
   created_at: string
   profiles?: { full_name: string | null; phone: string | null }
 }
@@ -119,7 +119,7 @@ export default function AdminDashboard() {
   const filteredBookings = bookings.filter(b => {
     const matchSearch = !searchQuery ||
       b.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (SERVICE_LABELS[b.service] ?? b.service).toLowerCase().includes(searchQuery.toLowerCase())
+      (SERVICE_LABELS[b.service_name] ?? b.service_name).toLowerCase().includes(searchQuery.toLowerCase())
     const matchStatus = statusFilter === 'all' || b.status === statusFilter
     return matchSearch && matchStatus
   })
@@ -130,8 +130,8 @@ export default function AdminDashboard() {
     inProgress: bookings.filter(b => b.status === 'in_progress').length,
     completed: bookings.filter(b => b.status === 'completed').length,
     revenue: bookings
-      .filter(b => b.status === 'completed' && b.price)
-      .reduce((sum, b) => sum + (b.price ?? 0), 0),
+      .filter(b => b.status === 'completed' && b.amount_ttc)
+      .reduce((sum, b) => sum + (b.amount_ttc ?? 0), 0),
   }
 
   const tabTitles: Record<Tab, string> = {
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
     >
       <div>
         <div className="font-medium text-sm" style={{ color: '#ffffff' }}>
-          {SERVICE_LABELS[booking.service] ?? booking.service}
+          {SERVICE_LABELS[booking.service_name] ?? booking.service_name}
         </div>
         <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
           {booking.profiles?.full_name || 'Client'}
@@ -432,10 +432,10 @@ export default function AdminDashboard() {
 
             {/* Info rows */}
             {[
-              { icon: <Wrench size={16} style={{ color: '#43BCC9' }} />,   label: 'Service',   value: SERVICE_LABELS[selectedBooking.service] ?? selectedBooking.service },
+              { icon: <Wrench size={16} style={{ color: '#43BCC9' }} />,   label: 'Service',   value: SERVICE_LABELS[selectedBooking.service_name] ?? selectedBooking.service_name },
               { icon: <Users size={16} style={{ color: '#43BCC9' }} />,    label: 'Client',    value: selectedBooking.profiles?.full_name || 'Inconnu' },
               { icon: <MapPin size={16} style={{ color: '#43BCC9' }} />,   label: 'Adresse',   value: selectedBooking.address },
-              { icon: <Calendar size={16} style={{ color: '#43BCC9' }} />, label: 'Date',      value: selectedBooking.scheduled_at ? new Date(selectedBooking.scheduled_at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Dès que possible' },
+              { icon: <Calendar size={16} style={{ color: '#43BCC9' }} />, label: 'Date',      value: selectedBooking.preferred_date ? new Date(selectedBooking.preferred_date).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Dès que possible' },
             ].map(row => (
               <div key={row.label} className="flex items-start gap-3 mb-4">
                 <div className="mt-0.5 flex-shrink-0">{row.icon}</div>
@@ -459,22 +459,22 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {selectedBooking.price && (
+            {selectedBooking.amount_ttc && (
               <div className="flex items-start gap-3 mb-4">
                 <Tag size={16} style={{ color: '#43BCC9', marginTop: '2px', flexShrink: 0 }} />
                 <div>
                   <div className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Prix</div>
-                  <div className="text-sm font-medium mt-0.5" style={{ color: '#ffffff' }}>{selectedBooking.price} MAD</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: '#ffffff' }}>{selectedBooking.amount_ttc} MAD</div>
                 </div>
               </div>
             )}
 
-            {selectedBooking.notes && (
+            {selectedBooking.notes_admin && (
               <div className="flex items-start gap-3 mb-4">
                 <MessageSquare size={16} style={{ color: '#43BCC9', marginTop: '2px', flexShrink: 0 }} />
                 <div>
                   <div className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Notes</div>
-                  <div className="text-sm font-medium mt-0.5" style={{ color: '#ffffff' }}>{selectedBooking.notes}</div>
+                  <div className="text-sm font-medium mt-0.5" style={{ color: '#ffffff' }}>{selectedBooking.notes_admin}</div>
                 </div>
               </div>
             )}

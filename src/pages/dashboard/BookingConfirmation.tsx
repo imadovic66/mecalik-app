@@ -1,17 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { CheckCircle, Car, MapPin, Calendar, User, Phone, MessageSquare, Clock } from 'lucide-react'
+import { CheckCircle, Car, MapPin, Calendar, MessageSquare, Clock } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 type Booking = {
   id: string
-  service_type: string
-  customer_name: string
-  customer_phone: string
-  car_info: string
+  service_name: string
   address: string
-  preferred_date: string
-  note: string | null
+  preferred_date: string | null
+  notes_admin: string | null
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
   created_at: string
 }
@@ -89,21 +86,20 @@ export default function BookingConfirmation() {
   )
   const waUrl = `https://wa.me/212667101341?text=${waMsg}`
 
-  const dateLabel =
-    booking.preferred_date === 'today'
-      ? "Aujourd'hui"
-      : booking.preferred_date === 'tomorrow'
-      ? 'Demain'
-      : booking.preferred_date
+  const dateLabel = booking.preferred_date
+    ? new Date(booking.preferred_date).toLocaleDateString('fr-FR', { dateStyle: 'medium' })
+    : "Dès que possible"
+
+  const SERVICE_LABELS: Record<string, string> = {
+    lavage: 'Lavage Auto', vidange: 'Vidange & Filtres', batterie: 'Batterie',
+    pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
+  }
 
   const detailRows = [
-    { icon: <Car size={15} />, label: 'Service', value: booking.service_type },
-    { icon: <User size={15} />, label: 'Nom', value: booking.customer_name },
-    { icon: <Phone size={15} />, label: 'Téléphone', value: booking.customer_phone },
-    { icon: <Car size={15} />, label: 'Voiture', value: booking.car_info },
+    { icon: <Car size={15} />, label: 'Service', value: SERVICE_LABELS[booking.service_name] ?? booking.service_name },
     { icon: <MapPin size={15} />, label: 'Lieu', value: booking.address },
     { icon: <Calendar size={15} />, label: 'Date', value: dateLabel },
-    ...(booking.note ? [{ icon: <MessageSquare size={15} />, label: 'Note', value: booking.note }] : []),
+    ...(booking.notes_admin ? [{ icon: <MessageSquare size={15} />, label: 'Note', value: booking.notes_admin }] : []),
   ]
 
   return (

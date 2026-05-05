@@ -10,12 +10,12 @@ import {
 
 type Booking = {
   id: string
-  service: string
+  service_name: string
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
   address: string
-  scheduled_at: string | null
-  price: number | null
-  notes: string | null
+  preferred_date: string | null
+  amount_ttc: number | null
+  notes_admin: string | null
   created_at: string
 }
 
@@ -120,21 +120,21 @@ export default function CustomerDashboard() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex-1 min-w-0">
             <div className="font-medium text-sm" style={{ color: '#ffffff' }}>
-              {serviceLabels[booking.service] || booking.service}
+              {serviceLabels[booking.service_name] || booking.service_name}
             </div>
             <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
               <MapPin size={11} />
               <span className="truncate">{booking.address}</span>
             </div>
-            {detailed && booking.scheduled_at && (
+            {detailed && booking.preferred_date && (
               <div className="flex items-center gap-1 mt-1 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 <Calendar size={11} />
-                <span>{new Date(booking.scheduled_at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                <span>{new Date(booking.preferred_date).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}</span>
               </div>
             )}
-            {detailed && booking.price && (
+            {detailed && booking.amount_ttc && (
               <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                Prix : {booking.price} MAD
+                Prix : {booking.amount_ttc} MAD
               </div>
             )}
           </div>

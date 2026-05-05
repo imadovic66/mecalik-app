@@ -108,15 +108,16 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
     const { data: newBooking } = await supabase
       .from('bookings')
       .insert({
-        service_type: service?.name ?? selectedService,
-        customer_name: form.name.trim(),
-        customer_phone: form.phone.trim(),
-        car_info: form.car.trim(),
-        address: form.address.trim(),
-        preferred_date: dateLabel,
-        note: form.note.trim() || null,
-        status: 'pending',
         user_id: user?.id ?? null,
+        service_name: selectedService,
+        status: 'pending',
+        address: form.address.trim(),
+        notes_admin: form.note.trim() || null,
+        preferred_date: form.date === 'today'
+          ? null
+          : form.date === 'tomorrow'
+          ? new Date(Date.now() + 86400000).toISOString()
+          : null,
       })
       .select()
       .single()
