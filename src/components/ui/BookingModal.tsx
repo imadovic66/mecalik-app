@@ -1,5 +1,6 @@
 import { X, ChevronRight, Car, MapPin, Calendar, User, Phone, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
+import { SERVICES as PRICING_SERVICES, getPrice } from '../../data/pricing'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
@@ -244,6 +245,10 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
               <div className="grid grid-cols-2 gap-3">
                 {SERVICES.map((s) => {
                   const active = selectedService === s.id
+                  const pricingService = PRICING_SERVICES.find(p => p.id === s.id)
+                  const priceLabel = pricingService
+                    ? (pricingService.contactOnly ? 'Sur devis' : `À partir de ${getPrice(pricingService, 'zone1')}`)
+                    : null
                   return (
                     <button
                       key={s.id}
@@ -266,6 +271,12 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                       >
                         {s.duration}
                       </div>
+                      {priceLabel && (
+                        <div className="text-xs font-semibold mt-1"
+                          style={{ color: '#43BCC9' }}>
+                          {priceLabel}
+                        </div>
+                      )}
                     </button>
                   )
                 })}

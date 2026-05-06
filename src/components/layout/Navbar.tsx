@@ -55,6 +55,7 @@ export default function Navbar() {
             {[
               { to: '/',         label: 'Accueil' },
               { to: '/services', label: 'Services' },
+              { to: '/devis',    label: 'Tarifs & Devis' },
               { to: '/fleet',    label: 'Flottes' },
               { to: '/about',    label: 'À propos' },
             ].map(item => (
@@ -104,6 +105,7 @@ export default function Navbar() {
             {[
               { to: '/',         label: 'Accueil' },
               { to: '/services', label: 'Services' },
+              { to: '/devis',    label: 'Tarifs & Devis' },
               { to: '/fleet',    label: 'Flottes' },
               { to: '/about',    label: 'À propos' },
             ].map(item => (

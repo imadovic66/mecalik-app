@@ -15,6 +15,7 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts'
 import { notifyCustomerByWhatsApp, getNotifiableStatuses } from '../../utils/whatsappNotify'
+import { SERVICES as PRICING_SERVICES, type Zone } from '../../data/pricing'
 
 type Booking = {
   id: string
@@ -52,7 +53,7 @@ const SERVICE_LABELS: Record<string, string> = {
   pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
 }
 
-type Tab = 'overview' | 'bookings' | 'customers'
+type Tab = 'overview' | 'bookings' | 'customers' | 'finances'
 
 const STATUS_KEYS = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] as const
 
@@ -80,6 +81,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [selectedZone, setSelectedZone] = useState<Zone>('zone1')
   const [bookings, setBookings] = useState<Booking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
@@ -182,12 +184,14 @@ export default function AdminDashboard() {
     overview: 'Vue d\'ensemble',
     bookings: 'Réservations',
     customers: 'Clients',
+    finances: 'Finances',
   }
 
   const navItems: { tab: Tab; icon: React.ReactNode; label: string }[] = [
     { tab: 'overview',  icon: <LayoutDashboard size={18} />, label: 'Vue d\'ensemble' },
     { tab: 'bookings',  icon: <ShoppingBag size={18} />,     label: 'Réservations' },
     { tab: 'customers', icon: <Users size={18} />,           label: 'Clients' },
+    { tab: 'finances',  icon: <TrendingUp size={18} />,      label: 'Finances' },
   ]
 
   const BookingRow = ({ booking }: { booking: Booking }) => (
@@ -584,6 +588,137 @@ export default function AdminDashboard() {
               </div>
             </>
           )}
+
+          {/* ── FINANCES ── */}
+          {activeTab === 'finances' && (() => {
+            const zonedServices = PRICING_SERVICES.filter(s => !s.contactOnly)
+            const revenueData = zonedServices.map(s => ({
+              name: s.labelShort,
+              price: s[selectedZone] as number,
+              cost: Math.round((s[selectedZone] as number) * 0.55),
+              margin: Math.round((s[selectedZone] as number) * 0.45),
+            }))
+            const zone1Prices = PRICING_SERVICES.filter(s => !s.contactOnly && s.zone1).map(s => s.zone1 as number)
+            const zone2Prices = PRICING_SERVICES.filter(s => !s.contactOnly && s.zone2).map(s => s.zone2 as number)
+            const avgZone1 = zone1Prices.length ? Math.round(zone1Prices.reduce((a, b) => a + b, 0) / zone1Prices.length) : 0
+            const avgZone2 = zone2Prices.length ? Math.round(zone2Prices.reduce((a, b) => a + b, 0) / zone2Prices.length) : 0
+            const maxPrice = Math.max(...PRICING_SERVICES.filter(s => !s.contactOnly && s.zone3).map(s => s.zone3 as number))
+
+            return (
+              <>
+                {/* Header + zone selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                  <h2 className="text-lg font-semibold" style={{ color: 'white' }}>
+                    Tableau financier
+                  </h2>
+                  <div className="flex gap-2">
+                    {(['zone1', 'zone2', 'zone3'] as Zone[]).map(z => (
+                      <button key={z} onClick={() => setSelectedZone(z)}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                        style={{
+                          background: selectedZone === z ? '#43BCC9' : 'rgba(255,255,255,0.06)',
+                          color: selectedZone === z ? '#080808' : 'rgba(255,255,255,0.5)',
+                        }}>
+                        {z === 'zone1' ? 'Zone 1' : z === 'zone2' ? 'Zone 2' : 'Zone 3'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* KPI cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  {[
+                    { label: 'Services tarifés', value: String(PRICING_SERVICES.filter(s => !s.contactOnly).length), color: '#43BCC9' },
+                    { label: 'Prix moyen Zone 1', value: `${avgZone1} MAD`, color: '#43BCC9' },
+                    { label: 'Prix moyen Zone 2', value: `${avgZone2} MAD`, color: '#43BCC9' },
+                    { label: 'Prix max Zone 3', value: `${maxPrice} MAD`, color: '#F0C040' },
+                  ].map(kpi => (
+                    <div key={kpi.label} className="rounded-2xl p-5"
+                      style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>{kpi.label}</div>
+                      <div className="text-xl font-bold" style={{ color: kpi.color, fontFamily: 'Space Grotesk, sans-serif' }}>
+                        {kpi.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bar chart */}
+                <div className="rounded-2xl p-6 mb-6"
+                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <h3 className="text-sm font-semibold mb-4" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                    Tarifs et marges estimées par service
+                  </h3>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={revenueData} margin={{ top: 5, right: 20, bottom: 60, left: -10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
+                        axisLine={false} tickLine={false} angle={-35} textAnchor="end" />
+                      <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                        axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', fontSize: '12px' }}
+                        formatter={(val: unknown) => [`${val} MAD`]}
+                        cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                      />
+                      <Bar dataKey="price" name="Prix client" fill="#43BCC9" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="cost" name="Coût technicien" fill="rgba(255,68,68,0.6)" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="margin" name="Marge MecaLIK" fill="#00DD88" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Pricing table */}
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                    <h3 className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      Grille tarifaire complète
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr style={{ background: '#141414' }}>
+                          {['Service', 'Zone 1', 'Zone 2', 'Zone 3', 'Durée'].map(h => (
+                            <th key={h} className="px-4 py-3 text-left text-xs uppercase tracking-wide"
+                              style={{ color: 'rgba(255,255,255,0.4)' }}>
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {PRICING_SERVICES.map(s => (
+                          <tr key={s.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td className="px-4 py-3 text-sm font-medium" style={{ color: 'white' }}>
+                              {s.label}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-center"
+                              style={{ color: s.contactOnly ? '#F0C040' : '#43BCC9' }}>
+                              {s.contactOnly ? (s.contactLabel ?? '—') : `${s.zone1} MAD`}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-center"
+                              style={{ color: s.contactOnly ? '#F0C040' : 'rgba(255,255,255,0.7)' }}>
+                              {s.contactOnly ? (s.contactLabel ?? '—') : `${s.zone2} MAD`}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-center"
+                              style={{ color: s.contactOnly ? '#F0C040' : 'rgba(255,255,255,0.7)' }}>
+                              {s.contactOnly ? (s.contactLabel ?? '—') : `${s.zone3} MAD`}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-center"
+                              style={{ color: 'rgba(255,255,255,0.4)' }}>
+                              {s.duration}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )
+          })()}
         </div>
       </div>
 

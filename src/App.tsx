@@ -8,6 +8,7 @@ import Home from './pages/Home'
 import Services from './pages/Services'
 import Fleet from './pages/Fleet'
 import About from './pages/About'
+import QuoteCalculator from './pages/QuoteCalculator'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
 import CustomerDashboard from './pages/dashboard/CustomerDashboard'
@@ -35,6 +36,7 @@ function App() {
           <Route path="/services" element={<PublicRoute><Services /></PublicRoute>} />
           <Route path="/fleet" element={<PublicRoute><Fleet /></PublicRoute>} />
           <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
+          <Route path="/devis" element={<PublicRoute><QuoteCalculator /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/booking/:id" element={<BookingConfirmation />} />
