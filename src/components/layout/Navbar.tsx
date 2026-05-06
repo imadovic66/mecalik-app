@@ -60,8 +60,13 @@ export default function Navbar() {
               { to: '/about',    label: 'À propos' },
             ].map(item => (
               <Link key={item.to} to={item.to}
-                className="text-sm font-medium transition-colors"
-                style={{ color: isActive(item.to) ? '#43BCC9' : 'rgba(255,255,255,0.65)' }}>
+                className="text-sm transition-colors"
+                style={{
+                  color: isActive(item.to) ? 'white' : 'rgba(255,255,255,0.5)',
+                  fontWeight: isActive(item.to) ? 500 : 400,
+                  borderBottom: isActive(item.to) ? '1px solid rgba(255,255,255,0.4)' : '1px solid transparent',
+                  paddingBottom: '2px',
+                }}>
                 {item.label}
               </Link>
             ))}
@@ -172,8 +177,8 @@ export default function Navbar() {
             <Link key={item.to} to={item.to}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
               style={{
-                color: isActive(item.to.split('?')[0]) ? '#43BCC9' : 'rgba(255,255,255,0.5)',
-                background: isActive(item.to.split('?')[0]) ? 'rgba(67,188,201,0.08)' : 'transparent',
+                color: isActive(item.to.split('?')[0]) ? 'white' : 'rgba(255,255,255,0.5)',
+                background: isActive(item.to.split('?')[0]) ? 'rgba(255,255,255,0.08)' : 'transparent',
               }}>
               {item.icon}
               {item.label}
@@ -184,7 +189,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           {roleBadge && (
             <span className="text-xs font-semibold px-3 py-1.5 rounded-full"
-              style={{ color: roleBadge.color, background: roleBadge.bg, border: `1px solid ${roleBadge.border}` }}>
+              style={{ color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
               {roleBadge.label}
             </span>
           )}

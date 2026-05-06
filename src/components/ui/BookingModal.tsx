@@ -169,8 +169,8 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
       <div
         className="relative z-10 w-full md:max-w-lg mx-0 md:mx-4 overflow-y-auto"
         style={{
-          background: '#0F0F0F',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: '#0D0D0D',
+          border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '16px 16px 0 0',
           maxHeight: '92vh',
         }}
@@ -255,25 +255,25 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                       onClick={() => setSelectedService(s.id)}
                       className="w-full text-left p-4 rounded-xl transition-all duration-200"
                       style={{
-                        border: active ? '1px solid #43BCC9' : '1px solid rgba(255,255,255,0.06)',
-                        background: active ? 'rgba(67,188,201,0.08)' : '#141414',
+                        border: active ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                        background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
                       }}
                     >
                       <div
                         className="text-sm font-semibold"
-                        style={{ color: active ? '#ffffff' : 'rgba(255,255,255,0.7)' }}
+                        style={{ color: active ? 'white' : 'rgba(255,255,255,0.6)' }}
                       >
                         {s.name}
                       </div>
                       <div
                         className="text-xs mt-1"
-                        style={{ color: active ? '#43BCC9' : 'rgba(255,255,255,0.35)' }}
+                        style={{ color: 'rgba(255,255,255,0.35)' }}
                       >
                         {s.duration}
                       </div>
                       {priceLabel && (
-                        <div className="text-xs font-semibold mt-1"
-                          style={{ color: '#43BCC9' }}>
+                        <div className="text-xs mt-1"
+                          style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
                           {priceLabel}
                         </div>
                       )}
@@ -289,8 +289,8 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                 disabled={!selectedService}
                 className="w-full rounded-full py-4 text-sm font-semibold transition-all"
                 style={{
-                  background: selectedService ? '#43BCC9' : 'rgba(255,255,255,0.08)',
-                  color: selectedService ? '#080808' : 'rgba(255,255,255,0.25)',
+                  background: selectedService ? 'white' : 'rgba(255,255,255,0.06)',
+                  color: selectedService ? '#080808' : 'rgba(255,255,255,0.3)',
                   cursor: selectedService ? 'pointer' : 'not-allowed',
                 }}
               >

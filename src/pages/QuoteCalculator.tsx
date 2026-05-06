@@ -47,16 +47,21 @@ export default function QuoteCalculator() {
                 onClick={() => setSelectedZone(zone)}
                 className="rounded-2xl p-5 text-left transition-all"
                 style={{
-                  background: selectedZone === zone ? 'rgba(67,188,201,0.1)' : 'rgba(255,255,255,0.03)',
-                  border: selectedZone === zone ? '1px solid rgba(67,188,201,0.4)' : '1px solid rgba(255,255,255,0.07)',
+                  background: selectedZone === zone ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  border: selectedZone === zone ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
                 }}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin size={14} style={{ color: selectedZone === zone ? '#43BCC9' : 'rgba(255,255,255,0.4)' }} />
-                  <span className="text-sm font-semibold"
-                    style={{ color: selectedZone === zone ? '#43BCC9' : 'rgba(255,255,255,0.7)' }}>
-                    {ZONE_LABELS[zone]}
-                  </span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} style={{ color: selectedZone === zone ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)' }} />
+                    <span className="text-sm"
+                      style={{ color: selectedZone === zone ? 'white' : 'rgba(255,255,255,0.5)', fontWeight: selectedZone === zone ? 600 : 400 }}>
+                      {ZONE_LABELS[zone]}
+                    </span>
+                  </div>
+                  {selectedZone === zone && (
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#43BCC9', flexShrink: 0 }} />
+                  )}
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   {ZONE_DESCRIPTIONS[zone]}
@@ -82,8 +87,8 @@ export default function QuoteCalculator() {
                   onClick={() => setSelectedService(s.id)}
                   className="rounded-2xl p-5 text-left transition-all flex items-center justify-between"
                   style={{
-                    background: isSelected ? 'rgba(67,188,201,0.08)' : 'rgba(255,255,255,0.03)',
-                    border: isSelected ? '1px solid rgba(67,188,201,0.35)' : '1px solid rgba(255,255,255,0.07)',
+                    background: isSelected ? 'rgba(255,255,255,0.05)' : 'transparent',
+                    border: isSelected ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.07)',
                   }}
                 >
                   <div>
@@ -96,7 +101,7 @@ export default function QuoteCalculator() {
                   </div>
                   <div className="text-right ml-4 flex-shrink-0">
                     <div className="font-bold text-sm"
-                      style={{ color: s.contactOnly ? '#F0C040' : '#43BCC9' }}>
+                      style={{ color: s.contactOnly ? '#F0C040' : 'white', fontWeight: s.contactOnly ? 400 : 600 }}>
                       {price}
                     </div>
                     {s.contactOnly && (
@@ -115,8 +120,8 @@ export default function QuoteCalculator() {
         {service && (
           <div className="rounded-3xl p-8 mb-6"
             style={{
-              background: 'linear-gradient(135deg, rgba(67,188,201,0.06) 0%, rgba(67,188,201,0.02) 100%)',
-              border: '1px solid rgba(67,188,201,0.2)',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.1)',
             }}>
             <h2 className="text-sm font-semibold uppercase tracking-wider mb-6"
               style={{ color: 'rgba(255,255,255,0.5)' }}>

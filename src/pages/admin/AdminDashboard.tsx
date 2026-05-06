@@ -261,7 +261,7 @@ export default function AdminDashboard() {
       {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
       <aside
         className="hidden lg:flex fixed left-0 top-0 h-full w-64 flex-col z-40"
-        style={{ background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.06)' }}
+        style={{ background: '#080808', borderRight: '1px solid rgba(255,255,255,0.05)' }}
       >
         <div className="p-6">
           <img src="/logo.jpg" alt="MecaLIK"
@@ -280,9 +280,14 @@ export default function AdminDashboard() {
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
                 style={{
-                  color: isActive ? '#43BCC9' : 'rgba(255,255,255,0.5)',
-                  background: isActive ? 'rgba(67,188,201,0.1)' : 'transparent',
-                  border: isActive ? '1px solid rgba(67,188,201,0.15)' : '1px solid transparent',
+                  color: isActive ? 'white' : 'rgba(255,255,255,0.45)',
+                  background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  borderLeft: isActive ? '2px solid #43BCC9' : '2px solid transparent',
+                  borderTop: '1px solid transparent',
+                  borderRight: '1px solid transparent',
+                  borderBottom: '1px solid transparent',
+                  fontWeight: isActive ? 600 : 400,
+                  paddingLeft: isActive ? '14px' : '16px',
                 }}
               >
                 {icon}{label}
@@ -333,7 +338,7 @@ export default function AdminDashboard() {
             </button>
             <span
               className="px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.2)', color: '#43BCC9' }}
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
             >
               Admin
             </span>
@@ -349,19 +354,19 @@ export default function AdminDashboard() {
               {/* KPI cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {[
-                  { label: 'Réservations totales', value: stats.total,              color: '#ffffff',  icon: <ShoppingBag size={18} />, iconBg: 'rgba(255,255,255,0.05)' },
-                  { label: 'En attente',            value: stats.pending,            color: '#F0C040',  icon: <Clock size={18} />,       iconBg: 'rgba(240,192,64,0.08)'  },
-                  { label: 'En cours',              value: stats.inProgress,         color: '#43BCC9',  icon: <Wrench size={18} />,      iconBg: 'rgba(67,188,201,0.08)'  },
-                  { label: "Chiffre d'affaires",    value: `${stats.revenue} MAD`,   color: '#00DD88',  icon: <TrendingUp size={18} />,  iconBg: 'rgba(0,221,136,0.08)'   },
+                  { label: 'Réservations totales', value: stats.total,            valueColor: 'white',                       icon: <ShoppingBag size={18} />, iconBg: 'rgba(255,255,255,0.04)', iconColor: 'rgba(255,255,255,0.3)',  cardBorder: 'rgba(255,255,255,0.08)' },
+                  { label: 'En attente',            value: stats.pending,          valueColor: '#F0C040',                     icon: <Clock size={18} />,       iconBg: 'rgba(240,192,64,0.07)',  iconColor: 'rgba(240,192,64,0.5)',   cardBorder: 'rgba(240,192,64,0.15)'  },
+                  { label: 'En cours',              value: stats.inProgress,       valueColor: stats.inProgress === 0 ? 'rgba(255,255,255,0.25)' : '#43BCC9', icon: <Wrench size={18} />, iconBg: 'rgba(67,188,201,0.06)', iconColor: 'rgba(67,188,201,0.4)', cardBorder: 'rgba(67,188,201,0.12)' },
+                  { label: "Chiffre d'affaires",   value: `${stats.revenue} MAD`, valueColor: '#00DD88',                     icon: <TrendingUp size={18} />,  iconBg: 'rgba(0,221,136,0.07)',  iconColor: 'rgba(0,221,136,0.5)',    cardBorder: 'rgba(0,221,136,0.15)'   },
                 ].map(kpi => (
                   <div key={kpi.label} className="rounded-2xl p-6 flex items-start justify-between"
-                    style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    style={{ background: '#0D0D0D', border: `1px solid ${kpi.cardBorder}` }}>
                     <div>
-                      <div className="text-sm mb-2" style={{ color: 'rgba(255,255,255,0.45)' }}>{kpi.label}</div>
-                      <div className="font-heading font-bold text-3xl" style={{ color: kpi.color }}>{kpi.value}</div>
+                      <div className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.45)' }}>{kpi.label}</div>
+                      <div className="font-heading font-bold text-3xl" style={{ color: kpi.valueColor, fontWeight: 800 }}>{kpi.value}</div>
                     </div>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: kpi.iconBg, color: kpi.color }}>
+                      style={{ background: kpi.iconBg, color: kpi.iconColor }}>
                       {kpi.icon}
                     </div>
                   </div>
@@ -373,7 +378,7 @@ export default function AdminDashboard() {
 
                 {/* Revenue bar chart */}
                 <div className="rounded-2xl p-6"
-                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  style={{ background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.07)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                   <h3 className="font-heading font-semibold text-base mb-6" style={{ color: 'white' }}>
                     Revenus (6 derniers mois)
                   </h3>
@@ -394,7 +399,7 @@ export default function AdminDashboard() {
 
                 {/* Booking status donut */}
                 <div className="rounded-2xl p-6"
-                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  style={{ background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.07)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                   <h3 className="font-heading font-semibold text-base mb-6" style={{ color: 'white' }}>
                     Répartition des réservations
                   </h3>
