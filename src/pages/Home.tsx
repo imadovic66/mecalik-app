@@ -5,6 +5,7 @@ import {
   MessageSquare, CheckCircle, MapPin,
   CreditCard, Clock3,
   ArrowRight, Phone, Wallet,
+  Smartphone, CheckCircle2, ArrowDownRight,
 } from 'lucide-react'
 
 const stats: { value: string; label: string }[] = [
@@ -333,16 +334,34 @@ export default function Home() {
 
           {/* BOTTOM STRIP — proof bar */}
           <div className="mt-20 lg:mt-28 pt-8 border-t"
-            style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+            style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
             <div className="flex flex-wrap items-center justify-between gap-6">
-              <div className="text-xs uppercase tracking-widest"
-                style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <div className="text-xs uppercase tracking-widest flex-shrink-0"
+                style={{ color: 'rgba(255,255,255,0.5)' }}>
                 Ils nous font confiance
               </div>
-              <div className="flex flex-wrap items-center gap-x-10 gap-y-3"
-                style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <div className="hidden lg:block w-px h-4 mx-4"
+                style={{ background: 'rgba(255,255,255,0.12)' }} />
+              {/* Mobile marquee */}
+              <div className="lg:hidden overflow-hidden flex-1">
+                <div style={{
+                  display: 'flex', gap: '40px', width: 'max-content',
+                  animation: 'marquee 20s linear infinite',
+                }}>
+                  {['Casablanca Finance City', 'Royal Air Maroc', 'OCP Group', 'BMCE Bank', 'Inwi',
+                    'Casablanca Finance City', 'Royal Air Maroc', 'OCP Group', 'BMCE Bank', 'Inwi'].map((name, i) => (
+                    <span key={i} className="text-sm font-medium tracking-wide whitespace-nowrap"
+                      style={{ color: 'rgba(255,255,255,0.6)' }}>
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {/* Desktop static */}
+              <div className="hidden lg:flex flex-wrap items-center gap-x-10 gap-y-3">
                 {['Casablanca Finance City', 'Royal Air Maroc', 'OCP Group', 'BMCE Bank', 'Inwi'].map(name => (
-                  <span key={name} className="text-sm font-medium tracking-wide">
+                  <span key={name} className="text-sm font-medium tracking-wide"
+                    style={{ color: 'rgba(255,255,255,0.6)' }}>
                     {name}
                   </span>
                 ))}
@@ -350,27 +369,12 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Scroll cue */}
-          <div className="hidden lg:flex absolute bottom-8 left-1/2 -translate-x-1/2 flex-col items-center gap-2"
-            style={{ color: 'rgba(255,255,255,0.3)' }}>
-            <span className="text-[10px] uppercase tracking-widest">Découvrir</span>
-            <div className="w-px h-8 relative overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.1)' }}>
-              <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0,
-                height: '40%',
-                background: 'rgba(255,255,255,0.5)',
-                animation: 'scrollCue 2s ease-in-out infinite',
-              }} />
-            </div>
-          </div>
-
         </div>
 
         <style>{`
-          @keyframes scrollCue {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(250%); }
+          @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
           }
         `}</style>
       </section>
@@ -454,91 +458,307 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────────── */}
-      <section className="bg-[#0A0A0A] py-20 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+      <section className="relative py-24 lg:py-40" style={{ background: '#080808' }}>
 
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-widest mb-4" style={{ color: '#43BCC9' }}>
-              Comment ça marche
-            </p>
-            <h2 className="font-heading text-4xl lg:text-5xl font-bold mb-4"
-              style={{ letterSpacing: '-0.02em', lineHeight: '1.05', color: '#ffffff' }}>
-              Trois étapes.{' '}
-              <br />
-              <span style={{ color: '#43BCC9' }}>Zéro surprise.</span>
-            </h2>
-            <p className="text-base mb-12" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Formulaire rapide, devis précis sur WhatsApp, technicien chez vous.
-            </p>
+        {/* Large background number */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div style={{
+            position: 'absolute',
+            top: '15%', left: '-2%',
+            fontSize: 'clamp(280px, 30vw, 480px)',
+            fontWeight: 800,
+            color: 'rgba(255,255,255,0.015)',
+            lineHeight: 0.8,
+            fontFamily: 'Space Grotesk, sans-serif',
+            letterSpacing: '-0.05em',
+            userSelect: 'none',
+          }}>
+            03
+          </div>
+        </div>
 
-            <div>
-              {[
-                {
-                  num: '01',
-                  icon: <MessageSquare size={16} color="rgba(255,255,255,0.4)" />,
-                  title: 'Formulaire 60 secondes',
-                  desc: "Choisissez le service, décrivez votre voiture, indiquez votre adresse. Moins d'une minute.",
-                },
-                {
-                  num: '02',
-                  icon: <CheckCircle size={16} color="rgba(255,255,255,0.4)" />,
-                  title: 'Devis exact sur WhatsApp',
-                  desc: "Vous recevez un prix précis pour votre voiture spécifique. Aucune surprise à l'arrivée.",
-                },
-                {
-                  num: '03',
-                  icon: <MapPin size={16} color="rgba(255,255,255,0.4)" />,
-                  title: 'Le technicien vient à vous',
-                  desc: 'Confirmez le devis. Notre technicien arrive. Paiement uniquement après le service terminé.',
-                },
-              ].map((step, i, arr) => (
-                <div key={step.num} className={`flex gap-5 items-start ${i < arr.length - 1 ? 'mb-8' : ''}`}>
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.25)' }}>
-                    <span className="font-heading font-bold text-sm" style={{ color: '#43BCC9' }}>
-                      {step.num}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      {step.icon}
-                      <span className="font-heading font-semibold text-base" style={{ color: '#ffffff' }}>
-                        {step.title}
-                      </span>
-                    </div>
-                    <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                      {step.desc}
-                    </p>
+        <div className="relative max-w-7xl mx-auto px-6">
+
+          {/* Section header */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-20 lg:mb-32">
+            <div className="lg:col-span-5">
+              <div className="text-xs uppercase tracking-[0.2em] mb-5 font-medium"
+                style={{ color: '#43BCC9' }}>
+                Comment ça marche
+              </div>
+              <h2 style={{
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: 'clamp(36px, 4.5vw, 56px)',
+                lineHeight: '1.02',
+                letterSpacing: '-0.025em',
+                color: 'white',
+                fontWeight: 700,
+              }}>
+                Trois étapes.<br />
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 300 }}>
+                  Pas une de plus.
+                </span>
+              </h2>
+            </div>
+            <div className="lg:col-span-6 lg:col-start-7 lg:pt-6">
+              <p className="text-base lg:text-lg leading-relaxed"
+                style={{ color: 'rgba(255,255,255,0.55)' }}>
+                De la demande à l'intervention terminée, tout se passe en moins de 90 minutes.
+                Pas de paperasse, pas de devis surprise, pas de déplacement de votre côté.
+                Vous restez où vous êtes — on s'occupe du reste.
+              </p>
+              <div className="mt-6 flex items-center gap-2 text-sm"
+                style={{ color: 'rgba(255,255,255,0.4)' }}>
+                <ArrowDownRight size={16} style={{ color: '#43BCC9' }} />
+                Faites défiler pour voir le processus
+              </div>
+            </div>
+          </div>
+
+          {/* Steps */}
+          <div className="space-y-32 lg:space-y-44">
+
+            {/* ── STEP 01 ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+              <div className="lg:col-span-6 order-2 lg:order-1">
+                <div className="flex items-center gap-4 mb-8">
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.1em' }}>01</span>
+                  <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
+                  <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
+                    style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
+                    30 secondes
                   </div>
                 </div>
-              ))}
+                <h3 style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: 'clamp(28px, 3.2vw, 40px)',
+                  lineHeight: '1.1',
+                  color: 'white',
+                  fontWeight: 600,
+                  marginBottom: '20px',
+                  letterSpacing: '-0.02em',
+                }}>
+                  Décrivez votre besoin
+                </h3>
+                <p className="text-base lg:text-lg leading-relaxed mb-8"
+                  style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  Ouvrez WhatsApp ou utilisez notre formulaire en ligne. Indiquez votre service,
+                  votre voiture, votre adresse. Pas de compte à créer.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    'WhatsApp ou formulaire en ligne',
+                    'Aucun compte requis',
+                    'Réponse en moins de 5 minutes',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <CheckCircle2 size={14} style={{ color: '#43BCC9', flexShrink: 0 }} />
+                      <span className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="lg:col-span-5 lg:col-start-8 order-1 lg:order-2">
+                <div className="relative rounded-2xl overflow-hidden"
+                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', padding: '32px' }}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.2)' }}>
+                      <Smartphone size={18} style={{ color: '#43BCC9' }} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold" style={{ color: 'white' }}>Nouvelle demande</div>
+                      <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>via WhatsApp</div>
+                    </div>
+                  </div>
+                  {[
+                    { label: 'Service', value: 'Vidange & Filtres' },
+                    { label: 'Voiture', value: 'Dacia Logan 2019' },
+                    { label: 'Adresse', value: 'Maarif, Casablanca' },
+                  ].map(row => (
+                    <div key={row.label} className="flex items-center justify-between py-3 border-b last:border-0"
+                      style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                      <span className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.35)' }}>{row.label}</span>
+                      <span className="text-sm font-medium" style={{ color: 'white' }}>{row.value}</span>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+                    className="w-full mt-6 py-3 rounded-xl text-sm font-semibold transition-colors"
+                    style={{ background: '#43BCC9', color: '#080808' }}>
+                    Envoyer la demande
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-10">
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-                className="inline-flex items-center gap-2 font-semibold px-7 py-3.5 rounded-full transition-colors duration-200 text-sm"
-                style={{ background: '#43BCC9', color: '#080808' }}
-              >
-                Demander un devis
-                <ChevronRight size={16} />
-              </button>
+            {/* ── STEP 02 ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+              <div className="lg:col-span-5 order-1">
+                <div className="relative rounded-2xl overflow-hidden"
+                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', padding: '32px' }}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ background: 'rgba(0,221,136,0.1)', border: '1px solid rgba(0,221,136,0.2)' }}>
+                      <MessageSquare size={18} style={{ color: '#00DD88' }} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold" style={{ color: 'white' }}>Votre devis</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#00DD88' }} />
+                        <span className="text-xs" style={{ color: '#00DD88' }}>Envoyé il y a 3 min</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>Détail du devis</div>
+                    {[
+                      { label: 'Main d\'œuvre', value: '180 MAD' },
+                      { label: 'Huile moteur 5L', value: '220 MAD' },
+                      { label: 'Filtre à huile', value: '45 MAD' },
+                      { label: 'Déplacement', value: '0 MAD' },
+                    ].map(row => (
+                      <div key={row.label} className="flex justify-between py-1.5">
+                        <span className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{row.label}</span>
+                        <span className="text-sm font-medium" style={{ color: row.value === '0 MAD' ? '#00DD88' : 'white' }}>{row.value}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between pt-3 mt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                      <span className="text-sm font-bold" style={{ color: 'white' }}>Total TTC</span>
+                      <span className="text-base font-bold" style={{ color: '#43BCC9' }}>445 MAD</span>
+                    </div>
+                  </div>
+                  <div className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    Prix garanti — aucun frais supplémentaire
+                  </div>
+                </div>
+              </div>
+              <div className="lg:col-span-6 lg:col-start-7 order-2">
+                <div className="flex items-center gap-4 mb-8">
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.1em' }}>02</span>
+                  <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
+                  <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
+                    style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
+                    &lt; 5 minutes
+                  </div>
+                </div>
+                <h3 style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: 'clamp(28px, 3.2vw, 40px)',
+                  lineHeight: '1.1',
+                  color: 'white',
+                  fontWeight: 600,
+                  marginBottom: '20px',
+                  letterSpacing: '-0.02em',
+                }}>
+                  Recevez votre devis exact
+                </h3>
+                <p className="text-base lg:text-lg leading-relaxed mb-8"
+                  style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  Notre équipe analyse votre demande et vous envoie un prix précis,
+                  adapté à votre véhicule. Pas de fourchette, pas d'approximation.
+                  Le prix affiché est le prix final.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    'Prix spécifique à votre modèle',
+                    'Détail ligne par ligne',
+                    'Zéro frais de déplacement',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <CheckCircle2 size={14} style={{ color: '#43BCC9', flexShrink: 0 }} />
+                      <span className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {/* ── STEP 03 ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+              <div className="lg:col-span-6 order-2 lg:order-1">
+                <div className="flex items-center gap-4 mb-8">
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.1em' }}>03</span>
+                  <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
+                  <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
+                    style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
+                    &lt; 90 min
+                  </div>
+                </div>
+                <h3 style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: 'clamp(28px, 3.2vw, 40px)',
+                  lineHeight: '1.1',
+                  color: 'white',
+                  fontWeight: 600,
+                  marginBottom: '20px',
+                  letterSpacing: '-0.02em',
+                }}>
+                  Le technicien vient à vous
+                </h3>
+                <p className="text-base lg:text-lg leading-relaxed mb-8"
+                  style={{ color: 'rgba(255,255,255,0.55)' }}>
+                  Confirmez le devis. Notre technicien certifié se déplace jusqu'à votre véhicule.
+                  Vous suivez l'avancement en temps réel. Paiement uniquement après que le service
+                  est terminé et validé.
+                </p>
+                <div className="space-y-3 mb-10">
+                  {[
+                    'Suivi en temps réel sur WhatsApp',
+                    'Paiement après service uniquement',
+                    'Rapport d\'intervention fourni',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <CheckCircle2 size={14} style={{ color: '#43BCC9', flexShrink: 0 }} />
+                      <span className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+                  className="flex items-center gap-2 px-7 py-4 rounded-full font-semibold text-sm transition-all"
+                  style={{ background: '#43BCC9', color: '#080808', boxShadow: '0 8px 32px rgba(67,188,201,0.2)' }}
+                  onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 12px 40px rgba(67,188,201,0.35)')}
+                  onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 8px 32px rgba(67,188,201,0.2)')}
+                >
+                  Démarrer maintenant
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+              <div className="lg:col-span-5 lg:col-start-8 order-1 lg:order-2">
+                <div className="relative rounded-2xl overflow-hidden"
+                  style={{ boxShadow: '0 24px 60px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <img
+                    src="/photo-intervention.jpg"
+                    alt="Technicien MecaLIK en intervention"
+                    className="w-full object-cover"
+                    style={{ aspectRatio: '4/3' }}
+                  />
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 55%)',
+                  }} />
+                  <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Wrench size={11} style={{ color: '#43BCC9' }} />
+                        <span className="text-[10px] uppercase tracking-wider font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                          Technicien certifié
+                        </span>
+                      </div>
+                      <div className="text-sm font-semibold" style={{ color: 'white' }}>En intervention</div>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full flex items-center gap-1.5"
+                      style={{ background: 'rgba(0,221,136,0.15)', border: '1px solid rgba(0,221,136,0.3)' }}>
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#00DD88' }} />
+                      <span className="text-[10px] font-bold" style={{ color: '#00DD88' }}>TERMINÉ</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
-
-          <div className="relative rounded-2xl overflow-hidden border border-[rgba(255,255,255,0.08)]">
-            <img
-              src="/photo-intervention.jpg"
-              alt="Technicien MecaLIK en intervention"
-              className="w-full h-full object-cover"
-              style={{ aspectRatio: '4/3' }}
-            />
-            <div className="absolute bottom-4 left-4 bg-[rgba(8,8,8,0.85)] backdrop-blur-sm border border-[rgba(255,255,255,0.1)] rounded-xl px-4 py-3">
-              <div className="font-medium text-white text-sm">Intervention sur site</div>
-              <div className="text-xs text-[rgba(255,255,255,0.4)] mt-0.5">Pneus · Casablanca Maarif</div>
-            </div>
-          </div>
-
         </div>
       </section>
 
