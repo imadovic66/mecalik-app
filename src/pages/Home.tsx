@@ -90,7 +90,7 @@ export default function Home() {
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section
         className="relative overflow-hidden"
-        style={{ minHeight: '100vh', background: '#080808' }}
+        style={{ minHeight: '100vh', background: '#080808', overflowX: 'hidden' }}
       >
         {/* AMBIENT BACKGROUND LAYERS */}
         <div className="absolute inset-0 pointer-events-none">
@@ -125,7 +125,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
             {/* LEFT — Editorial copy block */}
-            <div className="lg:col-span-7 lg:pr-4">
+            <div className="lg:col-span-7 lg:pr-4 order-2 lg:order-1">
 
               {/* Live availability eyebrow */}
               <div
@@ -222,13 +222,13 @@ export default function Home() {
               </div>
 
               {/* Trust micro-row */}
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <div className="flex items-center gap-x-6 gap-y-3 overflow-x-auto pb-1 scrollbar-hide">
                 {[
                   { icon: <Clock size={13} />,       label: 'Sous 90 minutes' },
                   { icon: <Wallet size={13} />,      label: 'Paiement après service' },
                   { icon: <ShieldCheck size={13} />, label: 'Techniciens certifiés' },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs"
+                  <div key={i} className="flex items-center gap-2 text-xs whitespace-nowrap flex-shrink-0"
                     style={{ color: 'rgba(255,255,255,0.45)' }}>
                     <span style={{ color: '#43BCC9' }}>{item.icon}</span>
                     {item.label}
@@ -238,13 +238,14 @@ export default function Home() {
             </div>
 
             {/* RIGHT — Photo card with floating elements */}
-            <div className="lg:col-span-5 relative">
+            <div className="lg:col-span-5 relative order-1 lg:order-2">
 
               {/* Main photo card */}
               <div
                 className="relative rounded-3xl overflow-hidden"
                 style={{
                   aspectRatio: '4/5',
+                  maxHeight: '360px',
                   boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
                 }}
               >
@@ -376,6 +377,8 @@ export default function Home() {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
           }
+          .scrollbar-hide::-webkit-scrollbar { display: none; }
+          .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         `}</style>
       </section>
 
@@ -386,15 +389,16 @@ export default function Home() {
             {stats.map((stat, i) => (
               <div
                 key={stat.value}
-                className="text-center px-8 py-2"
+                className="text-center px-4 lg:px-8 py-4 lg:py-2"
                 style={{
-                  borderRight: i < stats.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                  borderRight: i % 2 === 0 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                  borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.06)' : 'none',
                 }}
               >
-                <div className="font-heading text-3xl font-bold text-white">
+                <div className="font-heading text-2xl lg:text-3xl font-bold text-white">
                   {stat.value}
                 </div>
-                <div className="text-sm text-[rgba(255,255,255,0.4)] mt-1">
+                <div className="text-xs lg:text-sm text-[rgba(255,255,255,0.4)] mt-1">
                   {stat.label}
                 </div>
               </div>
@@ -421,6 +425,8 @@ export default function Home() {
                 letterSpacing: '-0.025em',
                 color: 'white',
                 fontWeight: 700,
+                maxWidth: '100%',
+                wordBreak: 'break-word',
               }}>
                 Tout ce dont votre<br />
                 <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 300 }}>
@@ -447,7 +453,7 @@ export default function Home() {
               style={{
                 background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
                 border: '1px solid rgba(255,255,255,0.06)',
-                minHeight: '280px',
+                minHeight: 'auto',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.border = '1px solid rgba(67,188,201,0.25)'
@@ -810,7 +816,7 @@ export default function Home() {
             {/* ── STEP 01 ── */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
               <div className="lg:col-span-6 order-2 lg:order-1">
-                <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-3 mb-6 flex-wrap">
                   <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.1em' }}>01</span>
                   <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
                   <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
@@ -849,7 +855,7 @@ export default function Home() {
               </div>
               <div className="lg:col-span-5 lg:col-start-8 order-1 lg:order-2">
                 <div className="relative rounded-2xl overflow-hidden"
-                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', padding: '32px' }}>
+                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', padding: '32px', overflowX: 'hidden' }}>
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.2)' }}>
@@ -885,7 +891,7 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
               <div className="lg:col-span-5 order-1">
                 <div className="relative rounded-2xl overflow-hidden"
-                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', padding: '32px' }}>
+                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', padding: '32px', overflowX: 'hidden' }}>
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: 'rgba(0,221,136,0.1)', border: '1px solid rgba(0,221,136,0.2)' }}>
@@ -923,7 +929,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="lg:col-span-6 lg:col-start-7 order-2">
-                <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-3 mb-6 flex-wrap">
                   <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.1em' }}>02</span>
                   <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
                   <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
@@ -966,7 +972,7 @@ export default function Home() {
             {/* ── STEP 03 ── */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
               <div className="lg:col-span-6 order-2 lg:order-1">
-                <div className="flex items-center gap-4 mb-8">
+                <div className="flex items-center gap-3 mb-6 flex-wrap">
                   <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.1em' }}>03</span>
                   <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
                   <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
@@ -1355,10 +1361,10 @@ export default function Home() {
                     est chez vous.
                   </p>
 
-                  <div className="flex flex-wrap gap-4 mb-10">
+                  <div className="flex flex-col sm:flex-row gap-4 mb-10">
                     <button
                       onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-                      className="flex items-center gap-2.5 px-8 py-4 rounded-full font-bold text-sm transition-all"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-4 rounded-full font-bold text-sm transition-all"
                       style={{
                         background: '#43BCC9',
                         color: '#080808',
@@ -1380,7 +1386,7 @@ export default function Home() {
                     </button>
 
                     <a href="tel:+212667101341"
-                      className="flex items-center gap-2.5 px-7 py-4 rounded-full font-semibold text-sm transition-colors"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-7 py-4 rounded-full font-semibold text-sm transition-colors"
                       style={{
                         border: '1px solid rgba(255,255,255,0.15)',
                         color: 'rgba(255,255,255,0.8)',
