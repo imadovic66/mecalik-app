@@ -120,7 +120,7 @@ export default function Home() {
         </div>
 
         {/* MAIN CONTENT */}
-        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-12 lg:pt-40 lg:pb-20">
+        <div className="relative max-w-7xl mx-auto px-6 pt-4 pb-12 lg:pt-40 lg:pb-20">
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-12 items-start">
 
@@ -150,7 +150,7 @@ export default function Home() {
               {/* Headline */}
               <h1 className="pr-20 lg:pr-0" style={{
                 fontFamily: 'Space Grotesk, sans-serif',
-                fontSize: 'clamp(36px, 9vw, 88px)',
+                fontSize: 'clamp(28px, 8vw, 88px)',
                 lineHeight: '0.98',
                 letterSpacing: '-0.03em',
                 color: 'white',
