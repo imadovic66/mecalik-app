@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
-  Clock, ShieldCheck, ChevronRight,
-  Droplets, Battery, Wrench, Search, AlertTriangle,
-  MessageSquare, MapPin,
+  Clock, ShieldCheck,
+  Wrench, MessageSquare, MapPin,
   CreditCard, Clock3,
   ArrowRight, Phone, Wallet,
   Smartphone, CheckCircle2, ArrowDownRight,
@@ -15,60 +14,6 @@ const stats: { value: string; label: string }[] = [
   { value: '0 MAD', label: 'Frais de déplacement' },
 ]
 
-type Service = {
-  id: string
-  icon: React.ReactNode
-  duration: string
-  title: string
-  desc: string
-  special?: boolean
-}
-
-const services: Service[] = [
-  {
-    id: 'lavage',
-    icon: <Droplets size={22} color="#43BCC9" />,
-    duration: '~45 min',
-    title: 'Lavage Auto',
-    desc: 'Lavage extérieur et intérieur à votre emplacement. Produits professionnels, résultat showroom.',
-  },
-  {
-    id: 'vidange',
-    icon: <Droplets size={22} color="#43BCC9" />,
-    duration: '~60 min',
-    title: 'Vidange & Filtres',
-    desc: "Vidange moteur avec filtre à huile d'origine. Vérification des niveaux incluse.",
-  },
-  {
-    id: 'batterie',
-    icon: <Battery size={22} color="#43BCC9" />,
-    duration: '~30 min',
-    title: 'Batterie',
-    desc: 'Diagnostic, remplacement et installation de batterie. Toutes marques et gabarits.',
-  },
-  {
-    id: 'pneus',
-    icon: <Wrench size={22} color="#43BCC9" />,
-    duration: '~45 min',
-    title: 'Pneus',
-    desc: 'Changement, équilibrage et contrôle de pression. Intervention sur place, sans lever de pont.',
-  },
-  {
-    id: 'diagnostic',
-    icon: <Search size={22} color="#43BCC9" />,
-    duration: '~30 min',
-    title: 'Diagnostic',
-    desc: "Lecture des codes erreur, bilan complet de l'état du véhicule. Rapport détaillé fourni.",
-  },
-  {
-    id: 'urgence',
-    icon: <AlertTriangle size={22} color="#F0C040" />,
-    duration: 'Urgence',
-    title: 'Urgence 24/7',
-    desc: "Panne, batterie à plat, crevaison — notre technicien intervient en moins de 90 minutes.",
-    special: true,
-  },
-]
 
 export default function Home() {
   const [techCount, setTechCount] = useState(7)
@@ -404,54 +349,343 @@ export default function Home() {
       </section>
 
       {/* ── SERVICES ─────────────────────────────────────────────────── */}
-      <section id="services" className="bg-[#080808] py-20 px-6">
-        <div className="max-w-7xl mx-auto">
+      <section id="services" className="relative py-24 lg:py-32" style={{ background: '#080808' }}>
+        <div className="max-w-7xl mx-auto px-6">
 
-          <p className="text-[#43BCC9] text-sm font-semibold uppercase tracking-widest mb-4">
-            Nos Services
-          </p>
-          <h2
-            className="font-heading text-4xl lg:text-5xl font-bold text-white mb-4"
-            style={{ letterSpacing: '-0.02em', lineHeight: '1.05' }}
-          >
-            Tout ce dont votre voiture a besoin,{' '}
-            <span className="text-[#43BCC9]">à votre porte.</span>
-          </h2>
-          <p className="text-[rgba(255,255,255,0.45)] text-lg mb-12 max-w-2xl">
-            Six services essentiels. Un technicien certifié. Zéro déplacement de votre part.
-          </p>
+          {/* Header — same split pattern as How It Works */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-16">
+            <div className="lg:col-span-5">
+              <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium"
+                style={{ color: '#43BCC9' }}>
+                Nos services
+              </div>
+              <h2 style={{
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: 'clamp(32px, 4vw, 52px)',
+                lineHeight: '1.05',
+                letterSpacing: '-0.025em',
+                color: 'white',
+                fontWeight: 700,
+              }}>
+                Tout ce dont votre<br />
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 300 }}>
+                  voiture a besoin.
+                </span>
+              </h2>
+            </div>
+            <div className="lg:col-span-5 lg:col-start-8 lg:pt-4">
+              <p className="text-base leading-relaxed"
+                style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Six services essentiels. Un technicien certifié se déplace
+                jusqu&apos;à votre voiture, où qu&apos;elle soit à Casablanca.
+              </p>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service) => (
-              <div
-                key={service.title}
-                onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-                className={`group bg-[#0F0F0F] border rounded-2xl p-8 hover:bg-[#111111] transition-all duration-300 cursor-pointer ${
-                  service.special
-                    ? 'border-[rgba(240,192,64,0.2)] hover:border-[rgba(240,192,64,0.4)]'
-                    : 'border-[rgba(255,255,255,0.06)] hover:border-[rgba(67,188,201,0.25)]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-[rgba(67,188,201,0.08)] flex items-center justify-center">
-                    {service.icon}
+          {/* ASYMMETRIC SERVICE GRID */}
+          {/* Row 1: large (5) + medium (4) + small accent (3) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+
+            {/* SERVICE 1 — LARGE: Lavage Auto */}
+            <div
+              className="lg:col-span-5 group relative rounded-3xl p-8 overflow-hidden cursor-pointer transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                minHeight: '280px',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.border = '1px solid rgba(67,188,201,0.25)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.border = '1px solid rgba(255,255,255,0.06)'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+              onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+            >
+              <div style={{
+                position: 'absolute', top: 0, right: 0,
+                width: '200px', height: '200px',
+                background: 'radial-gradient(circle, rgba(67,188,201,0.08) 0%, transparent 70%)',
+                borderRadius: '50%',
+                transform: 'translate(30%, -30%)',
+              }} />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-8">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                    style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+                      <path d="M12 6v6l4 2" />
+                    </svg>
                   </div>
-                  <span className="text-xs text-[rgba(255,255,255,0.35)] border border-[rgba(255,255,255,0.08)] rounded-full px-3 py-1">
-                    {service.duration}
+                  <span className="text-xs font-medium px-3 py-1 rounded-full"
+                    style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.15)' }}>
+                    ~45 min
                   </span>
                 </div>
-                <h3 className="font-heading text-xl font-semibold text-white mb-3">
-                  {service.title}
+                <h3 style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: '26px', fontWeight: 600, color: 'white',
+                  marginBottom: '12px', letterSpacing: '-0.015em',
+                }}>
+                  Lavage Auto
                 </h3>
-                <p className="text-[rgba(255,255,255,0.45)] text-sm leading-relaxed mb-6">
-                  {service.desc}
+                <p className="text-sm leading-relaxed mb-8"
+                  style={{ color: 'rgba(255,255,255,0.5)', maxWidth: '280px' }}>
+                  Lavage extérieur et intérieur complet à votre emplacement.
+                  Produits professionnels, résultat showroom.
                 </p>
-                <div className="flex items-center gap-2 text-[#43BCC9] text-sm font-medium">
+                <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#43BCC9' }}>
                   Demander un devis
-                  <ChevronRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* SERVICE 2 — MEDIUM: Vidange */}
+            <div
+              className="lg:col-span-4 group relative rounded-3xl p-7 overflow-hidden cursor-pointer transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.border = '1px solid rgba(67,188,201,0.25)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.border = '1px solid rgba(255,255,255,0.06)'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+              onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+                  style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
+                    <ellipse cx="12" cy="12" rx="10" ry="10" />
+                    <path d="M12 8v4l3 3" />
+                  </svg>
+                </div>
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.15)' }}>
+                  ~60 min
+                </span>
+              </div>
+              <h3 style={{
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: '22px', fontWeight: 600, color: 'white',
+                marginBottom: '10px', letterSpacing: '-0.015em',
+              }}>
+                Vidange &amp; Filtres
+              </h3>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Vidange moteur avec filtre d&apos;origine. Vérification des niveaux incluse.
+              </p>
+              <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#43BCC9' }}>
+                Demander un devis
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+
+            {/* SERVICE 3 — SMALL accent: Batterie */}
+            <div
+              className="lg:col-span-3 group relative rounded-3xl p-6 overflow-hidden cursor-pointer transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(67,188,201,0.06) 0%, rgba(67,188,201,0.02) 100%)',
+                border: '1px solid rgba(67,188,201,0.15)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.border = '1px solid rgba(67,188,201,0.35)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.border = '1px solid rgba(67,188,201,0.15)'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+              onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+            >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
+                style={{ background: 'rgba(67,188,201,0.15)', border: '1px solid rgba(67,188,201,0.25)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
+                  <rect x="2" y="7" width="20" height="14" rx="2" />
+                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                  <line x1="12" y1="12" x2="12" y2="16" />
+                  <line x1="10" y1="14" x2="14" y2="14" />
+                </svg>
+              </div>
+              <h3 style={{
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: '20px', fontWeight: 600, color: 'white',
+                marginBottom: '8px', letterSpacing: '-0.015em',
+              }}>
+                Batterie
+              </h3>
+              <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Diagnostic, remplacement et installation. Toutes marques.
+              </p>
+              <div className="text-xs font-medium" style={{ color: '#43BCC9' }}>~30 min</div>
+            </div>
+          </div>
+
+          {/* Row 2: small (3) + medium (4) + large accent (5) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+            {/* SERVICE 4 — Pneus */}
+            <div
+              className="lg:col-span-3 group relative rounded-3xl p-6 overflow-hidden cursor-pointer transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.border = '1px solid rgba(67,188,201,0.25)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.border = '1px solid rgba(255,255,255,0.06)'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+              onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+            >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
+                style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </div>
+              <h3 style={{
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: '20px', fontWeight: 600, color: 'white',
+                marginBottom: '8px', letterSpacing: '-0.015em',
+              }}>
+                Pneus
+              </h3>
+              <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Changement, équilibrage et contrôle de pression sur place.
+              </p>
+              <div className="text-xs font-medium" style={{ color: '#43BCC9' }}>~45 min</div>
+            </div>
+
+            {/* SERVICE 5 — Diagnostic */}
+            <div
+              className="lg:col-span-4 group relative rounded-3xl p-7 overflow-hidden cursor-pointer transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.border = '1px solid rgba(67,188,201,0.25)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.border = '1px solid rgba(255,255,255,0.06)'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+              onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+                  style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                </div>
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.15)' }}>
+                  ~30 min
+                </span>
+              </div>
+              <h3 style={{
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: '22px', fontWeight: 600, color: 'white',
+                marginBottom: '10px', letterSpacing: '-0.015em',
+              }}>
+                Diagnostic
+              </h3>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Lecture des codes erreur, bilan complet de l&apos;état du véhicule. Rapport détaillé fourni.
+              </p>
+              <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#43BCC9' }}>
+                Demander un devis
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+
+            {/* SERVICE 6 — URGENCE: red accent card */}
+            <div
+              className="lg:col-span-5 group relative rounded-3xl p-8 overflow-hidden cursor-pointer transition-all duration-300"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,68,68,0.06) 0%, rgba(255,68,68,0.02) 100%)',
+                border: '1px solid rgba(255,68,68,0.18)',
+                minHeight: '240px',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.border = '1px solid rgba(255,68,68,0.4)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.border = '1px solid rgba(255,68,68,0.18)'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+              onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+            >
+              <div style={{
+                position: 'absolute', bottom: 0, right: 0,
+                width: '250px', height: '250px',
+                background: 'radial-gradient(circle, rgba(255,68,68,0.08) 0%, transparent 70%)',
+                borderRadius: '50%',
+                transform: 'translate(20%, 30%)',
+              }} />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex w-2.5 h-2.5">
+                      <span className="absolute inset-0 rounded-full animate-ping"
+                        style={{ background: '#FF4444', opacity: 0.5 }} />
+                      <span className="relative rounded-full w-2.5 h-2.5"
+                        style={{ background: '#FF4444' }} />
+                    </span>
+                    <span className="text-xs font-semibold uppercase tracking-wider"
+                      style={{ color: '#FF4444' }}>
+                      Disponible 24h/7j
+                    </span>
+                  </div>
+                  <span className="text-xs font-medium px-3 py-1 rounded-full"
+                    style={{ background: 'rgba(255,68,68,0.1)', color: '#FF4444', border: '1px solid rgba(255,68,68,0.2)' }}>
+                    ASAP
+                  </span>
+                </div>
+                <h3 style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: '26px', fontWeight: 700, color: 'white',
+                  marginBottom: '12px', letterSpacing: '-0.015em',
+                }}>
+                  Urgence 24/7
+                </h3>
+                <p className="text-sm leading-relaxed mb-8"
+                  style={{ color: 'rgba(255,255,255,0.55)', maxWidth: '280px' }}>
+                  Panne, batterie à plat, crevaison — notre technicien
+                  intervient en moins de 90 minutes, jour et nuit.
+                </p>
+                <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#FF4444' }}>
+                  Appeler maintenant
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
