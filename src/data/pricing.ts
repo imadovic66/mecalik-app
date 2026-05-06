@@ -13,6 +13,9 @@ export type ServicePrice = {
   duration: string
   includes: string
   category: 'diagnostic' | 'urgence' | 'entretien' | 'assistance'
+  hasPartsRequired: boolean
+  typicalPartsCost?: { min: number; max: number }
+  partsMargine: number
 }
 
 export const ZONE_LABELS: Record<Zone, string> = {
@@ -38,6 +41,8 @@ export const SERVICES: ServicePrice[] = [
     duration: '~30 min',
     includes: 'Lecture des codes défauts OBD',
     category: 'diagnostic',
+    hasPartsRequired: false,
+    partsMargine: 5,
   },
   {
     id: 'expertise',
@@ -49,6 +54,8 @@ export const SERVICES: ServicePrice[] = [
     duration: '~60 min',
     includes: 'Expertise professionnelle complète du véhicule',
     category: 'diagnostic',
+    hasPartsRequired: false,
+    partsMargine: 5,
   },
   {
     id: 'batterie',
@@ -60,6 +67,9 @@ export const SERVICES: ServicePrice[] = [
     duration: '~30 min',
     includes: "Main d'œuvre uniquement — batterie en sus",
     category: 'entretien',
+    hasPartsRequired: true,
+    typicalPartsCost: { min: 600, max: 900 },
+    partsMargine: 5,
   },
   {
     id: 'demarrage',
@@ -71,6 +81,8 @@ export const SERVICES: ServicePrice[] = [
     duration: '~20 min',
     includes: 'Intervention sur place avec câbles de démarrage',
     category: 'urgence',
+    hasPartsRequired: false,
+    partsMargine: 5,
   },
   {
     id: 'roue',
@@ -82,6 +94,8 @@ export const SERVICES: ServicePrice[] = [
     duration: '~20 min',
     includes: 'Si roue de secours disponible dans le véhicule',
     category: 'urgence',
+    hasPartsRequired: false,
+    partsMargine: 5,
   },
   {
     id: 'lavage',
@@ -93,6 +107,9 @@ export const SERVICES: ServicePrice[] = [
     duration: '~45 min',
     includes: 'Lavage extérieur et intérieur complet',
     category: 'entretien',
+    hasPartsRequired: true,
+    typicalPartsCost: { min: 50, max: 100 },
+    partsMargine: 5,
   },
   {
     id: 'vidange',
@@ -104,6 +121,9 @@ export const SERVICES: ServicePrice[] = [
     duration: '~60 min',
     includes: "Main d'œuvre uniquement — huile + filtre en sus",
     category: 'entretien',
+    hasPartsRequired: true,
+    typicalPartsCost: { min: 350, max: 500 },
+    partsMargine: 5,
   },
   {
     id: 'pneus',
@@ -115,6 +135,9 @@ export const SERVICES: ServicePrice[] = [
     duration: '~45 min',
     includes: "Main d'œuvre uniquement — pneus en sus",
     category: 'entretien',
+    hasPartsRequired: true,
+    typicalPartsCost: { min: 400, max: 800 },
+    partsMargine: 5,
   },
   {
     id: 'freins',
@@ -126,6 +149,9 @@ export const SERVICES: ServicePrice[] = [
     duration: '~45 min',
     includes: "Main d'œuvre uniquement — plaquettes en sus",
     category: 'entretien',
+    hasPartsRequired: true,
+    typicalPartsCost: { min: 200, max: 400 },
+    partsMargine: 5,
   },
   {
     id: 'adblue',
@@ -138,6 +164,9 @@ export const SERVICES: ServicePrice[] = [
     duration: 'Variable',
     includes: 'Réinitialisation système AdBlue',
     category: 'diagnostic',
+    hasPartsRequired: true,
+    typicalPartsCost: { min: 0, max: 0 },
+    partsMargine: 5,
   },
   {
     id: 'ouverture',
@@ -150,6 +179,8 @@ export const SERVICES: ServicePrice[] = [
     duration: 'Variable',
     includes: "Perte de clé ou clé laissée à l'intérieur",
     category: 'urgence',
+    hasPartsRequired: false,
+    partsMargine: 5,
   },
   {
     id: 'fap',
@@ -162,6 +193,9 @@ export const SERVICES: ServicePrice[] = [
     duration: 'Variable',
     includes: 'Diagnostic, nettoyage et régénération FAP',
     category: 'diagnostic',
+    hasPartsRequired: true,
+    typicalPartsCost: { min: 0, max: 0 },
+    partsMargine: 5,
   },
 ]
 
@@ -175,4 +209,36 @@ export function getPrice(service: ServicePrice, zone: Zone): string {
 export function getPriceNumber(service: ServicePrice, zone: Zone): number | null {
   if (service.contactOnly) return null
   return service[zone] as number | null
+}
+
+export function getPartsMarginRevenue(service: ServicePrice): { min: number; max: number } {
+  if (!service.hasPartsRequired || !service.typicalPartsCost) {
+    return { min: 0, max: 0 }
+  }
+  const rate = service.partsMargine / 100
+  return {
+    min: Math.round(service.typicalPartsCost.min * rate),
+    max: Math.round(service.typicalPartsCost.max * rate),
+  }
+}
+
+export function getTotalRevenuePerIntervention(
+  service: ServicePrice,
+  zone: Zone
+): {
+  mo: number | null
+  partsMin: number
+  partsMax: number
+  totalMin: number | null
+  totalMax: number | null
+} {
+  const mo = getPriceNumber(service, zone)
+  const parts = getPartsMarginRevenue(service)
+  return {
+    mo,
+    partsMin: parts.min,
+    partsMax: parts.max,
+    totalMin: mo ? mo + parts.min : null,
+    totalMax: mo ? mo + parts.max : null,
+  }
 }

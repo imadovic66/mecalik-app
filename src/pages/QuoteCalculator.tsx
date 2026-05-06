@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SERVICES, ZONE_LABELS, ZONE_DESCRIPTIONS, getPrice, type Zone } from '../data/pricing'
+import { SERVICES, ZONE_LABELS, ZONE_DESCRIPTIONS, getPrice, getTotalRevenuePerIntervention, type Zone } from '../data/pricing'
 import { MapPin, Clock, ChevronRight, Phone, Info } from 'lucide-react'
 
 export default function QuoteCalculator() {
@@ -152,32 +152,63 @@ export default function QuoteCalculator() {
             </div>
 
             {/* Details */}
-            <div className="space-y-3 mb-8">
-              <div className="flex items-start gap-3 text-sm p-3 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <Clock size={15} style={{ color: '#43BCC9', flexShrink: 0, marginTop: 1 }} />
-                <span style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  Durée estimée: <strong style={{ color: 'white' }}>{service.duration}</strong>
-                </span>
-              </div>
-              <div className="flex items-start gap-3 text-sm p-3 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <Info size={15} style={{ color: '#43BCC9', flexShrink: 0, marginTop: 1 }} />
-                <span style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  {service.includes}
-                </span>
-              </div>
-              {!service.contactOnly && (
-                <div className="flex items-start gap-3 text-sm p-3 rounded-xl"
-                  style={{ background: 'rgba(240,192,64,0.05)', border: '1px solid rgba(240,192,64,0.1)' }}>
-                  <Info size={15} style={{ color: '#F0C040', flexShrink: 0, marginTop: 1 }} />
-                  <span style={{ color: 'rgba(255,255,255,0.6)' }}>
-                    Les pièces (si nécessaires) sont facturées au coût réel,
-                    sans marge MecaLIK.
-                  </span>
+            {(() => {
+              const partsRevenue = getTotalRevenuePerIntervention(service, selectedZone)
+              return (
+                <div className="space-y-3 mb-8">
+                  <div className="flex items-start gap-3 text-sm p-3 rounded-xl"
+                    style={{ background: 'rgba(255,255,255,0.04)' }}>
+                    <Clock size={15} style={{ color: '#43BCC9', flexShrink: 0, marginTop: 1 }} />
+                    <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      Durée estimée: <strong style={{ color: 'white' }}>{service.duration}</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-3 text-sm p-3 rounded-xl"
+                    style={{ background: 'rgba(255,255,255,0.04)' }}>
+                    <Info size={15} style={{ color: '#43BCC9', flexShrink: 0, marginTop: 1 }} />
+                    <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      {service.includes}
+                    </span>
+                  </div>
+                  {service.hasPartsRequired && service.typicalPartsCost && service.typicalPartsCost.min > 0 && (
+                    <div className="flex items-start gap-3 text-sm p-3 rounded-xl"
+                      style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <Info size={15} style={{ color: '#F0C040', flexShrink: 0, marginTop: 1 }} />
+                      <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+                        Pièces estimées: <strong style={{ color: 'white' }}>
+                          {service.typicalPartsCost.min}–{service.typicalPartsCost.max} MAD
+                        </strong>
+                        {' '}(facturées au prix fournisseur + 5% de frais de gestion)
+                      </span>
+                    </div>
+                  )}
+                  {service.hasPartsRequired && partsRevenue.totalMin !== null && partsRevenue.totalMax !== null && (
+                    <div className="flex items-start gap-3 text-sm p-3 rounded-xl"
+                      style={{ background: 'rgba(67,188,201,0.05)', border: '1px solid rgba(67,188,201,0.12)' }}>
+                      <Info size={15} style={{ color: '#43BCC9', flexShrink: 0, marginTop: 1 }} />
+                      <div>
+                        <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+                          Coût total estimé (MO + pièces):
+                        </span>
+                        <div className="font-bold mt-0.5" style={{ color: '#43BCC9' }}>
+                          {partsRevenue.totalMin}–{partsRevenue.totalMax} MAD
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {!service.contactOnly && (
+                    <div className="flex items-start gap-3 text-sm p-3 rounded-xl"
+                      style={{ background: 'rgba(240,192,64,0.05)', border: '1px solid rgba(240,192,64,0.1)' }}>
+                      <Info size={15} style={{ color: '#F0C040', flexShrink: 0, marginTop: 1 }} />
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>
+                        Les pièces (si nécessaires) sont facturées au coût réel,
+                        sans marge MecaLIK.
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              )
+            })()}
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3">

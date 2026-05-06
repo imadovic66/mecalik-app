@@ -15,7 +15,7 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts'
 import { notifyCustomerByWhatsApp, getNotifiableStatuses } from '../../utils/whatsappNotify'
-import { SERVICES as PRICING_SERVICES, type Zone } from '../../data/pricing'
+import { SERVICES as PRICING_SERVICES, getTotalRevenuePerIntervention, type Zone } from '../../data/pricing'
 
 type Booking = {
   id: string
@@ -591,18 +591,31 @@ export default function AdminDashboard() {
 
           {/* ── FINANCES ── */}
           {activeTab === 'finances' && (() => {
-            const zonedServices = PRICING_SERVICES.filter(s => !s.contactOnly)
-            const revenueData = zonedServices.map(s => ({
-              name: s.labelShort,
-              price: s[selectedZone] as number,
-              cost: Math.round((s[selectedZone] as number) * 0.55),
-              margin: Math.round((s[selectedZone] as number) * 0.45),
-            }))
-            const zone1Prices = PRICING_SERVICES.filter(s => !s.contactOnly && s.zone1).map(s => s.zone1 as number)
-            const zone2Prices = PRICING_SERVICES.filter(s => !s.contactOnly && s.zone2).map(s => s.zone2 as number)
-            const avgZone1 = zone1Prices.length ? Math.round(zone1Prices.reduce((a, b) => a + b, 0) / zone1Prices.length) : 0
-            const avgZone2 = zone2Prices.length ? Math.round(zone2Prices.reduce((a, b) => a + b, 0) / zone2Prices.length) : 0
-            const maxPrice = Math.max(...PRICING_SERVICES.filter(s => !s.contactOnly && s.zone3).map(s => s.zone3 as number))
+            const revenueData = PRICING_SERVICES
+              .filter(s => !s.contactOnly)
+              .map(s => {
+                const moPrice = s[selectedZone] as number
+                const techCost = Math.round(moPrice * 0.60)
+                const mecalikMO = Math.round(moPrice * 0.40)
+                const revenue = getTotalRevenuePerIntervention(s, selectedZone)
+                const partsAvg = Math.round((revenue.partsMin + revenue.partsMax) / 2)
+                return {
+                  name: s.labelShort,
+                  'Part technicien': techCost,
+                  'Marge MO MecaLIK': mecalikMO,
+                  'Marge pièces (5%)': partsAvg,
+                  'Total MecaLIK': mecalikMO + partsAvg,
+                }
+              })
+
+            const moServices = PRICING_SERVICES.filter(s => !s.contactOnly && s[selectedZone])
+            const avgMO = moServices.length
+              ? Math.round(moServices.reduce((sum, s) => sum + (s[selectedZone] as number) * 0.4, 0) / moServices.length)
+              : 0
+            const partsServices = PRICING_SERVICES.filter(s => s.hasPartsRequired && s.typicalPartsCost && s.typicalPartsCost.min > 0)
+            const avgParts = partsServices.length
+              ? Math.round(partsServices.reduce((sum, s) => sum + ((s.typicalPartsCost!.min + s.typicalPartsCost!.max) / 2 * 0.05), 0) / partsServices.length)
+              : 0
 
             return (
               <>
@@ -628,10 +641,10 @@ export default function AdminDashboard() {
                 {/* KPI cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   {[
-                    { label: 'Services tarifés', value: String(PRICING_SERVICES.filter(s => !s.contactOnly).length), color: '#43BCC9' },
-                    { label: 'Prix moyen Zone 1', value: `${avgZone1} MAD`, color: '#43BCC9' },
-                    { label: 'Prix moyen Zone 2', value: `${avgZone2} MAD`, color: '#43BCC9' },
-                    { label: 'Prix max Zone 3', value: `${maxPrice} MAD`, color: '#F0C040' },
+                    { label: 'Services tarifés', value: String(PRICING_SERVICES.filter(s => !s.contactOnly).length), color: 'white' },
+                    { label: 'Votre marge MO moy.', value: `${avgMO} MAD`, color: '#43BCC9' },
+                    { label: 'Marge pièces moy.', value: `+${avgParts} MAD`, color: '#F0C040' },
+                    { label: 'Seuil rentabilité', value: '82 interventions', color: '#00DD88' },
                   ].map(kpi => (
                     <div key={kpi.label} className="rounded-2xl p-5"
                       style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -661,9 +674,9 @@ export default function AdminDashboard() {
                         formatter={(val: unknown) => [`${val} MAD`]}
                         cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                       />
-                      <Bar dataKey="price" name="Prix client" fill="#43BCC9" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="cost" name="Coût technicien" fill="rgba(255,68,68,0.6)" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="margin" name="Marge MecaLIK" fill="#00DD88" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="Part technicien" fill="rgba(255,68,68,0.6)" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="Marge MO MecaLIK" fill="#43BCC9" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="Marge pièces (5%)" fill="#F0C040" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
