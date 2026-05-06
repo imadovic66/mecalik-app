@@ -120,12 +120,12 @@ export default function Home() {
         </div>
 
         {/* MAIN CONTENT */}
-        <div className="relative max-w-7xl mx-auto px-6 pt-24 pb-12 lg:pt-40 lg:pb-20">
+        <div className="relative max-w-7xl mx-auto px-6 pt-20 pb-12 lg:pt-40 lg:pb-20">
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-12 items-start">
 
             {/* LEFT — Editorial copy block */}
-            <div className="lg:col-span-7 order-2 lg:order-1">
+            <div className="lg:col-span-7 order-2 lg:order-1" style={{ overflowX: 'hidden' }}>
 
               {/* Live availability eyebrow */}
               <div
@@ -141,16 +141,16 @@ export default function Home() {
                   <span className="relative rounded-full w-2 h-2"
                     style={{ background: '#00DD88' }} />
                 </span>
-                <span className="text-xs font-medium tracking-wide"
+                <span className="text-[11px] font-medium tracking-wide"
                   style={{ color: 'rgba(255,255,255,0.85)' }}>
                   {techCount} techniciens disponibles à Casablanca
                 </span>
               </div>
 
               {/* Headline */}
-              <h1 style={{
+              <h1 className="pr-20 lg:pr-0" style={{
                 fontFamily: 'Space Grotesk, sans-serif',
-                fontSize: 'clamp(48px, 7vw, 88px)',
+                fontSize: 'clamp(36px, 9vw, 88px)',
                 lineHeight: '0.98',
                 letterSpacing: '-0.03em',
                 color: 'white',
