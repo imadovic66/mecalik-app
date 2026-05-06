@@ -120,7 +120,7 @@ export default function Home() {
         </div>
 
         {/* MAIN CONTENT */}
-        <div className="relative max-w-7xl mx-auto px-6 pt-32 pb-12 lg:pt-40 lg:pb-20">
+        <div className="relative max-w-7xl mx-auto px-6 pt-24 pb-12 lg:pt-40 lg:pb-20">
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
@@ -334,39 +334,22 @@ export default function Home() {
           </div>
 
           {/* BOTTOM STRIP — proof bar */}
-          <div className="mt-20 lg:mt-28 pt-8 border-t"
+          <div className="mt-16 lg:mt-20 pt-8 border-t flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
             style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-            <div className="flex flex-wrap items-center justify-between gap-6">
-              <div className="text-xs uppercase tracking-widest flex-shrink-0"
-                style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Ils nous font confiance
-              </div>
-              <div className="hidden lg:block w-px h-4 mx-4"
-                style={{ background: 'rgba(255,255,255,0.12)' }} />
-              {/* Mobile marquee */}
-              <div className="lg:hidden overflow-hidden flex-1">
-                <div style={{
-                  display: 'flex', gap: '40px', width: 'max-content',
-                  animation: 'marquee 20s linear infinite',
-                }}>
-                  {['Casablanca Finance City', 'Royal Air Maroc', 'OCP Group', 'BMCE Bank', 'Inwi',
-                    'Casablanca Finance City', 'Royal Air Maroc', 'OCP Group', 'BMCE Bank', 'Inwi'].map((name, i) => (
-                    <span key={i} className="text-sm font-medium tracking-wide whitespace-nowrap"
-                      style={{ color: 'rgba(255,255,255,0.6)' }}>
-                      {name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              {/* Desktop static */}
-              <div className="hidden lg:flex flex-wrap items-center gap-x-10 gap-y-3">
-                {['Casablanca Finance City', 'Royal Air Maroc', 'OCP Group', 'BMCE Bank', 'Inwi'].map(name => (
-                  <span key={name} className="text-sm font-medium tracking-wide"
-                    style={{ color: 'rgba(255,255,255,0.6)' }}>
-                    {name}
-                  </span>
-                ))}
-              </div>
+            <div className="text-xs uppercase tracking-widest flex-shrink-0"
+              style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Ils nous font confiance
+            </div>
+            {/* Mobile: simple dot-separated text */}
+            <div className="lg:hidden text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Casablanca Finance City · Royal Air Maroc · OCP Group · BMCE Bank · Inwi
+            </div>
+            {/* Desktop: flex row */}
+            <div className="hidden lg:flex items-center gap-x-10 gap-y-3 flex-wrap"
+              style={{ color: 'rgba(255,255,255,0.6)' }}>
+              {['Casablanca Finance City', 'Royal Air Maroc', 'OCP Group', 'BMCE Bank', 'Inwi'].map(name => (
+                <span key={name} className="text-sm font-medium tracking-wide">{name}</span>
+              ))}
             </div>
           </div>
 
@@ -408,7 +391,7 @@ export default function Home() {
       </section>
 
       {/* ── SERVICES ─────────────────────────────────────────────────── */}
-      <section id="services" className="relative py-24 lg:py-32" style={{ background: '#080808' }}>
+      <section id="services" className="relative py-16 lg:py-32" style={{ background: '#080808' }}>
         <div className="max-w-7xl mx-auto px-6">
 
           {/* Header — same split pattern as How It Works */}
@@ -753,7 +736,7 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────────── */}
-      <section className="relative py-24 lg:py-40" style={{ background: '#080808' }}>
+      <section className="relative py-16 lg:py-40" style={{ background: '#080808' }}>
 
         {/* Large background number */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -1083,7 +1066,7 @@ export default function Home() {
       </section>
 
       {/* ── REVIEWS ──────────────────────────────────────────────────── */}
-      <section className="relative py-24 lg:py-32 overflow-hidden"
+      <section className="relative py-16 lg:py-32 overflow-hidden"
         style={{ background: '#080808' }}>
 
         <div className="absolute top-0 left-0 right-0 h-px"
@@ -1294,7 +1277,7 @@ export default function Home() {
       </section>
 
       {/* ── FINAL CTA ────────────────────────────────────────────────── */}
-      <section className="relative py-24 lg:py-32 overflow-hidden"
+      <section className="relative py-16 lg:py-32 overflow-hidden"
         style={{ background: '#080808' }}>
 
         <div className="absolute top-0 left-0 right-0 h-px"
