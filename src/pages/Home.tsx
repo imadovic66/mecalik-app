@@ -89,8 +89,8 @@ export default function Home() {
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section
-        className="relative overflow-hidden"
-        style={{ minHeight: '100vh', background: '#080808', overflowX: 'hidden' }}
+        className="relative overflow-hidden lg:min-h-screen"
+        style={{ background: '#080808', overflowX: 'hidden' }}
       >
         {/* AMBIENT BACKGROUND LAYERS */}
         <div className="absolute inset-0 pointer-events-none">
@@ -122,10 +122,10 @@ export default function Home() {
         {/* MAIN CONTENT */}
         <div className="relative max-w-7xl mx-auto px-6 pt-24 pb-12 lg:pt-40 lg:pb-20">
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-12 items-start">
 
             {/* LEFT — Editorial copy block */}
-            <div className="lg:col-span-7 lg:pr-4 order-2 lg:order-1">
+            <div className="lg:col-span-7 order-2 lg:order-1">
 
               {/* Live availability eyebrow */}
               <div
@@ -242,10 +242,9 @@ export default function Home() {
 
               {/* Main photo card */}
               <div
-                className="relative rounded-3xl overflow-hidden"
+                className="relative rounded-3xl overflow-hidden w-full aspect-video lg:aspect-[4/5]"
                 style={{
-                  aspectRatio: '4/5',
-                  maxHeight: '360px',
+                  maxHeight: '280px',
                   boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)',
                 }}
               >
