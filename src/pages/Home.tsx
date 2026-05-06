@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   Clock, ShieldCheck, ChevronRight,
   Droplets, Battery, Wrench, Search, AlertTriangle,
-  MessageSquare, CheckCircle, MapPin,
+  MessageSquare, MapPin,
   CreditCard, Clock3,
   ArrowRight, Phone, Wallet,
   Smartphone, CheckCircle2, ArrowDownRight,
