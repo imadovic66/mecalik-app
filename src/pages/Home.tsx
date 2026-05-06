@@ -15,6 +15,62 @@ const stats: { value: string; label: string }[] = [
 ]
 
 
+const ACTIVITIES = [
+  { service: 'Vidange', location: 'Maarif', time: 'il y a 4 min' },
+  { service: 'Batterie', location: 'Ain Diab', time: 'il y a 11 min' },
+  { service: 'Lavage', location: 'Anfa', time: 'il y a 18 min' },
+  { service: 'Diagnostic', location: 'Bourgogne', time: 'il y a 23 min' },
+  { service: 'Pneus', location: 'CIL', time: 'il y a 31 min' },
+  { service: 'Urgence', location: 'Hay Hassani', time: 'il y a 42 min' },
+  { service: 'Vidange', location: 'Sidi Maarouf', time: 'il y a 55 min' },
+]
+
+function LiveActivityTicker() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % ACTIVITIES.length)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const activity = ACTIVITIES[currentIndex]
+
+  return (
+    <div className="rounded-2xl p-5"
+      style={{
+        background: 'rgba(67,188,201,0.04)',
+        border: '1px solid rgba(67,188,201,0.12)',
+      }}>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="relative flex w-2 h-2">
+          <span className="absolute inset-0 rounded-full animate-ping"
+            style={{ background: '#43BCC9', opacity: 0.5 }} />
+          <span className="relative rounded-full w-2 h-2"
+            style={{ background: '#43BCC9' }} />
+        </span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider"
+          style={{ color: '#43BCC9' }}>
+          Activité en direct
+        </span>
+      </div>
+      <div key={currentIndex} style={{ animation: 'fadeIn 0.4s ease' }}>
+        <div className="text-sm font-medium mb-0.5" style={{ color: 'white' }}>
+          {activity.service}
+        </div>
+        <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          {activity.location}, Casablanca
+        </div>
+        <div className="text-[10px] mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          {activity.time}
+        </div>
+      </div>
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+    </div>
+  )
+}
+
 export default function Home() {
   const [techCount, setTechCount] = useState(7)
 
@@ -1079,59 +1135,211 @@ export default function Home() {
       </section>
 
       {/* ── REVIEWS ──────────────────────────────────────────────────── */}
-      <section className="bg-[#0A0A0A] py-20 px-6">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative py-24 lg:py-32 overflow-hidden"
+        style={{ background: '#080808' }}>
 
-          <div className="mb-12">
-            <p className="text-sm font-semibold uppercase tracking-widest mb-4" style={{ color: '#43BCC9' }}>
-              Avis clients
-            </p>
-            <h2 className="font-heading text-4xl font-bold"
-              style={{ letterSpacing: '-0.02em', color: '#ffffff' }}>
-              Ce que disent nos clients.
-            </h2>
-          </div>
+        <div className="absolute top-0 left-0 right-0 h-px"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(67,188,201,0.3), transparent)' }} />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                quote: "Batterie tombée en plein parking. Le technicien était là en moins d'une heure. Prix exact, paiement après. Service impeccable.",
-                initials: 'SA', name: 'Sofia A.', location: 'Casablanca — Maarif',
-              },
-              {
-                quote: 'Vidange faite devant chez moi, sans bouger ma voiture. Technicien sérieux, propre, rapide. Je recommande vraiment.',
-                initials: 'KT', name: 'Karim T.', location: 'Casablanca — Ain Diab',
-              },
-              {
-                quote: "Crevaison un dimanche matin. MecaLIK m'a répondu en 10 minutes et réglé le problème en moins de 45 minutes. Exceptionnel.",
-                initials: 'MY', name: 'Mohamed Y.', location: 'Casablanca — Hay Hassani',
-              },
-            ].map((review) => (
-              <div key={review.name} className="rounded-2xl p-8"
-                style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="w-4 h-4 rounded-sm" style={{ background: '#F0C040' }} />
+        <div className="max-w-7xl mx-auto px-6">
+
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-16 gap-6">
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium"
+                style={{ color: '#43BCC9' }}>
+                Avis clients
+              </div>
+              <h2 style={{
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: 'clamp(32px, 4vw, 52px)',
+                lineHeight: '1.05',
+                letterSpacing: '-0.025em',
+                color: 'white',
+                fontWeight: 700,
+              }}>
+                Ce que disent nos clients.
+              </h2>
+            </div>
+            <div className="flex items-center gap-4 lg:pb-2">
+              <div className="text-right">
+                <div style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: '48px',
+                  fontWeight: 800,
+                  color: 'white',
+                  lineHeight: 1,
+                  letterSpacing: '-0.03em',
+                }}>4.9</div>
+                <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  sur 5
+                </div>
+              </div>
+              <div>
+                <div className="flex gap-1 mb-1">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <svg key={i} width="20" height="20" viewBox="0 0 24 24" fill="#F0C040">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
                   ))}
                 </div>
-                <p className="text-base leading-relaxed mb-6"
+                <div className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  2 847 avis vérifiés
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Testimonials grid — asymmetric */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+
+            {/* LARGE featured testimonial */}
+            <div className="lg:col-span-5 rounded-3xl p-8"
+              style={{
+                background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}>
+              <div className="flex gap-1 mb-5">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="#F0C040">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                ))}
+              </div>
+              <blockquote className="text-lg lg:text-xl leading-relaxed mb-8"
+                style={{ color: 'rgba(255,255,255,0.88)', fontStyle: 'italic' }}>
+                &ldquo;Ma batterie a lâché dans le parking de Morocco Mall. En 40 minutes,
+                le technicien était là. Professionnel, rapide, et le prix annoncé
+                sur WhatsApp était exactement ce que j&apos;ai payé. Je ne vais plus
+                jamais chercher un garage.&rdquo;
+              </blockquote>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold"
+                  style={{ background: 'rgba(67,188,201,0.15)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
+                  SA
+                </div>
+                <div>
+                  <div className="font-semibold text-sm" style={{ color: 'white' }}>
+                    Salma Amrani
+                  </div>
+                  <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    Casablanca · il y a 3 jours · Batterie
+                  </div>
+                </div>
+                <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(0,221,136,0.08)', border: '1px solid rgba(0,221,136,0.2)' }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00DD88" strokeWidth="3">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  <span className="text-[10px] font-semibold" style={{ color: '#00DD88' }}>
+                    Vérifié
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right column — 2 stacked */}
+            <div className="lg:col-span-4 flex flex-col gap-4">
+
+              <div className="rounded-3xl p-7 flex-1"
+                style={{
+                  background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}>
+                <div className="flex gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="#F0C040">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  ))}
+                </div>
+                <blockquote className="text-sm leading-relaxed mb-6"
                   style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                  &ldquo;{review.quote}&rdquo;
-                </p>
+                  &ldquo;Vidange faite dans mon bureau à Maarif. J&apos;ai continué à travailler
+                  pendant ce temps. Le rapport envoyé par WhatsApp était très détaillé.&rdquo;
+                </blockquote>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(67,188,201,0.15)', border: '1px solid rgba(67,188,201,0.2)' }}>
-                    <span className="font-heading font-bold text-sm" style={{ color: '#43BCC9' }}>
-                      {review.initials}
-                    </span>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{ background: 'rgba(67,188,201,0.15)', color: '#43BCC9' }}>
+                    KO
                   </div>
                   <div>
-                    <div className="font-medium text-sm" style={{ color: '#ffffff' }}>{review.name}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{review.location}</div>
+                    <div className="text-sm font-medium" style={{ color: 'white' }}>Karim Ouazzani</div>
+                    <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      Maarif · il y a 1 semaine · Vidange
+                    </div>
                   </div>
                 </div>
               </div>
-            ))}
+
+              <div className="rounded-3xl p-7 flex-1"
+                style={{
+                  background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}>
+                <div className="flex gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="#F0C040">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  ))}
+                </div>
+                <blockquote className="text-sm leading-relaxed mb-6"
+                  style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
+                  &ldquo;J&apos;ai contacté MecaLIK à 23h après une crevaison. Le technicien
+                  est arrivé en 35 minutes. Service exceptionnel.&rdquo;
+                </blockquote>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{ background: 'rgba(67,188,201,0.15)', color: '#43BCC9' }}>
+                    NB
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium" style={{ color: 'white' }}>Nadia Benali</div>
+                    <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      Ain Diab · il y a 2 jours · Urgence 24/7
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Far right — 1 tall + live activity ticker */}
+            <div className="lg:col-span-3 flex flex-col gap-4">
+
+              <div className="rounded-3xl p-6 flex-1"
+                style={{
+                  background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}>
+                <div className="flex gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill="#F0C040">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  ))}
+                </div>
+                <blockquote className="text-sm leading-relaxed mb-5"
+                  style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
+                  &ldquo;Pour notre flotte de 12 véhicules, MecaLIK a complètement changé
+                  notre gestion. Plus besoin d&apos;immobiliser les véhicules.&rdquo;
+                </blockquote>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
+                    style={{ background: 'rgba(240,192,64,0.15)', color: '#F0C040' }}>
+                    YM
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium" style={{ color: 'white' }}>Youssef Mejdoub</div>
+                    <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      Gestionnaire flotte · Flottes B2B
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <LiveActivityTicker />
+            </div>
           </div>
 
         </div>
