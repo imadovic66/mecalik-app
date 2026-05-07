@@ -4,8 +4,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, ShoppingBag, Users,
-  LogOut, Clock,
-  Search, Eye, X,
+  LogOut,
+  Search, X,
   TrendingUp, Wrench, Phone, MapPin,
   Calendar, RefreshCw, MessageSquare, Tag, Star,
 } from 'lucide-react'
@@ -142,6 +142,8 @@ export default function AdminDashboard() {
     setUpdatingStatus(false)
   }
 
+  const handleSignOut = async () => { await signOut(); navigate('/') }
+
   const filteredBookings = bookings.filter(b => {
     const matchSearch = !searchQuery ||
       b.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -180,13 +182,6 @@ export default function AdminDashboard() {
     { name: 'Annulé',      value: bookings.filter(b => b.status === 'cancelled').length,   color: '#FF4444' },
   ].filter(d => d.value > 0)
 
-  const tabTitles: Record<Tab, string> = {
-    overview: 'Vue d\'ensemble',
-    bookings: 'Réservations',
-    customers: 'Clients',
-    finances: 'Finances',
-  }
-
   const navItems: { tab: Tab; icon: React.ReactNode; label: string }[] = [
     { tab: 'overview',  icon: <LayoutDashboard size={18} />, label: 'Vue d\'ensemble' },
     { tab: 'bookings',  icon: <ShoppingBag size={18} />,     label: 'Réservations' },
@@ -194,180 +189,168 @@ export default function AdminDashboard() {
     { tab: 'finances',  icon: <TrendingUp size={18} />,      label: 'Finances' },
   ]
 
-  const BookingRow = ({ booking }: { booking: Booking }) => (
-    <div
-      className="rounded-xl p-4 mb-3 grid grid-cols-1 md:grid-cols-4 gap-4 items-center cursor-pointer"
-      style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}
-      onClick={() => setSelectedBooking(booking)}
-    >
-      <div>
-        <div className="font-medium text-sm" style={{ color: '#ffffff' }}>
-          {SERVICE_LABELS[booking.service_name] ?? booking.service_name}
-        </div>
-        <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          {booking.profiles?.full_name || 'Client'}
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <MapPin size={12} style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
-        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-          {booking.address.length > 30 ? booking.address.slice(0, 30) + '…' : booking.address}
-        </span>
-      </div>
-      <div><StatusPill status={booking.status} /></div>
-      <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-        <select
-          value={booking.status}
-          onChange={async (e) => {
-            await updateBookingStatus(booking.id, e.target.value)
-          }}
-          className="rounded-lg px-2 py-1.5 text-xs outline-none cursor-pointer"
-          style={{
-            background: '#141414',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.6)',
-          }}
-        >
-          <option value="pending">En attente</option>
-          <option value="confirmed">Confirmer</option>
-          <option value="in_progress">En cours</option>
-          <option value="completed">Terminer</option>
-          <option value="cancelled">Annuler</option>
-        </select>
-        {booking.profiles?.phone && (
-          <a
-            href={`tel:${booking.profiles.phone}`}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-            style={{ background: 'rgba(0,221,136,0.08)', border: '1px solid rgba(0,221,136,0.15)' }}
-          >
-            <Phone size={14} style={{ color: '#00DD88' }} />
-          </a>
-        )}
-        <button
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
-          style={{ background: 'rgba(255,255,255,0.05)' }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(67,188,201,0.1)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-        >
-          <Eye size={14} style={{ color: 'rgba(255,255,255,0.5)' }} />
-        </button>
-      </div>
-    </div>
-  )
-
   return (
     <div className="min-h-screen bg-[#080808] flex">
 
       {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
       <aside
-        className="hidden lg:flex fixed left-0 top-0 h-full w-64 flex-col z-40"
-        style={{ background: '#080808', borderRight: '1px solid rgba(255,255,255,0.05)' }}
+        className="hidden lg:flex fixed left-0 top-0 h-full z-40 flex-col"
+        style={{ width: '220px', background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
-        <div className="p-6">
-          <img src="/logo.jpg" alt="MecaLIK"
-            style={{ height: '36px', width: '120px', objectFit: 'cover', borderRadius: '6px' }} />
-          <div className="mt-2 px-1">
-            <div className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              Administration
-            </div>
+        {/* Logo area */}
+        <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
+            Administration
           </div>
         </div>
 
-        <nav className="flex-1 px-3 mt-2 space-y-1">
-          {navItems.map(({ tab, icon, label }) => {
-            const isActive = activeTab === tab
+        {/* Nav items */}
+        <nav style={{ padding: '8px 12px', flex: 1 }}>
+          {([
+            { tab: 'overview' as Tab, label: "Vue d'ensemble", icon: LayoutDashboard },
+            { tab: 'bookings' as Tab, label: 'Réservations',   icon: ShoppingBag },
+            { tab: 'customers' as Tab, label: 'Clients',       icon: Users },
+            { tab: 'finances' as Tab, label: 'Finances',       icon: TrendingUp },
+          ] as const).map(item => {
+            const Icon = item.icon
+            const isActive = activeTab === item.tab
             return (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
+              <button
+                key={item.tab}
+                onClick={() => setActiveTab(item.tab)}
                 style={{
-                  color: isActive ? 'white' : 'rgba(255,255,255,0.45)',
-                  background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
-                  borderLeft: isActive ? '2px solid #43BCC9' : '2px solid transparent',
-                  borderTop: '1px solid transparent',
-                  borderRight: '1px solid transparent',
-                  borderBottom: '1px solid transparent',
-                  fontWeight: isActive ? 600 : 400,
-                  paddingLeft: isActive ? '14px' : '16px',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  marginBottom: '2px',
+                  background: isActive ? 'rgba(255,255,255,0.07)' : 'transparent',
+                  color: isActive ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)',
+                  fontSize: '13px',
+                  fontWeight: isActive ? 500 : 400,
+                  textAlign: 'left',
+                  transition: 'all 0.15s',
+                  position: 'relative',
                 }}
               >
-                {icon}{label}
+                {isActive && (
+                  <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: '2px', background: '#43BCC9', borderRadius: '0 2px 2px 0' }} />
+                )}
+                <Icon size={15} style={{ opacity: isActive ? 1 : 0.5, flexShrink: 0 }} />
+                {item.label}
               </button>
             )
           })}
         </nav>
 
-        <div className="p-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="text-xs mb-3 px-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        {/* Bottom user area */}
+        <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginBottom: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user?.email}
           </div>
           <button
-            onClick={async () => { await signOut(); navigate('/') }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors"
-            style={{ color: 'rgba(255,255,255,0.4)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
+            onClick={handleSignOut}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', fontSize: '12px', padding: '0' }}
           >
-            <LogOut size={18} />Déconnexion
+            <LogOut size={13} />
+            Déconnexion
           </button>
         </div>
       </aside>
 
       {/* ── MAIN ─────────────────────────────────────────────────────── */}
-      <div className="lg:ml-64 flex-1 flex flex-col min-h-screen">
+      <div className="lg:ml-[220px] flex-1 min-h-screen" style={{ overflow: 'auto', background: '#080808' }}>
 
         {/* Top bar */}
-        <div className="px-6 py-4 flex items-center justify-between"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#080808' }}>
+        <div style={{
+          padding: '16px 32px',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: '#080808',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}>
           <div>
-            <h1 className="font-heading font-bold text-xl" style={{ color: '#ffffff' }}>
-              {tabTitles[activeTab]}
-            </h1>
-            <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Tableau de bord administrateur
-            </p>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
+              {activeTab === 'overview' && "Vue d'ensemble"}
+              {activeTab === 'bookings' && 'Réservations'}
+              {activeTab === 'customers' && 'Clients'}
+              {activeTab === 'finances' && 'Finances'}
+            </div>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
+              MecaLIK — Tableau de bord
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={fetchData}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: 'rgba(255,255,255,0.06)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
-            >
-              <RefreshCw size={16} style={{ color: 'rgba(255,255,255,0.5)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button onClick={fetchData} style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+            }}>
+              <RefreshCw size={12} />
+              Actualiser
             </button>
-            <span
-              className="px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}
-            >
-              Admin
-            </span>
+            <div style={{
+              padding: '4px 10px',
+              borderRadius: '6px',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              fontSize: '11px',
+              fontWeight: 500,
+              color: 'rgba(255,255,255,0.5)',
+              letterSpacing: '0.05em',
+            }}>
+              ADMIN
+            </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6">
+        <div style={{ padding: '28px 32px' }}>
 
           {/* ── OVERVIEW ── */}
           {activeTab === 'overview' && (
             <>
-              {/* KPI cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {/* Stat bar */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '1px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                marginBottom: '24px',
+              }}>
                 {[
-                  { label: 'Réservations totales', value: stats.total,            valueColor: 'white',                       icon: <ShoppingBag size={18} />, iconBg: 'rgba(255,255,255,0.04)', iconColor: 'rgba(255,255,255,0.3)',  cardBorder: 'rgba(255,255,255,0.08)' },
-                  { label: 'En attente',            value: stats.pending,          valueColor: '#F0C040',                     icon: <Clock size={18} />,       iconBg: 'rgba(240,192,64,0.07)',  iconColor: 'rgba(240,192,64,0.5)',   cardBorder: 'rgba(240,192,64,0.15)'  },
-                  { label: 'En cours',              value: stats.inProgress,       valueColor: stats.inProgress === 0 ? 'rgba(255,255,255,0.25)' : '#43BCC9', icon: <Wrench size={18} />, iconBg: 'rgba(67,188,201,0.06)', iconColor: 'rgba(67,188,201,0.4)', cardBorder: 'rgba(67,188,201,0.12)' },
-                  { label: "Chiffre d'affaires",   value: `${stats.revenue} MAD`, valueColor: '#00DD88',                     icon: <TrendingUp size={18} />,  iconBg: 'rgba(0,221,136,0.07)',  iconColor: 'rgba(0,221,136,0.5)',    cardBorder: 'rgba(0,221,136,0.15)'   },
-                ].map(kpi => (
-                  <div key={kpi.label} className="rounded-2xl p-6 flex items-start justify-between"
-                    style={{ background: '#0D0D0D', border: `1px solid ${kpi.cardBorder}` }}>
-                    <div>
-                      <div className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.45)' }}>{kpi.label}</div>
-                      <div className="font-heading font-bold text-3xl" style={{ color: kpi.valueColor, fontWeight: 800 }}>{kpi.value}</div>
+                  { label: 'Total',             value: String(stats.total),            color: 'white',   note: 'réservations'  },
+                  { label: 'En attente',         value: String(stats.pending),          color: '#F0C040', note: 'à traiter'     },
+                  { label: 'En cours',           value: String(stats.inProgress),       color: '#43BCC9', note: 'interventions' },
+                  { label: "Chiffre d'affaires", value: `${stats.revenue} MAD`,         color: '#00DD88', note: 'complétées'    },
+                ].map((stat, i) => (
+                  <div key={i} style={{ background: '#0D0D0D', padding: '20px 24px' }}>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', fontWeight: 500 }}>
+                      {stat.label}
                     </div>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: kpi.iconBg, color: kpi.iconColor }}>
-                      {kpi.icon}
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: stat.color, letterSpacing: '-0.02em', lineHeight: 1, fontFamily: 'Space Grotesk, sans-serif', marginBottom: '4px' }}>
+                      {stat.value}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>
+                      {stat.note}
                     </div>
                   </div>
                 ))}
@@ -538,9 +521,9 @@ export default function AdminDashboard() {
               </div>
 
               {loading ? (
-                <div className="space-y-3">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: '#141414' }} />
+                <div className="space-y-2">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="h-12 rounded-lg animate-pulse" style={{ background: '#141414' }} />
                   ))}
                 </div>
               ) : filteredBookings.length === 0 ? (
@@ -549,7 +532,66 @@ export default function AdminDashboard() {
                   <div className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Aucune réservation trouvée</div>
                 </div>
               ) : (
-                filteredBookings.map(b => <BookingRow key={b.id} booking={b} />)
+                <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
+                  {/* Table header */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 110px 80px', padding: '10px 20px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    {['Référence', 'Service', 'Client', 'Statut', 'Date'].map(h => (
+                      <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</div>
+                    ))}
+                  </div>
+                  {/* Table rows */}
+                  {filteredBookings.map((booking, i) => (
+                    <div
+                      key={booking.id}
+                      onClick={() => setSelectedBooking(booking)}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '120px 1fr 1fr 110px 80px',
+                        padding: '13px 20px',
+                        borderBottom: i < filteredBookings.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                        cursor: 'pointer',
+                        background: selectedBooking?.id === booking.id ? 'rgba(255,255,255,0.04)' : 'transparent',
+                        transition: 'background 0.1s',
+                        alignItems: 'center',
+                      }}
+                      onMouseEnter={e => { if (selectedBooking?.id !== booking.id) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = selectedBooking?.id === booking.id ? 'rgba(255,255,255,0.04)' : 'transparent' }}
+                    >
+                      <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                        {booking.id.slice(0, 8).toUpperCase()}
+                      </div>
+                      <div style={{ fontSize: '13px', color: 'white' }}>
+                        {SERVICE_LABELS[booking.service_name] ?? booking.service_name}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
+                        {booking.profiles?.full_name || 'Anonyme'}
+                      </div>
+                      <div>
+                        <span style={{
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          background: booking.status === 'completed'  ? 'rgba(0,221,136,0.1)' :
+                                      booking.status === 'pending'    ? 'rgba(240,192,64,0.1)' :
+                                      booking.status === 'in_progress'? 'rgba(67,188,201,0.1)' :
+                                      booking.status === 'confirmed'  ? 'rgba(67,188,201,0.08)' :
+                                      'rgba(255,68,68,0.1)',
+                          color: booking.status === 'completed'  ? '#00DD88' :
+                                 booking.status === 'pending'    ? '#F0C040' :
+                                 booking.status === 'in_progress'? '#43BCC9' :
+                                 booking.status === 'confirmed'  ? '#43BCC9' :
+                                 '#FF4444',
+                        }}>
+                          {STATUS_CONFIG[booking.status]?.label ?? booking.status}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+                        {new Date(booking.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </>
           )}
