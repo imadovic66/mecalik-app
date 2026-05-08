@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
-import { Wrench, ChevronRight, MapPin, Clock, ArrowRight } from 'lucide-react'
+import { Wrench, ChevronRight, MapPin, Clock, ArrowRight, Bell, X } from 'lucide-react'
 import RatingModal from '../../components/ui/RatingModal'
+import { usePushNotifications } from '../../hooks/usePushNotifications'
 
 type Booking = {
   id: string
@@ -66,6 +67,10 @@ export default function CustomerDashboard() {
   const [addingCar, setAddingCar]                       = useState(false)
   const [showRating, setShowRating]                     = useState(false)
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<Booking | null>(null)
+  const [pushBannerDismissed, setPushBannerDismissed]   = useState(() => localStorage.getItem('push_banner_dismissed') === '1')
+
+  const { permission, subscribed, supported, subscribe } = usePushNotifications()
+  const showPushBanner = supported && permission !== 'granted' && !subscribed && !pushBannerDismissed
 
   const firstName = profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'là'
 
@@ -169,6 +174,43 @@ export default function CustomerDashboard() {
             ))}
           </div>
         </div>
+
+        {/* ── PUSH PERMISSION BANNER ──────────────────────────────────── */}
+        {showPushBanner && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            background: 'rgba(67,188,201,0.06)',
+            border: '1px solid rgba(67,188,201,0.15)',
+            borderRadius: '10px', padding: '12px 16px', marginTop: '16px',
+          }}>
+            <Bell size={15} style={{ color: '#43BCC9', flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '12px', fontWeight: 500, color: 'rgba(255,255,255,0.8)' }}>
+                Suivez vos réservations en temps réel
+              </div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '1px' }}>
+                Activez les notifications pour être alerté des mises à jour
+              </div>
+            </div>
+            <button
+              onClick={async () => { await subscribe() }}
+              style={{
+                background: '#43BCC9', color: '#080808',
+                border: 'none', borderRadius: '100px',
+                padding: '6px 14px', fontSize: '12px', fontWeight: 600,
+                cursor: 'pointer', flexShrink: 0,
+              }}
+            >
+              Activer
+            </button>
+            <button
+              onClick={() => { setPushBannerDismissed(true); localStorage.setItem('push_banner_dismissed', '1') }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {/* ── TAB NAV ─────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>

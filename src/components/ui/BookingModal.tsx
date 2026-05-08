@@ -123,9 +123,21 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
       console.error('Booking insert error:', insertError.message, insertError.code)
     }
 
-    console.log('Booking created:', newBooking)
-
     setSubmitting(false)
+
+    if (newBooking) {
+      // Notify admin via push (fire-and-forget)
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: 'admin',
+          title: 'Nouvelle réservation',
+          body: `${service?.name} — ${form.address}`,
+          url: '/admin',
+        }),
+      }).catch(() => {})
+    }
 
     if (newBooking && user) {
       window.open(url, '_blank')
