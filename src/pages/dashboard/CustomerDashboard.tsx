@@ -22,10 +22,10 @@ type Booking = {
 
 type CarType = {
   id: string
-  make: string
+  brand: string
   model: string
   year: number
-  plate: string | null
+  license_plate: string | null
 }
 
 const STATUS_CONFIG = {
@@ -63,7 +63,7 @@ export default function CustomerDashboard() {
   const [loading, setLoading]                           = useState(true)
   const [activeTab, setActiveTab]                       = useState<Tab>('overview')
   const [showAddCar, setShowAddCar]                     = useState(false)
-  const [newCar, setNewCar]                             = useState({ make: '', model: '', year: '', plate: '' })
+  const [newCar, setNewCar]                             = useState({ brand: '', model: '', year: '', license_plate: '' })
   const [addingCar, setAddingCar]                       = useState(false)
   const [showRating, setShowRating]                     = useState(false)
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<Booking | null>(null)
@@ -87,7 +87,7 @@ export default function CustomerDashboard() {
     const fetchData = async () => {
       const [{ data: bookingData }, { data: carData }] = await Promise.all([
         supabase.from('bookings').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
-        supabase.from('cars').select('*').eq('customer_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('cars').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       ])
       setBookings(bookingData ?? [])
       setCars(carData ?? [])
@@ -99,21 +99,21 @@ export default function CustomerDashboard() {
   const refreshCars = async () => {
     if (!user) return
     const { data } = await supabase
-      .from('cars').select('*').eq('customer_id', user.id).order('created_at', { ascending: false })
+      .from('cars').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
     setCars(data ?? [])
   }
 
   const addCar = async () => {
-    if (!user || !newCar.make || !newCar.model || !newCar.year) return
+    if (!user || !newCar.brand || !newCar.model || !newCar.year) return
     setAddingCar(true)
     setCarError(null)
 
     const { error } = await supabase.from('cars').insert({
-      customer_id: user.id,          // FIX: was user_id — must match RLS policy
-      make:        newCar.make.trim(),
-      model:       newCar.model.trim(),
-      year:        parseInt(newCar.year),
-      plate:       newCar.plate.trim() || null,
+      user_id:       user.id,
+      brand:         newCar.brand.trim(),
+      model:         newCar.model.trim(),
+      year:          parseInt(newCar.year),
+      license_plate: newCar.license_plate.trim() || null,
     })
 
     if (error) {
@@ -123,7 +123,7 @@ export default function CustomerDashboard() {
     }
 
     await refreshCars()
-    setNewCar({ make: '', model: '', year: '', plate: '' })
+    setNewCar({ brand: '', model: '', year: '', license_plate: '' })
     setShowAddCar(false)
     setAddingCar(false)
     setCarSuccess('Véhicule ajouté avec succès')
@@ -138,13 +138,13 @@ export default function CustomerDashboard() {
     const { error } = await supabase
       .from('cars')
       .update({
-        make:  editingCar.make.trim(),
-        model: editingCar.model.trim(),
-        year:  editingCar.year,
-        plate: editingCar.plate?.trim() || null,
+        brand:         editingCar.brand.trim(),
+        model:         editingCar.model.trim(),
+        year:          editingCar.year,
+        license_plate: editingCar.license_plate?.trim() || null,
       })
       .eq('id', editingCar.id)
-      .eq('customer_id', user.id)
+      .eq('user_id', user.id)
 
     if (error) {
       setCarError(error.message)
@@ -557,10 +557,10 @@ export default function CustomerDashboard() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {[
-                      { key: 'make',  label: 'Marque *',        placeholder: 'Ex: Dacia', type: 'text'   },
-                      { key: 'model', label: 'Modèle *',        placeholder: 'Ex: Logan', type: 'text'   },
-                      { key: 'year',  label: 'Année *',         placeholder: '2019',      type: 'number' },
-                      { key: 'plate', label: 'Immatriculation', placeholder: '123-A-45',  type: 'text'   },
+                      { key: 'brand',         label: 'Marque *',        placeholder: 'Ex: Dacia', type: 'text'   },
+                      { key: 'model',         label: 'Modèle *',        placeholder: 'Ex: Logan', type: 'text'   },
+                      { key: 'year',          label: 'Année *',         placeholder: '2019',      type: 'number' },
+                      { key: 'license_plate', label: 'Immatriculation', placeholder: '123-A-45',  type: 'text'   },
                     ].map(field => (
                       <div key={field.key}>
                         <label style={{
@@ -600,14 +600,14 @@ export default function CustomerDashboard() {
                     </button>
                     <button
                       onClick={addCar}
-                      disabled={addingCar || !newCar.make || !newCar.model || !newCar.year}
+                      disabled={addingCar || !newCar.brand || !newCar.model || !newCar.year}
                       style={{
                         padding: '8px 16px', borderRadius: '100px',
-                        background: (addingCar || !newCar.make || !newCar.model || !newCar.year)
+                        background: (addingCar || !newCar.brand || !newCar.model || !newCar.year)
                           ? 'rgba(255,255,255,0.15)' : 'white',
                         color: '#080808', border: 'none',
                         fontSize: '12px', fontWeight: 600,
-                        cursor: (addingCar || !newCar.make || !newCar.model || !newCar.year) ? 'not-allowed' : 'pointer',
+                        cursor: (addingCar || !newCar.brand || !newCar.model || !newCar.year) ? 'not-allowed' : 'pointer',
                       }}
                     >
                       {addingCar ? 'Enregistrement...' : 'Enregistrer'}
@@ -627,10 +627,10 @@ export default function CustomerDashboard() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {[
-                      { key: 'make',  label: 'Marque *',        placeholder: 'Ex: Dacia', type: 'text'   },
-                      { key: 'model', label: 'Modèle *',        placeholder: 'Ex: Logan', type: 'text'   },
-                      { key: 'year',  label: 'Année *',         placeholder: '2019',      type: 'number' },
-                      { key: 'plate', label: 'Immatriculation', placeholder: '123-A-45',  type: 'text'   },
+                      { key: 'brand',         label: 'Marque *',        placeholder: 'Ex: Dacia', type: 'text'   },
+                      { key: 'model',         label: 'Modèle *',        placeholder: 'Ex: Logan', type: 'text'   },
+                      { key: 'year',          label: 'Année *',         placeholder: '2019',      type: 'number' },
+                      { key: 'license_plate', label: 'Immatriculation', placeholder: '123-A-45',  type: 'text'   },
                     ].map(field => (
                       <div key={field.key}>
                         <label style={{
@@ -724,10 +724,10 @@ export default function CustomerDashboard() {
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '13px', fontWeight: 500, color: 'white' }}>
-                          {car.make} {car.model}
+                          {car.brand} {car.model}
                         </div>
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
-                          {car.year}{car.plate ? ` · ${car.plate}` : ''}
+                          {car.year}{car.license_plate ? ` · ${car.license_plate}` : ''}
                         </div>
                       </div>
                       {/* Actions */}
