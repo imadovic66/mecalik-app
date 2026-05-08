@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
-import { Wrench, ChevronRight, MapPin, Clock, ArrowRight, Bell, X } from 'lucide-react'
+import { Wrench, ChevronRight, MapPin, Clock, ArrowRight, Bell, X, Pencil, Trash2 } from 'lucide-react'
 import RatingModal from '../../components/ui/RatingModal'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
 
@@ -68,6 +68,10 @@ export default function CustomerDashboard() {
   const [showRating, setShowRating]                     = useState(false)
   const [selectedBookingForRating, setSelectedBookingForRating] = useState<Booking | null>(null)
   const [pushBannerDismissed, setPushBannerDismissed]   = useState(() => localStorage.getItem('push_banner_dismissed') === '1')
+  const [carError, setCarError]                         = useState<string | null>(null)
+  const [carSuccess, setCarSuccess]                     = useState<string | null>(null)
+  const [editingCar, setEditingCar]                     = useState<CarType | null>(null)
+  const [deletingCarId, setDeletingCarId]               = useState<string | null>(null)
 
   const { permission, subscribed, supported, subscribe } = usePushNotifications()
   const showPushBanner = supported && permission !== 'granted' && !subscribed && !pushBannerDismissed
@@ -83,7 +87,7 @@ export default function CustomerDashboard() {
     const fetchData = async () => {
       const [{ data: bookingData }, { data: carData }] = await Promise.all([
         supabase.from('bookings').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
-        supabase.from('cars').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('cars').select('*').eq('customer_id', user.id).order('created_at', { ascending: false }),
       ])
       setBookings(bookingData ?? [])
       setCars(carData ?? [])
@@ -92,21 +96,80 @@ export default function CustomerDashboard() {
     fetchData()
   }, [user])
 
+  const refreshCars = async () => {
+    if (!user) return
+    const { data } = await supabase
+      .from('cars').select('*').eq('customer_id', user.id).order('created_at', { ascending: false })
+    setCars(data ?? [])
+  }
+
   const addCar = async () => {
     if (!user || !newCar.make || !newCar.model || !newCar.year) return
     setAddingCar(true)
-    await supabase.from('cars').insert({
-      user_id: user.id,
-      make:    newCar.make,
-      model:   newCar.model,
-      year:    parseInt(newCar.year),
-      plate:   newCar.plate || null,
+    setCarError(null)
+
+    const { error } = await supabase.from('cars').insert({
+      customer_id: user.id,          // FIX: was user_id — must match RLS policy
+      make:        newCar.make.trim(),
+      model:       newCar.model.trim(),
+      year:        parseInt(newCar.year),
+      plate:       newCar.plate.trim() || null,
     })
-    const { data } = await supabase.from('cars').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
-    setCars(data ?? [])
+
+    if (error) {
+      setCarError(error.message)
+      setAddingCar(false)
+      return
+    }
+
+    await refreshCars()
     setNewCar({ make: '', model: '', year: '', plate: '' })
     setShowAddCar(false)
     setAddingCar(false)
+    setCarSuccess('Véhicule ajouté avec succès')
+    setTimeout(() => setCarSuccess(null), 3000)
+  }
+
+  const updateCar = async () => {
+    if (!user || !editingCar) return
+    setAddingCar(true)
+    setCarError(null)
+
+    const { error } = await supabase
+      .from('cars')
+      .update({
+        make:  editingCar.make.trim(),
+        model: editingCar.model.trim(),
+        year:  editingCar.year,
+        plate: editingCar.plate?.trim() || null,
+      })
+      .eq('id', editingCar.id)
+      .eq('customer_id', user.id)
+
+    if (error) {
+      setCarError(error.message)
+      setAddingCar(false)
+      return
+    }
+
+    setCars(prev => prev.map(c => c.id === editingCar.id ? editingCar : c))
+    setEditingCar(null)
+    setAddingCar(false)
+    setCarSuccess('Véhicule modifié avec succès')
+    setTimeout(() => setCarSuccess(null), 3000)
+  }
+
+  const deleteCar = async (carId: string) => {
+    setDeletingCarId(carId)
+    const { error } = await supabase
+      .from('cars').delete().eq('id', carId).eq('customer_id', user!.id)
+
+    if (error) {
+      setCarError(error.message)
+    } else {
+      setCars(prev => prev.filter(c => c.id !== carId))
+    }
+    setDeletingCarId(null)
   }
 
   const activeCount    = bookings.filter(b => ['pending', 'confirmed', 'in_progress'].includes(b.status)).length
@@ -440,7 +503,8 @@ export default function CustomerDashboard() {
           {/* VEHICLES */}
           {activeTab === 'vehicles' && (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              {/* Header row */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div style={{
                   fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em',
                   color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase',
@@ -448,7 +512,7 @@ export default function CustomerDashboard() {
                   Mes véhicules
                 </div>
                 <button
-                  onClick={() => setShowAddCar(!showAddCar)}
+                  onClick={() => { setShowAddCar(v => !v); setEditingCar(null); setCarError(null) }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '6px',
                     background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)',
@@ -460,6 +524,29 @@ export default function CustomerDashboard() {
                 </button>
               </div>
 
+              {/* Success banner */}
+              {carSuccess && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: '8px', marginBottom: '12px',
+                  background: 'rgba(0,221,136,0.08)', border: '1px solid rgba(0,221,136,0.2)',
+                  fontSize: '12px', color: '#00DD88',
+                }}>
+                  {carSuccess}
+                </div>
+              )}
+
+              {/* Error banner */}
+              {carError && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: '8px', marginBottom: '12px',
+                  background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)',
+                  fontSize: '12px', color: '#FF4444',
+                }}>
+                  {carError}
+                </div>
+              )}
+
+              {/* Add form */}
               {showAddCar && (
                 <div style={{
                   background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.1)',
@@ -501,7 +588,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
                     <button
-                      onClick={() => setShowAddCar(false)}
+                      onClick={() => { setShowAddCar(false); setCarError(null) }}
                       style={{
                         padding: '8px 16px', borderRadius: '100px',
                         border: '1px solid rgba(255,255,255,0.1)',
@@ -513,13 +600,14 @@ export default function CustomerDashboard() {
                     </button>
                     <button
                       onClick={addCar}
-                      disabled={addingCar}
+                      disabled={addingCar || !newCar.make || !newCar.model || !newCar.year}
                       style={{
                         padding: '8px 16px', borderRadius: '100px',
-                        background: addingCar ? 'rgba(255,255,255,0.4)' : 'white',
+                        background: (addingCar || !newCar.make || !newCar.model || !newCar.year)
+                          ? 'rgba(255,255,255,0.15)' : 'white',
                         color: '#080808', border: 'none',
                         fontSize: '12px', fontWeight: 600,
-                        cursor: addingCar ? 'not-allowed' : 'pointer',
+                        cursor: (addingCar || !newCar.make || !newCar.model || !newCar.year) ? 'not-allowed' : 'pointer',
                       }}
                     >
                       {addingCar ? 'Enregistrement...' : 'Enregistrer'}
@@ -528,7 +616,80 @@ export default function CustomerDashboard() {
                 </div>
               )}
 
-              {cars.length === 0 && !showAddCar ? (
+              {/* Edit form */}
+              {editingCar && (
+                <div style={{
+                  background: '#0D0D0D', border: '1px solid rgba(67,188,201,0.2)',
+                  borderRadius: '10px', padding: '20px', marginBottom: '16px',
+                }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', marginBottom: '16px' }}>
+                    Modifier le véhicule
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {[
+                      { key: 'make',  label: 'Marque *',        placeholder: 'Ex: Dacia', type: 'text'   },
+                      { key: 'model', label: 'Modèle *',        placeholder: 'Ex: Logan', type: 'text'   },
+                      { key: 'year',  label: 'Année *',         placeholder: '2019',      type: 'number' },
+                      { key: 'plate', label: 'Immatriculation', placeholder: '123-A-45',  type: 'text'   },
+                    ].map(field => (
+                      <div key={field.key}>
+                        <label style={{
+                          display: 'block', fontSize: '11px', color: 'rgba(255,255,255,0.4)',
+                          marginBottom: '6px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase',
+                        }}>
+                          {field.label}
+                        </label>
+                        <input
+                          type={field.type}
+                          placeholder={field.placeholder}
+                          value={String(editingCar[field.key as keyof CarType] ?? '')}
+                          onChange={e => setEditingCar(prev => prev
+                            ? { ...prev, [field.key]: field.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value }
+                            : prev
+                          )}
+                          style={{
+                            width: '100%', background: '#141414',
+                            border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px',
+                            padding: '10px 14px', fontSize: '13px', color: 'white',
+                            outline: 'none', boxSizing: 'border-box',
+                          }}
+                          onFocus={e => (e.target.style.borderColor = '#43BCC9')}
+                          onBlur={e  => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                    <button
+                      onClick={() => { setEditingCar(null); setCarError(null) }}
+                      style={{
+                        padding: '8px 16px', borderRadius: '100px',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'rgba(255,255,255,0.6)', background: 'none',
+                        fontSize: '12px', cursor: 'pointer',
+                      }}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={updateCar}
+                      disabled={addingCar}
+                      style={{
+                        padding: '8px 16px', borderRadius: '100px',
+                        background: addingCar ? 'rgba(67,188,201,0.3)' : '#43BCC9',
+                        color: '#080808', border: 'none',
+                        fontSize: '12px', fontWeight: 600,
+                        cursor: addingCar ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {addingCar ? 'Enregistrement...' : 'Sauvegarder'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {cars.length === 0 && !showAddCar && !editingCar ? (
                 <div style={{
                   textAlign: 'center', padding: '60px 20px',
                   border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px',
@@ -555,11 +716,13 @@ export default function CustomerDashboard() {
                       key={car.id}
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '16px 20px', background: '#0D0D0D',
+                        padding: '14px 20px', background: '#0D0D0D',
                         borderBottom: i < cars.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                        opacity: deletingCarId === car.id ? 0.4 : 1,
+                        transition: 'opacity 0.15s',
                       }}
                     >
-                      <div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '13px', fontWeight: 500, color: 'white' }}>
                           {car.make} {car.model}
                         </div>
@@ -567,7 +730,38 @@ export default function CustomerDashboard() {
                           {car.year}{car.plate ? ` · ${car.plate}` : ''}
                         </div>
                       </div>
-                      <ChevronRight size={14} style={{ color: 'rgba(255,255,255,0.2)' }} />
+                      {/* Actions */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                        <button
+                          onClick={() => { setEditingCar(car); setShowAddCar(false); setCarError(null) }}
+                          title="Modifier"
+                          style={{
+                            width: '30px', height: '30px', borderRadius: '6px',
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'rgba(255,255,255,0.3)',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
+                          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => deleteCar(car.id)}
+                          disabled={deletingCarId === car.id}
+                          title="Supprimer"
+                          style={{
+                            width: '30px', height: '30px', borderRadius: '6px',
+                            background: 'none', border: 'none', cursor: deletingCarId === car.id ? 'not-allowed' : 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'rgba(255,68,68,0.4)',
+                          }}
+                          onMouseEnter={e => { if (deletingCarId !== car.id) e.currentTarget.style.color = '#FF4444' }}
+                          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,68,68,0.4)')}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
