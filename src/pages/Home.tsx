@@ -5,13 +5,7 @@ import {
   ArrowRight, Phone, Wallet,
   Smartphone, CheckCircle2, ArrowDownRight,
 } from 'lucide-react'
-
-const stats: { value: string; label: string }[] = [
-  { value: '1,1M+', label: 'Voitures au Maroc' },
-  { value: '< 90 min', label: "Délai d'arrivée moyen" },
-  { value: '4,9 / 5', label: 'Note client moyenne' },
-  { value: '0 MAD', label: 'Frais de déplacement' },
-]
+import { supabase } from '../lib/supabase'
 
 
 const ACTIVITIES = [
@@ -71,7 +65,9 @@ function LiveActivityTicker() {
 }
 
 export default function Home() {
-  const [techCount, setTechCount] = useState(7)
+  const [techCount, setTechCount]   = useState(7)
+  const [avgRating, setAvgRating]   = useState('4.9')
+  const [reviewCount, setReviewCount] = useState(0)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -83,6 +79,26 @@ export default function Home() {
     }, 4500)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    supabase
+      .from('reviews')
+      .select('rating')
+      .eq('is_visible', true)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return
+        const avg = data.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / data.length
+        setAvgRating(avg.toFixed(1))
+        setReviewCount(data.length)
+      })
+  }, [])
+
+  const stats = [
+    { value: '1,1M+',             label: 'Voitures au Maroc'    },
+    { value: '< 90 min',          label: "Délai d'arrivée moyen" },
+    { value: `${avgRating} / 5`,  label: 'Note client moyenne'   },
+    { value: '0 MAD',             label: 'Frais de déplacement'  },
+  ]
 
   return (
     <main>
@@ -301,10 +317,10 @@ export default function Home() {
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                     </svg>
                   ))}
-                  <span className="ml-1 text-sm font-bold" style={{ color: 'white' }}>4.9</span>
+                  <span className="ml-1 text-sm font-bold" style={{ color: 'white' }}>{avgRating}</span>
                 </div>
                 <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  2 800+ avis clients
+                  {reviewCount > 0 ? `${reviewCount.toLocaleString('fr-FR')} avis` : '2 800+ avis clients'}
                 </div>
               </div>
 
@@ -1100,7 +1116,7 @@ export default function Home() {
                   color: 'white',
                   lineHeight: 1,
                   letterSpacing: '-0.03em',
-                }}>4.9</div>
+                }}>{avgRating}</div>
                 <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   sur 5
                 </div>
@@ -1114,7 +1130,7 @@ export default function Home() {
                   ))}
                 </div>
                 <div className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  2 847 avis vérifiés
+                  {reviewCount > 0 ? `${reviewCount.toLocaleString('fr-FR')} avis vérifiés` : '2 847 avis vérifiés'}
                 </div>
               </div>
             </div>
@@ -1408,7 +1424,7 @@ export default function Home() {
                   {[
                     { number: '< 5 min',  label: 'Délai de réponse',      color: '#43BCC9' },
                     { number: '< 90 min', label: "Délai d'intervention",  color: '#43BCC9' },
-                    { number: '4.9 / 5',  label: 'Note moyenne clients',  color: '#F0C040' },
+                    { number: `${avgRating} / 5`, label: 'Note moyenne clients', color: '#F0C040' },
                     { number: '0 MAD',    label: 'Frais de déplacement',  color: '#00DD88' },
                   ].map((stat, i) => (
                     <div key={i} className="rounded-2xl p-6 text-center"

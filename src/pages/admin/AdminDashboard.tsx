@@ -8,6 +8,7 @@ import {
   Search, X,
   TrendingUp, Wrench, Phone, MapPin,
   Calendar, RefreshCw, MessageSquare, Tag, Star,
+  Eye, EyeOff,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -40,6 +41,18 @@ type Customer = {
   created_at: string
 }
 
+type Review = {
+  id: string
+  booking_id: string
+  customer_id: string
+  service_type: string | null
+  rating: number
+  comment: string | null
+  is_visible: boolean
+  created_at: string
+  profiles?: { full_name: string | null }
+}
+
 const STATUS_CONFIG = {
   pending:     { label: 'En attente',  color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },
   confirmed:   { label: 'Confirmé',    color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
@@ -53,7 +66,7 @@ const SERVICE_LABELS: Record<string, string> = {
   pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
 }
 
-type Tab = 'overview' | 'bookings' | 'customers' | 'finances'
+type Tab = 'overview' | 'bookings' | 'customers' | 'finances' | 'reviews'
 
 const STATUS_KEYS = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] as const
 
@@ -88,14 +101,16 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
-  const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [updatingStatus, setUpdatingStatus]         = useState(false)
+  const [reviews, setReviews]                       = useState<Review[]>([])
+  const [reviewRatingFilter, setReviewRatingFilter] = useState('all')
 
   useEffect(() => { if (!user) navigate('/login') }, [user, navigate])
   useEffect(() => { if (profile && profile.role !== 'admin') navigate('/dashboard') }, [profile, navigate])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [{ data: bookingData }, { data: customerData }] = await Promise.all([
+    const [{ data: bookingData }, { data: customerData }, { data: reviewData }] = await Promise.all([
       supabase
         .from('bookings')
         .select('*, profiles(full_name, phone)')
@@ -106,9 +121,14 @@ export default function AdminDashboard() {
         .select('*')
         .eq('role', 'customer')
         .order('created_at', { ascending: false }),
+      supabase
+        .from('reviews')
+        .select('*, profiles!customer_id(full_name)')
+        .order('created_at', { ascending: false }),
     ])
     setBookings(bookingData ?? [])
     setCustomers(customerData ?? [])
+    setReviews(reviewData ?? [])
     setLoading(false)
   }, [])
 
@@ -143,6 +163,11 @@ export default function AdminDashboard() {
   }
 
   const handleSignOut = async () => { await signOut(); navigate('/') }
+
+  const toggleReviewVisibility = async (reviewId: string, isVisible: boolean) => {
+    await supabase.from('reviews').update({ is_visible: !isVisible }).eq('id', reviewId)
+    setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_visible: !r.is_visible } : r))
+  }
 
   const filteredBookings = bookings.filter(b => {
     const matchSearch = !searchQuery ||
@@ -183,10 +208,11 @@ export default function AdminDashboard() {
   ].filter(d => d.value > 0)
 
   const navItems: { tab: Tab; icon: React.ReactNode; label: string }[] = [
-    { tab: 'overview',  icon: <LayoutDashboard size={18} />, label: 'Vue d\'ensemble' },
+    { tab: 'overview',  icon: <LayoutDashboard size={18} />, label: "Vue d'ensemble" },
     { tab: 'bookings',  icon: <ShoppingBag size={18} />,     label: 'Réservations' },
     { tab: 'customers', icon: <Users size={18} />,           label: 'Clients' },
     { tab: 'finances',  icon: <TrendingUp size={18} />,      label: 'Finances' },
+    { tab: 'reviews',   icon: <Star size={18} />,            label: 'Avis' },
   ]
 
   return (
@@ -207,10 +233,11 @@ export default function AdminDashboard() {
         {/* Nav items */}
         <nav style={{ padding: '8px 12px', flex: 1 }}>
           {([
-            { tab: 'overview' as Tab, label: "Vue d'ensemble", icon: LayoutDashboard },
-            { tab: 'bookings' as Tab, label: 'Réservations',   icon: ShoppingBag },
-            { tab: 'customers' as Tab, label: 'Clients',       icon: Users },
-            { tab: 'finances' as Tab, label: 'Finances',       icon: TrendingUp },
+            { tab: 'overview'  as Tab, label: "Vue d'ensemble", icon: LayoutDashboard },
+            { tab: 'bookings'  as Tab, label: 'Réservations',   icon: ShoppingBag },
+            { tab: 'customers' as Tab, label: 'Clients',        icon: Users },
+            { tab: 'finances'  as Tab, label: 'Finances',       icon: TrendingUp },
+            { tab: 'reviews'   as Tab, label: 'Avis',           icon: Star },
           ] as const).map(item => {
             const Icon = item.icon
             const isActive = activeTab === item.tab
@@ -279,10 +306,11 @@ export default function AdminDashboard() {
         }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
-              {activeTab === 'overview' && "Vue d'ensemble"}
-              {activeTab === 'bookings' && 'Réservations'}
+              {activeTab === 'overview'  && "Vue d'ensemble"}
+              {activeTab === 'bookings'  && 'Réservations'}
               {activeTab === 'customers' && 'Clients'}
-              {activeTab === 'finances' && 'Finances'}
+              {activeTab === 'finances'  && 'Finances'}
+              {activeTab === 'reviews'   && 'Avis clients'}
             </div>
             <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
               MecaLIK — Tableau de bord
@@ -635,6 +663,154 @@ export default function AdminDashboard() {
               </div>
             </>
           )}
+
+          {/* ── REVIEWS ── */}
+          {activeTab === 'reviews' && (() => {
+            const totalReviews = reviews.length
+            const avgNum = totalReviews > 0
+              ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+              : 0
+            const avgStr = avgNum > 0 ? avgNum.toFixed(1) : '—'
+            const fiveStars = reviews.filter(r => r.rating === 5).length
+            const negative  = reviews.filter(r => r.rating <= 2).length
+
+            const filtered = reviews.filter(r => {
+              if (reviewRatingFilter === 'all') return true
+              if (reviewRatingFilter === '2') return r.rating <= 2
+              return r.rating === parseInt(reviewRatingFilter)
+            })
+
+            return (
+              <>
+                {/* Summary stat bar */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '1px', background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px',
+                  overflow: 'hidden', marginBottom: '24px',
+                }}>
+                  {[
+                    { label: 'Note moyenne', value: `${avgStr} / 5`, color: '#F0C040', note: 'sur 5 étoiles' },
+                    { label: 'Total avis',   value: String(totalReviews), color: 'white',    note: 'soumis' },
+                    { label: '5 étoiles',    value: String(fiveStars),    color: '#00DD88',  note: totalReviews ? `${Math.round(fiveStars / totalReviews * 100)}%` : '0%' },
+                    { label: 'Avis négatifs', value: String(negative),   color: '#FF4444',  note: '≤ 2 étoiles' },
+                  ].map((s, i) => (
+                    <div key={i} style={{ background: '#0D0D0D', padding: '20px 24px' }}>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', fontWeight: 500 }}>{s.label}</div>
+                      <div style={{ fontSize: '28px', fontWeight: 700, color: s.color, letterSpacing: '-0.02em', lineHeight: 1, fontFamily: 'Space Grotesk, sans-serif', marginBottom: '4px' }}>{s.value}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>{s.note}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Rating filter */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'all', label: 'Tous' },
+                    { key: '5',   label: '5 ★' },
+                    { key: '4',   label: '4 ★' },
+                    { key: '3',   label: '3 ★' },
+                    { key: '2',   label: '≤ 2 ★' },
+                  ].map(f => (
+                    <button
+                      key={f.key}
+                      onClick={() => setReviewRatingFilter(f.key)}
+                      style={{
+                        padding: '6px 14px', borderRadius: '100px', border: 'none',
+                        fontSize: '12px', fontWeight: 500, cursor: 'pointer',
+                        background: reviewRatingFilter === f.key ? '#43BCC9' : 'rgba(255,255,255,0.06)',
+                        color: reviewRatingFilter === f.key ? '#080808' : 'rgba(255,255,255,0.5)',
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Table */}
+                {filtered.length === 0 ? (
+                  <div style={{
+                    textAlign: 'center', padding: '60px 20px',
+                    border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px',
+                  }}>
+                    <Star size={32} style={{ color: 'rgba(255,255,255,0.1)', margin: '0 auto 12px', display: 'block' }} />
+                    <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.35)' }}>Aucun avis</div>
+                  </div>
+                ) : (
+                  <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
+                    {/* Header */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '90px 140px 140px 76px 1fr 80px 44px',
+                      padding: '10px 20px',
+                      background: '#0D0D0D',
+                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    }}>
+                      {['Date', 'Client', 'Service', 'Note', 'Commentaire', 'Statut', ''].map(h => (
+                        <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</div>
+                      ))}
+                    </div>
+                    {/* Rows */}
+                    {filtered.map((review, i) => (
+                      <div
+                        key={review.id}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '90px 140px 140px 76px 1fr 80px 44px',
+                          padding: '12px 20px',
+                          alignItems: 'center',
+                          borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                          opacity: review.is_visible ? 1 : 0.45,
+                          transition: 'opacity 0.2s',
+                        }}
+                      >
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>
+                          {new Date(review.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
+                          {review.profiles?.full_name || 'Anonyme'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
+                          {SERVICE_LABELS[review.service_type ?? ''] ?? review.service_type ?? '—'}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          {Array.from({ length: review.rating }, (_, idx) => (
+                            <svg key={idx} width="11" height="11" viewBox="0 0 24 24" fill="#F0C040">
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                          ))}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
+                          {review.comment || '—'}
+                        </div>
+                        <div>
+                          <span style={{
+                            fontSize: '11px', fontWeight: 500, padding: '3px 8px', borderRadius: '4px',
+                            background: review.is_visible ? 'rgba(0,221,136,0.08)' : 'rgba(255,68,68,0.08)',
+                            color: review.is_visible ? '#00DD88' : '#FF4444',
+                          }}>
+                            {review.is_visible ? 'Visible' : 'Masqué'}
+                          </span>
+                        </div>
+                        <div>
+                          <button
+                            onClick={() => toggleReviewVisibility(review.id, review.is_visible)}
+                            title={review.is_visible ? 'Masquer' : 'Afficher'}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'rgba(255,255,255,0.35)', display: 'flex', alignItems: 'center' }}
+                          >
+                            {review.is_visible
+                              ? <EyeOff size={14} />
+                              : <Eye size={14} />
+                            }
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )
+          })()}
 
           {/* ── FINANCES ── */}
           {activeTab === 'finances' && (() => {
