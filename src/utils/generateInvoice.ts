@@ -44,7 +44,7 @@ export function generateInvoice(data: InvoiceData): void {
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
   doc.text('Mécanicien à Domicile — Casablanca', 15, 28)
-  doc.text('contact@mecalik.com | +212 667 101 341', 15, 34)
+  doc.text('contact@mecalik.com | +212 777 348 065', 15, 34)
   doc.text('mecalik.com', 15, 40)
 
   // FACTURE title
@@ -172,7 +172,7 @@ export function generateInvoice(data: InvoiceData): void {
   doc.setFontSize(8)
   doc.setTextColor(120, 120, 120)
   doc.text('Paiement à réception de facture. Virement bancaire ou espèces.', pageWidth / 2, y + 6, { align: 'center' })
-  doc.text('MecaLIK — Casablanca, Maroc | contact@mecalik.com | +212 667 101 341', pageWidth / 2, y + 11, { align: 'center' })
+  doc.text('MecaLIK — Casablanca, Maroc | contact@mecalik.com | +212 777 348 065', pageWidth / 2, y + 11, { align: 'center' })
   doc.text('mecalik.com', pageWidth / 2, y + 16, { align: 'center' })
 
   doc.save(`Facture_MecaLIK_${data.companyName.replace(/\s/g, '_')}_${data.month.replace('/', '-')}_${data.year}.pdf`)

@@ -6,7 +6,7 @@ import {
 import BookingModal from '../components/ui/BookingModal'
 
 const WA_FLEET =
-  'https://wa.me/212667101341?text=' +
+  'https://wa.me/212777348065?text=' +
   encodeURIComponent(
     "Bonjour MecaLIK, je représente une entreprise et souhaite discuter d'une solution flotte."
   )
@@ -53,7 +53,7 @@ export default function Fleet() {
       `Entreprise: ${formData.company}\n` +
       `Email: ${formData.email}\n` +
       `Telephone: ${formData.phone}`
-    window.open('https://wa.me/212667101341?text=' + encodeURIComponent(msg), '_blank')
+    window.open('https://wa.me/212777348065?text=' + encodeURIComponent(msg), '_blank')
     setSubmitted(true)
   }
 
@@ -444,12 +444,12 @@ export default function Fleet() {
                   style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
                 >
                   <a
-                    href="tel:+212667101341"
+                    href="tel:+212777348065"
                     className="flex items-center gap-2 transition-colors"
                     style={{ color: 'rgba(255,255,255,0.45)' }}
                   >
                     <Phone size={15} color="#43BCC9" />
-                    +212 667 101 341
+                    +212 777 348 065
                   </a>
                   <a
                     href="mailto:contact@mecalik.com"

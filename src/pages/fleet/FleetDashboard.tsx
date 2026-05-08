@@ -46,7 +46,7 @@ const VEHICLE_STATUS = {
 type Tab = 'overview' | 'fleet' | 'calendar' | 'bookings' | 'reports'
 type StatusFilter = 'all' | 'ok' | 'service_due' | 'in_service' | 'alert'
 
-const WA_FLEET_URL = 'https://wa.me/212667101341?text=' +
+const WA_FLEET_URL = 'https://wa.me/212777348065?text=' +
   encodeURIComponent("Bonjour MecaLIK, je suis gestionnaire de flotte et j'ai besoin d'une intervention.")
 
 function VehicleStatusIcon({ status }: { status: keyof typeof VEHICLE_STATUS }) {

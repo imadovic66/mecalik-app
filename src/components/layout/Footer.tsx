@@ -13,7 +13,7 @@ const companyLinks: { label: string; href: string }[] = [
   { label: 'À propos', href: '/about' },
   { label: 'Flottes & Entreprises', href: '/fleet' },
   { label: 'Contact', href: '/contact' },
-  { label: 'WhatsApp', href: 'https://wa.me/212667101341' },
+  { label: 'WhatsApp', href: 'https://wa.me/212777348065' },
 ]
 
 export default function Footer() {
@@ -57,7 +57,7 @@ export default function Footer() {
                 <AtSign size={16} color="rgba(255,255,255,0.55)" />
               </a>
               <a
-                href="tel:+212667101341"
+                href="tel:+212777348065"
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200"
                 style={{ border: '1px solid rgba(255,255,255,0.1)' }}
                 aria-label="Appeler MecaLIK"
@@ -115,10 +115,10 @@ export default function Footer() {
               <div className="flex items-start gap-3">
                 <Phone size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
                 <a
-                  href="tel:+212667101341"
+                  href="tel:+212777348065"
                   className="text-[rgba(255,255,255,0.45)] text-sm hover:text-white transition-colors"
                 >
-                  +212 667 101 341
+                  +212 777 348 065
                 </a>
               </div>
               <div className="flex items-start gap-3">

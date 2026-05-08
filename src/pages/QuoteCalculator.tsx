@@ -229,7 +229,7 @@ export default function QuoteCalculator() {
                 <ChevronRight size={16} />
               </button>
               <a
-                href="tel:+212667101341"
+                href="tel:+212777348065"
                 className="flex items-center justify-center gap-2 py-4 px-6 rounded-full font-semibold text-sm"
                 style={{ border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}
               >

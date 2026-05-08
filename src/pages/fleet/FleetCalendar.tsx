@@ -76,7 +76,7 @@ export default function FleetCalendar() {
     const vehicle = vehicles.find(v => v.id === newEvent.vehicle_id)
     const serviceLabel = SERVICE_TYPES.find(s => s.value === newEvent.service_type)?.label ?? newEvent.service_type
     const msg = `Bonjour MecaLIK, je souhaite planifier un service pour:\nVéhicule: ${vehicle?.brand} ${vehicle?.model} (${vehicle?.plate})\nService: ${serviceLabel}\nDate souhaitée: ${newEvent.date}`
-    window.open('https://wa.me/212667101341?text=' + encodeURIComponent(msg), '_blank')
+    window.open('https://wa.me/212777348065?text=' + encodeURIComponent(msg), '_blank')
     setShowAddEvent(false)
     setNewEvent({ vehicle_id: '', service_type: 'vidange', date: '', notes: '' })
   }

@@ -222,7 +222,7 @@ export default function Home() {
                 </button>
 
                 <a
-                  href="tel:+212667101341"
+                  href="tel:+212777348065"
                   className="flex items-center gap-2 px-6 py-4 rounded-full text-sm font-medium transition-colors"
                   style={{
                     color: 'rgba(255,255,255,0.85)',
@@ -233,7 +233,7 @@ export default function Home() {
                   onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
                 >
                   <Phone size={15} />
-                  06 67 10 13 41
+                  07 77 34 80 65
                 </a>
               </div>
 
@@ -1383,7 +1383,7 @@ export default function Home() {
                       Démarrer sur WhatsApp
                     </button>
 
-                    <a href="tel:+212667101341"
+                    <a href="tel:+212777348065"
                       className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-7 py-4 rounded-full font-semibold text-sm transition-colors"
                       style={{
                         border: '1px solid rgba(255,255,255,0.15)',
@@ -1396,7 +1396,7 @@ export default function Home() {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.68A2 2 0 012 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
                       </svg>
-                      06 67 10 13 41
+                      07 77 34 80 65
                     </a>
                   </div>
 

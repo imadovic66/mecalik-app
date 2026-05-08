@@ -88,7 +88,7 @@ export default function BookingConfirmation() {
   const waMsg = encodeURIComponent(
     `Bonjour MecaLIK, je souhaite des informations sur ma réservation #${id?.slice(0, 8).toUpperCase()}`
   )
-  const waUrl = `https://wa.me/212667101341?text=${waMsg}`
+  const waUrl = `https://wa.me/212777348065?text=${waMsg}`
 
   const dateLabel = booking.preferred_date
     ? new Date(booking.preferred_date).toLocaleDateString('fr-FR', { dateStyle: 'medium' })

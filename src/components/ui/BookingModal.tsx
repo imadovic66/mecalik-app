@@ -102,7 +102,7 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
       (form.note ? `\nNote: ${form.note}` : '') +
       `\n\nMerci !`
 
-    const url = 'https://wa.me/212667101341?text=' + encodeURIComponent(msg)
+    const url = 'https://wa.me/212777348065?text=' + encodeURIComponent(msg)
 
     setSubmitting(true)
     const { data: newBooking, error: insertError } = await supabase
