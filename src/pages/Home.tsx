@@ -813,7 +813,7 @@ export default function Home() {
                   <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
                   <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
                     style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
-                    30 secondes
+                    {t('landing.step1Time')}
                   </div>
                 </div>
                 <h3 style={{
@@ -889,7 +889,7 @@ export default function Home() {
                       <MessageSquare size={18} style={{ color: '#00DD88' }} />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold" style={{ color: 'white' }}>Votre devis</div>
+                      <div className="text-sm font-semibold" style={{ color: 'white' }}>{t('landing.step1FormQuote')}</div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#00DD88' }} />
                         <span className="text-xs" style={{ color: '#00DD88' }}>{t('landing.step1QuoteLabel')}</span>
@@ -897,7 +897,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div className="text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>Détail du devis</div>
+                    <div className="text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('landing.quoteDetail')}</div>
                     {[
                       { labelKey: 'landing.quoteLabour',    value: '180 MAD' },
                       { labelKey: 'landing.quoteMotorOil',  value: '220 MAD' },
@@ -1083,7 +1083,7 @@ export default function Home() {
             <div>
               <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium"
                 style={{ color: '#43BCC9' }}>
-                Avis clients
+                {t('landing.reviewsTag')}
               </div>
               <h2 style={{
                 fontFamily: 'Space Grotesk, sans-serif',
