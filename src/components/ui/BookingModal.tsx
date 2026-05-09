@@ -84,6 +84,11 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
       return
     }
 
+    // Sync preselected service from parent (e.g. quick-service tiles)
+    if (preselectedService) {
+      setSelectedService(preselectedService)
+    }
+
     // Pre-fill name + phone from profile (already in memory — no extra fetch)
     setForm(prev => ({
       ...prev,

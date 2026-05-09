@@ -19,10 +19,15 @@ import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
 
 function App() {
-  const [bookingOpen, setBookingOpen] = useState(false)
+  const [bookingOpen, setBookingOpen]         = useState(false)
+  const [preselectedService, setPreselectedService] = useState<string | undefined>(undefined)
 
   useEffect(() => {
-    const handler = () => setBookingOpen(true)
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ service?: string }>).detail
+      setPreselectedService(detail?.service || undefined)
+      setBookingOpen(true)
+    }
     window.addEventListener('openBooking', handler)
     return () => window.removeEventListener('openBooking', handler)
   }, [])
@@ -52,7 +57,11 @@ function App() {
         </Routes>
         <Footer />
         <WhatsAppFAB />
-        <BookingModal isOpen={bookingOpen} onClose={() => setBookingOpen(false)} />
+        <BookingModal
+          isOpen={bookingOpen}
+          onClose={() => { setBookingOpen(false); setPreselectedService(undefined) }}
+          preselectedService={preselectedService}
+        />
       </div>
     </BrowserRouter>
   )

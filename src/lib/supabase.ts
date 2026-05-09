@@ -9,6 +9,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+export type Car = {
+  id: string
+  user_id: string
+  brand: string
+  model: string
+  year: number | null
+  license_plate: string | null
+  mileage: number | null
+  color: string | null
+  fuel_type: string | null
+  is_primary: boolean
+  photo_url: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type Database = {
   public: {
     Tables: {
