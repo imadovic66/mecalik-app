@@ -57,9 +57,7 @@ function AppShell() {
           <Route path="/fleet-dashboard" element={
             <ProtectedRoute><FleetDashboard /></ProtectedRoute>
           } />
-          <Route path="/mechanic" element={
-            <ProtectedRoute requiredRole="mechanic"><MechanicDashboard /></ProtectedRoute>
-          } />
+          <Route path="/mechanic" element={<MechanicDashboard />} />
           <Route path="/admin" element={
             <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>
           } />

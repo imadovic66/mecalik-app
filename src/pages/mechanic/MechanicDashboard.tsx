@@ -44,7 +44,7 @@ const NEXT_STATUS: Record<string, { label: string; next: string; color: string }
 type TabId = 'jobs' | 'history' | 'gains' | 'profil'
 
 export default function MechanicDashboard() {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, loading: authLoading, signOut } = useAuth()
   const navigate = useNavigate()
 
   const [tab, setTab]               = useState<TabId>('jobs')
@@ -54,6 +54,18 @@ export default function MechanicDashboard() {
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
+  // ── Auth guard ──
+  useEffect(() => {
+    if (authLoading) return
+    if (!user) { navigate('/login'); return }
+    if (profile && profile.role !== 'mechanic' && profile.role !== 'admin') {
+      if (profile.role === 'fleet_manager') navigate('/fleet-dashboard')
+      else navigate('/dashboard')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user, profile])
+
+  // ── Data fetch + realtime ──
   useEffect(() => {
     if (!user || !profile) return
     fetchBookings()
