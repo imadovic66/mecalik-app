@@ -90,13 +90,14 @@ function getInitials(name: string | null | undefined): string {
 }
 
 function StatusPill({ status }: { status: keyof typeof STATUS_CONFIG }) {
+  const { t } = useTranslation()
   const cfg = STATUS_CONFIG[status]
   return (
     <span
       className="px-3 py-1 rounded-full text-xs font-medium"
       style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}
     >
-      {cfg.label}
+      {t(`status.${status}`)}
     </span>
   )
 }
@@ -265,11 +266,11 @@ export default function AdminDashboard() {
   })
 
   const bookingStatusData = [
-    { name: 'En attente',  value: bookings.filter(b => b.status === 'pending').length,     color: '#F0C040' },
-    { name: 'Confirmé',    value: bookings.filter(b => b.status === 'confirmed').length,   color: '#43BCC9' },
-    { name: 'En cours',    value: bookings.filter(b => b.status === 'in_progress').length, color: '#7B6CF6' },
-    { name: 'Terminé',     value: bookings.filter(b => b.status === 'completed').length,   color: '#00DD88' },
-    { name: 'Annulé',      value: bookings.filter(b => b.status === 'cancelled').length,   color: '#FF4444' },
+    { name: t('status.pending'),     value: bookings.filter(b => b.status === 'pending').length,     color: '#F0C040' },
+    { name: t('status.confirmed'),   value: bookings.filter(b => b.status === 'confirmed').length,   color: '#43BCC9' },
+    { name: t('status.in_progress'), value: bookings.filter(b => b.status === 'in_progress').length, color: '#7B6CF6' },
+    { name: t('status.completed'),   value: bookings.filter(b => b.status === 'completed').length,   color: '#00DD88' },
+    { name: t('status.cancelled'),   value: bookings.filter(b => b.status === 'cancelled').length,   color: '#FF4444' },
   ].filter(d => d.value > 0)
 
   const navItems: { tab: Tab; icon: React.ReactNode; label: string }[] = [
@@ -455,7 +456,7 @@ export default function AdminDashboard() {
                 <div className="rounded-2xl p-6"
                   style={{ background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.07)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                   <h3 className="font-heading font-semibold text-base mb-6" style={{ color: 'white' }}>
-                    Revenus (6 derniers mois)
+                    {t('admin.revenueChart')}
                   </h3>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={revenueData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
@@ -476,11 +477,11 @@ export default function AdminDashboard() {
                 <div className="rounded-2xl p-6"
                   style={{ background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.07)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                   <h3 className="font-heading font-semibold text-base mb-6" style={{ color: 'white' }}>
-                    Répartition des réservations
+                    {t('admin.distributionChart')}
                   </h3>
                   {bookingStatusData.length === 0 ? (
                     <div className="text-center py-8 text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                      Aucune réservation pour le moment
+                      {t('admin.noReservationsPeriod')}
                     </div>
                   ) : (
                     <>
@@ -522,14 +523,14 @@ export default function AdminDashboard() {
                 style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-heading font-semibold text-base" style={{ color: 'white' }}>
-                    Activité récente
+                    {t('admin.recentActivity')}
                   </h3>
                   <button
                     onClick={() => setActiveTab('bookings')}
                     className="text-sm transition-colors"
                     style={{ color: '#43BCC9' }}
                   >
-                    Voir tout →
+                    {t('fleet.viewAll')} →
                   </button>
                 </div>
 
@@ -541,7 +542,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : bookings.length === 0 ? (
                   <div className="text-center py-8 text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                    Aucune réservation pour le moment
+                    {t('admin.noReservationsPeriod')}
                   </div>
                 ) : (
                   bookings.slice(0, 5).map(booking => (
@@ -606,7 +607,7 @@ export default function AdminDashboard() {
                         : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }
                       }
                     >
-                      {s === 'all' ? 'Tous' : STATUS_CONFIG[s as keyof typeof STATUS_CONFIG].label}
+                      {s === 'all' ? t('common.all') : t(`status.${s}`)}
                     </button>
                   ))}
                 </div>
@@ -621,7 +622,7 @@ export default function AdminDashboard() {
               ) : filteredBookings.length === 0 ? (
                 <div className="text-center py-20">
                   <Search size={40} style={{ color: 'rgba(255,255,255,0.1)', margin: '0 auto 16px' }} />
-                  <div className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Aucune réservation trouvée</div>
+                  <div className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('admin.noReservations')}</div>
                 </div>
               ) : (
                 <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
@@ -704,11 +705,11 @@ export default function AdminDashboard() {
                           cursor: 'pointer', fontFamily: 'inherit', outline: 'none', width: '100%',
                         }}
                       >
-                        <option value="pending">En attente</option>
-                        <option value="confirmed">Confirmée</option>
-                        <option value="in_progress">En cours</option>
-                        <option value="completed">Terminée</option>
-                        <option value="cancelled">Annulée</option>
+                        <option value="pending">{t('status.pending')}</option>
+                        <option value="confirmed">{t('status.confirmed')}</option>
+                        <option value="in_progress">{t('status.in_progress')}</option>
+                        <option value="completed">{t('status.completed')}</option>
+                        <option value="cancelled">{t('status.cancelled')}</option>
                       </select>
                       {/* Montant — inline editable input */}
                       <input
@@ -1375,7 +1376,7 @@ export default function AdminDashboard() {
                         cursor: updatingStatus ? 'not-allowed' : 'pointer',
                       }}
                     >
-                      {cfg.label}
+                      {t(`status.${status}`)}
                     </button>
                   )
                 })}

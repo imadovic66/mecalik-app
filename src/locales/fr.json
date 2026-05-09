@@ -107,7 +107,13 @@
     "bookingDetails": "Détails de la réservation",
     "rateService": "Noter le service",
     "thankYou": "Merci pour votre confiance !",
-    "demandReceived": "Demande reçue"
+    "demandReceived": "Demande reçue",
+    "cancelledTitle": "Réservation annulée",
+    "cancelledSub": "Cette réservation a été annulée",
+    "requestedOn": "Demandé le",
+    "arriving": "Arrive sous 30 min",
+    "notFound": "Réservation introuvable",
+    "notFoundSub": "Cette réservation n'existe pas ou a été supprimée."
   },
   "customer": {
     "greeting": "Salut",
@@ -247,7 +253,8 @@
       "contact": "Contacter MecaLIK",
       "whatsapp": "WhatsApp · Réponse 5 min",
       "refresh": "Actualiser",
-      "requestIntervention": "Demander une intervention"
+      "requestIntervention": "Demander une intervention",
+      "quickActions": "Actions rapides"
     },
     "vehicles": {
       "vehicle": "Véhicule",
@@ -284,7 +291,8 @@
       "totalPlural": "interventions",
       "filtered": "filtrées de",
       "noInterventions": "Aucune intervention",
-      "exportCsv": "Export CSV"
+      "exportCsv": "Export CSV",
+      "inTotal": "au total"
     },
     "finance": {
       "thisMonth": "Dépenses ce mois",

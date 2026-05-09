@@ -29,11 +29,11 @@ type Booking = {
   completed_at: string | null
 }
 
-const STATUS_STEPS = [
-  { key: 'pending',     label: 'Demande reçue',       icon: Check    },
-  { key: 'confirmed',   label: 'Confirmée',           icon: Calendar },
-  { key: 'in_progress', label: 'Technicien en route', icon: Wrench   },
-  { key: 'completed',   label: 'Service terminé',     icon: Sparkles },
+const STATUS_STEPS_BASE = [
+  { key: 'pending',     labelKey: 'booking.requestReceived',   icon: Check    },
+  { key: 'confirmed',   labelKey: 'booking.requestConfirmed',  icon: Calendar },
+  { key: 'in_progress', labelKey: 'booking.technicianEnRoute', icon: Wrench   },
+  { key: 'completed',   labelKey: 'booking.serviceCompleted',  icon: Sparkles },
 ]
 
 const STATUS_INDEX: Record<string, number> = {
@@ -44,6 +44,7 @@ export default function BookingConfirmation() {
   const { id }     = useParams<{ id: string }>()
   const navigate   = useNavigate()
   const { t }      = useTranslation()
+  const STATUS_STEPS = STATUS_STEPS_BASE.map(s => ({ ...s, label: t(s.labelKey) }))
   const [booking, setBooking]     = useState<Booking | null>(null)
   const [loading, setLoading]     = useState(true)
   const [showRating, setShowRating] = useState(false)
@@ -78,7 +79,7 @@ export default function BookingConfirmation() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>Chargement...</div>
+        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>{t('common.loading')}</div>
       </div>
     )
   }
@@ -90,10 +91,10 @@ export default function BookingConfirmation() {
         <div style={{ textAlign: 'center', maxWidth: '320px' }}>
           <AlertCircle size={32} color="rgba(255,255,255,0.3)" style={{ marginBottom: '14px' }} />
           <div style={{ color: 'white', fontSize: '15px', marginBottom: '6px', fontWeight: 500 }}>
-            Réservation introuvable
+            {t('booking.notFound')}
           </div>
           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '20px' }}>
-            Cette réservation n'existe pas ou a été supprimée.
+            {t('booking.notFoundSub')}
           </div>
           <button onClick={() => navigate('/')} style={{
             background: 'white', color: '#080808', border: 'none',
@@ -170,10 +171,10 @@ export default function BookingConfirmation() {
                 fontFamily: 'Space Grotesk, sans-serif', fontSize: '20px',
                 fontWeight: 600, color: 'white', marginBottom: '6px', letterSpacing: '-0.015em',
               }}>
-                Réservation annulée
+                {t('booking.cancelledTitle')}
               </div>
               <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
-                Cette réservation a été annulée
+                {t('booking.cancelledSub')}
               </div>
             </div>
           ) : (
@@ -207,7 +208,7 @@ export default function BookingConfirmation() {
                     fontSize: '10px', fontWeight: 600, color: '#43BCC9',
                     letterSpacing: '0.1em', textTransform: 'uppercase',
                   }}>
-                    {STATUS_STEPS[currentStep]?.label || 'En cours'}
+                    {STATUS_STEPS[currentStep]?.label || t('status.in_progress')}
                   </span>
                 </div>
 
@@ -290,12 +291,12 @@ export default function BookingConfirmation() {
                           {step.key === 'confirmed' && (
                             booking.confirmed_at
                               ? new Date(booking.confirmed_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-                              : isFuture ? 'En attente' : ''
+                              : isFuture ? t('booking.waiting') : ''
                           )}
-                          {step.key === 'in_progress' && (isCurrent ? 'Arrive sous 30 min' : isPast ? 'Terminé' : 'En attente')}
+                          {step.key === 'in_progress' && (isCurrent ? t('booking.arriving') : isPast ? t('booking.done') : t('booking.waiting'))}
                           {step.key === 'completed' && booking.completed_at &&
                             new Date(booking.completed_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                          {step.key === 'completed' && !booking.completed_at && isFuture && 'En attente'}
+                          {step.key === 'completed' && !booking.completed_at && isFuture && t('booking.waiting')}
                         </div>
                       </div>
                     </div>
@@ -367,19 +368,19 @@ export default function BookingConfirmation() {
               background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)',
               borderRadius: '16px', overflow: 'hidden',
             }}>
-              <DetailRow label="Référence"  value={refLabel} mono />
-              <DetailRow label="Service"    value={booking.service_name} />
-              <DetailRow label="Adresse"    value={booking.address} />
-              {booking.address_notes && <DetailRow label="Précisions" value={booking.address_notes} />}
+              <DetailRow label={t('booking.reference')}   value={refLabel} mono />
+              <DetailRow label={t('booking.service')}     value={booking.service_name} />
+              <DetailRow label={t('booking.address')}     value={booking.address} />
+              {booking.address_notes && <DetailRow label={t('booking.addressNotes')} value={booking.address_notes} />}
               <DetailRow
-                label="Demandé le"
+                label={t('booking.requestedOn')}
                 value={new Date(booking.created_at).toLocaleString('fr-FR', {
                   day: '2-digit', month: 'long', year: 'numeric',
                   hour: '2-digit', minute: '2-digit',
                 })}
               />
               {booking.amount_ttc != null && (
-                <DetailRow label="Montant" value={`${booking.amount_ttc} MAD`} highlight />
+                <DetailRow label={t('common.amount')} value={`${booking.amount_ttc} MAD`} highlight />
               )}
             </div>
           </div>

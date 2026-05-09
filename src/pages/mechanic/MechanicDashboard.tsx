@@ -201,9 +201,9 @@ export default function MechanicDashboard() {
               {/* Stats strip */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '24px' }}>
                 {[
-                  { label: "Aujourd'hui", value: activeJobs.length.toString(),  sub: 'jobs actifs', color: '#43BCC9' },
-                  { label: 'Ce mois',     value: String(completedJobs.filter(b => new Date(b.created_at).getMonth() === now.getMonth()).length), sub: 'terminés', color: '#00DD88' },
-                  { label: 'Note moy.',   value: avgRating || '—',              sub: 'sur 5',       color: '#F0C040' },
+                  { label: i18nT('mechanic.today'),    value: activeJobs.length.toString(),  sub: i18nT('mechanic.activeJobs'), color: '#43BCC9' },
+                  { label: i18nT('mechanic.thisMonth'), value: String(completedJobs.filter(b => new Date(b.created_at).getMonth() === now.getMonth()).length), sub: i18nT('mechanic.completed'), color: '#00DD88' },
+                  { label: i18nT('mechanic.avgRating'), value: avgRating || '—',              sub: i18nT('mechanic.outOf'),      color: '#F0C040' },
                 ].map((s, i) => (
                   <div key={i} style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '12px 14px' }}>
                     <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
@@ -220,14 +220,14 @@ export default function MechanicDashboard() {
               {/* Jobs list */}
               {loading ? (
                 <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '13px', padding: '40px' }}>
-                  Chargement...
+                  {i18nT('common.loading')}
                 </div>
               ) : activeJobs.length === 0 ? (
                 <div style={{ padding: '40px 24px', textAlign: 'center', background: 'rgba(67,188,201,0.03)', border: '1.5px dashed rgba(67,188,201,0.2)', borderRadius: '16px' }}>
                   <Wrench size={28} color="rgba(67,188,201,0.4)" style={{ marginBottom: '12px' }} />
-                  <div style={{ fontSize: '14px', fontWeight: 500, color: 'white', marginBottom: '4px' }}>Aucun job assigné</div>
+                  <div style={{ fontSize: '14px', fontWeight: 500, color: 'white', marginBottom: '4px' }}>{i18nT('mechanic.noJobs')}</div>
                   <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-                    {isOnline ? "En attente d'une nouvelle intervention" : 'Passez en ligne pour recevoir des jobs'}
+                    {isOnline ? i18nT('mechanic.waitingForJob') : i18nT('mechanic.waitingOnline')}
                   </div>
                 </div>
               ) : (
@@ -262,7 +262,7 @@ export default function MechanicDashboard() {
                                   animation: job.status === 'in_progress' ? 'mechPulse 2s infinite' : 'none',
                                 }} />
                                 <span style={{ fontSize: '9px', fontWeight: 600, color: status.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                                  {status.label}
+                                  {i18nT(`status.${job.status}`)}
                                 </span>
                               </div>
 
@@ -286,7 +286,7 @@ export default function MechanicDashboard() {
                                 <div style={{ fontSize: '16px', fontWeight: 700, color: '#00DD88', fontFamily: 'Space Grotesk, sans-serif' }}>
                                   {Math.round(job.amount_ttc * 0.6)} MAD
                                 </div>
-                                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>votre part</div>
+                                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>{i18nT('mechanic.yourPart')}</div>
                               </div>
                             )}
                           </div>
@@ -298,7 +298,7 @@ export default function MechanicDashboard() {
 
                             {job.address_notes && (
                               <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '12px' }}>
-                                <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Précisions</div>
+                                <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{i18nT('mechanic.notes')}</div>
                                 <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>{job.address_notes}</div>
                               </div>
                             )}
@@ -324,7 +324,7 @@ export default function MechanicDashboard() {
                                   textDecoration: 'none',
                                 }}
                               >
-                                <Navigation size={13} /> Itinéraire
+                                <Navigation size={13} /> {i18nT('mechanic.navigate')}
                               </a>
                               <a
                                 href="https://wa.me/212777348065"
@@ -338,7 +338,7 @@ export default function MechanicDashboard() {
                                   textDecoration: 'none',
                                 }}
                               >
-                                <MessageCircle size={13} /> Support
+                                <MessageCircle size={13} /> {i18nT('mechanic.support')}
                               </a>
                             </div>
 
@@ -358,11 +358,11 @@ export default function MechanicDashboard() {
                                   fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em',
                                 }}
                               >
-                                {isUpdating ? 'Mise à jour...' : (
+                                {isUpdating ? i18nT('mechanic.updating') : (
                                   <>
                                     {nextAction.next === 'in_progress' && <Navigation size={16} />}
                                     {nextAction.next === 'completed'   && <CheckCircle size={16} />}
-                                    {nextAction.label}
+                                    {nextAction.next === 'in_progress' ? i18nT('mechanic.startRoute') : i18nT('mechanic.endService')}
                                   </>
                                 )}
                               </button>
@@ -381,12 +381,12 @@ export default function MechanicDashboard() {
           {tab === 'history' && (
             <div>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>
-                {historyJobs.length} intervention{historyJobs.length !== 1 ? 's' : ''} passée{historyJobs.length !== 1 ? 's' : ''}
+                {historyJobs.length} {i18nT('mechanic.pastInterventions')}
               </div>
 
               {historyJobs.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '14px', color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
-                  Aucune intervention passée
+                  {i18nT('mechanic.noPastJobs')}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -399,7 +399,7 @@ export default function MechanicDashboard() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                             <div style={{ fontSize: '14px', fontWeight: 500, color: 'white' }}>{job.service_name}</div>
                             <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, background: status.bg, color: status.color, textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0 }}>
-                              {status.label}
+                              {i18nT(`status.${job.status}`)}
                             </span>
                           </div>
                           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -435,8 +435,8 @@ export default function MechanicDashboard() {
               {/* Summary */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '24px' }}>
                 {[
-                  { label: 'Ce mois',     value: `${Math.round(thisMonthEarnings)} MAD`, sub: `${thisMonthCompleted.length} job${thisMonthCompleted.length !== 1 ? 's' : ''} terminé${thisMonthCompleted.length !== 1 ? 's' : ''}`, color: '#F0C040' },
-                  { label: 'Total cumulé', value: `${Math.round(totalEarnings)} MAD`,    sub: `${completedJobs.length} job${completedJobs.length !== 1 ? 's' : ''} au total`, color: '#00DD88' },
+                  { label: i18nT('mechanic.thisMonthEarnings'), value: `${Math.round(thisMonthEarnings)} MAD`, sub: `${thisMonthCompleted.length} jobs ${i18nT('mechanic.jobsCompleted')}`, color: '#F0C040' },
+                  { label: i18nT('mechanic.totalEarnings'),     value: `${Math.round(totalEarnings)} MAD`,    sub: `${completedJobs.length} jobs ${i18nT('mechanic.jobsTotal')}`,      color: '#00DD88' },
                 ].map((s, i) => (
                   <div key={i} style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '16px' }}>
                     <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>{s.label}</div>
@@ -448,21 +448,20 @@ export default function MechanicDashboard() {
 
               {/* Commission info */}
               <div style={{ padding: '14px 16px', background: 'rgba(67,188,201,0.05)', border: '1px solid rgba(67,188,201,0.15)', borderRadius: '12px', marginBottom: '20px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#43BCC9', marginBottom: '4px' }}>Structure de rémunération</div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#43BCC9', marginBottom: '4px' }}>{i18nT('mechanic.payStructure')}</div>
                 <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
-                  Vous recevez <strong style={{ color: 'white' }}>60%</strong> du montant de chaque intervention terminée.
-                  MecaLIK retient <strong style={{ color: 'white' }}>40%</strong> de commission plateforme.
+                  {i18nT('mechanic.payDetail60')} <strong style={{ color: 'white' }}>60%</strong> {i18nT('mechanic.payDetail40')} <strong style={{ color: 'white' }}>40%</strong> {i18nT('mechanic.payDetailCommission')}
                 </div>
               </div>
 
               {/* Per-job breakdown */}
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
-                Détail par intervention
+                {i18nT('mechanic.perJob')}
               </div>
 
               {completedJobs.length === 0 ? (
                 <div style={{ padding: '32px', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '12px', color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
-                  Aucune intervention terminée
+                  {i18nT('mechanic.noJobsCompleted')}
                 </div>
               ) : (
                 <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
@@ -479,7 +478,7 @@ export default function MechanicDashboard() {
                           +{Math.round((job.amount_ttc || 0) * 0.6)} MAD
                         </div>
                         <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
-                          sur {job.amount_ttc} MAD
+                          {i18nT('mechanic.on')} {job.amount_ttc} MAD
                         </div>
                       </div>
                     </div>
@@ -507,7 +506,7 @@ export default function MechanicDashboard() {
                 <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 600, color: 'white', marginBottom: '2px' }}>
                   {profile?.full_name || firstName}
                 </div>
-                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>Technicien certifié · MecaLIK</div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>{i18nT('mechanic.profile.certifiedTech')}</div>
                 {avgRating && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: '#F0C040', fontWeight: 600 }}>
                     <Star size={14} fill="#F0C040" color="#F0C040" /> {avgRating} / 5
@@ -518,9 +517,9 @@ export default function MechanicDashboard() {
               {/* Stats bar */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
                 {[
-                  { label: 'Jobs total',  value: completedJobs.length.toString(), sub: '',    color: '#43BCC9' },
-                  { label: 'Gains totaux', value: String(Math.round(totalEarnings)), sub: ' MAD', color: '#00DD88' },
-                  { label: 'Note',        value: avgRating || '—',               sub: '',    color: '#F0C040' },
+                  { label: i18nT('mechanic.profile.totalJobs'),     value: completedJobs.length.toString(),    sub: '',    color: '#43BCC9' },
+                  { label: i18nT('mechanic.profile.totalEarnings'), value: String(Math.round(totalEarnings)), sub: ' MAD', color: '#00DD88' },
+                  { label: i18nT('mechanic.profile.rating'),        value: avgRating || '—',                   sub: '',    color: '#F0C040' },
                 ].map((s, i) => (
                   <div key={i} style={{ background: '#0D0D0D', padding: '14px' }}>
                     <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>{s.label}</div>
@@ -534,9 +533,9 @@ export default function MechanicDashboard() {
               {/* Info rows */}
               <div style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', overflow: 'hidden', marginBottom: '16px' }}>
                 {[
-                  { label: 'Email',     value: user?.email || '—'       },
-                  { label: 'Téléphone', value: profile?.phone || '—'    },
-                  { label: 'Rôle',      value: 'Technicien MecaLIK'     },
+                  { label: i18nT('common.email'),           value: user?.email || '—'                      },
+                  { label: i18nT('common.phone'),           value: profile?.phone || '—'                   },
+                  { label: i18nT('mechanic.profile.role'),  value: i18nT('mechanic.profile.techRole')      },
                 ].map((row, i, arr) => (
                   <div key={i} style={{ padding: '14px 16px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
                     <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{row.label}</div>

@@ -290,7 +290,7 @@ export default function FleetDashboard() {
         }}>
           <div>
             <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
-              {NAV.find(n => n.id === tab)?.label}
+              {t(`fleet.tabs.${tab === 'rapports' ? 'reports' : tab}`)}
             </div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
               {company?.name || 'MecaLIK Fleet'} · {vehicles.length} véhicule{vehicles.length !== 1 ? 's' : ''}
@@ -330,11 +330,11 @@ export default function FleetDashboard() {
                 gap: '1px', marginBottom: '24px',
               }}>
                 {[
-                  { label: 'Flotte totale',   value: vehicles.length, color: 'white',   sub: 'véhicules'   },
-                  { label: 'Opérationnels',   value: operational,     color: '#00DD88', sub: 'en service'  },
-                  { label: 'Service requis',  value: serviceDue,      color: '#F0C040', sub: 'à planifier' },
-                  { label: 'En intervention', value: inService,       color: '#43BCC9', sub: 'actuellement'},
-                  { label: 'Alertes',         value: alerts,          color: '#FF4444', sub: 'urgent'      },
+                  { label: t('fleet.stats.total'),       value: vehicles.length, color: 'white',   sub: t('fleet.stats.vehicles')    },
+                  { label: t('fleet.stats.operational'), value: operational,     color: '#00DD88', sub: t('fleet.stats.inOperation')  },
+                  { label: t('fleet.stats.serviceDue'),  value: serviceDue,      color: '#F0C040', sub: t('fleet.stats.toPlan')       },
+                  { label: t('fleet.stats.inService'),   value: inService,       color: '#43BCC9', sub: t('fleet.stats.currently')    },
+                  { label: t('fleet.stats.alerts'),      value: alerts,          color: '#FF4444', sub: t('fleet.stats.urgent')       },
                 ].map((s, i) => (
                   <div key={i} style={{ background: '#0A0A0A', padding: '16px 18px' }}>
                     <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
@@ -354,14 +354,14 @@ export default function FleetDashboard() {
                 {/* Quick actions */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
-                    Actions rapides
+                    {t('fleet.actions.quickActions')}
                   </div>
 
                   {[
-                    { label: 'Nouvelle intervention', sub: 'Réserver un service',       color: '#F0C040',              bg: 'rgba(240,192,64,0.06)',   border: 'rgba(240,192,64,0.2)',  Icon: Plus,          onClick: () => window.dispatchEvent(new CustomEvent('openBooking')) },
-                    { label: 'Voir les véhicules',    sub: `${vehicles.length} enregistrés`, color: 'white',           bg: 'rgba(255,255,255,0.03)',  border: 'rgba(255,255,255,0.07)', Icon: Car,           onClick: () => setTab('vehicles') },
-                    { label: 'Rapport du mois',       sub: `${monthSpend} MAD dépensés`, color: 'rgba(255,255,255,0.7)', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', Icon: FileText,      onClick: () => setTab('rapports') },
-                    { label: 'Contacter MecaLIK',     sub: 'WhatsApp · Réponse 5 min', color: '#00DD88',              bg: 'rgba(0,221,136,0.05)',    border: 'rgba(0,221,136,0.15)',  Icon: MessageCircle, onClick: () => window.open('https://wa.me/212777348065', '_blank') },
+                    { label: t('fleet.actions.newIntervention'), sub: t('fleet.actions.bookService'),                   color: '#F0C040',              bg: 'rgba(240,192,64,0.06)',   border: 'rgba(240,192,64,0.2)',  Icon: Plus,          onClick: () => window.dispatchEvent(new CustomEvent('openBooking')) },
+                    { label: t('fleet.actions.viewVehicles'),    sub: `${vehicles.length} enregistrés`,                color: 'white',               bg: 'rgba(255,255,255,0.03)',  border: 'rgba(255,255,255,0.07)', Icon: Car,           onClick: () => setTab('vehicles') },
+                    { label: t('fleet.actions.monthReport'),     sub: `${monthSpend} MAD dépensés`,                   color: 'rgba(255,255,255,0.7)', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', Icon: FileText,      onClick: () => setTab('rapports') },
+                    { label: t('fleet.actions.contact'),         sub: t('fleet.actions.whatsapp'),                    color: '#00DD88',              bg: 'rgba(0,221,136,0.05)',    border: 'rgba(0,221,136,0.15)',  Icon: MessageCircle, onClick: () => window.open('https://wa.me/212777348065', '_blank') },
                   ].map((a, i) => (
                     <button key={i} onClick={a.onClick} style={{
                       width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
@@ -381,7 +381,7 @@ export default function FleetDashboard() {
                   {(company?.contact_phone || company?.contact_name) && (
                     <div style={{ marginTop: '8px', padding: '12px 14px', background: '#0A0A0A', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
                       <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-                        Contact entreprise
+                        {t('fleet.contact.company')}
                       </div>
                       {company?.contact_name  && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '3px' }}>{company.contact_name}</div>}
                       {company?.contact_phone && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{company.contact_phone}</div>}
@@ -393,13 +393,13 @@ export default function FleetDashboard() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                     <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                      Interventions récentes
+                      {t('fleet.recentInterventions')}
                     </div>
                     <button onClick={() => setTab('interventions')} style={{
                       background: 'transparent', border: 'none', cursor: 'pointer',
                       color: '#43BCC9', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px',
                     }}>
-                      Voir tout <ArrowUpRight size={11} />
+                      {t('fleet.viewAll')} <ArrowUpRight size={11} />
                     </button>
                   </div>
                   <BookingsTable bookings={bookings.slice(0, 8)} onRowClick={id => navigate(`/booking/${id}`)} compact />
@@ -418,7 +418,7 @@ export default function FleetDashboard() {
                   <input
                     value={vehicleSearch}
                     onChange={e => setVehicleSearch(e.target.value)}
-                    placeholder="Rechercher par véhicule, plaque, conducteur..."
+                    placeholder={t('fleet.vehicles.search')}
                     style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: '12px', flex: 1, fontFamily: 'inherit' }}
                   />
                 </div>
@@ -429,20 +429,20 @@ export default function FleetDashboard() {
                       background: vehicleFilter === f ? 'rgba(240,192,64,0.12)' : 'rgba(255,255,255,0.04)',
                       color: vehicleFilter === f ? '#F0C040' : 'rgba(255,255,255,0.45)',
                     }}>
-                      {f === 'all' ? 'Tous' : VEHICLE_STATUS[f]?.label}
+                      {f === 'all' ? t('fleet.vehicles.filters.all') : t(`fleet.vehicles.filters.${f === 'service_due' ? 'serviceDue' : f === 'in_service' ? 'inService' : f}`)}
                     </button>
                   ))}
                 </div>
                 <button
                   onClick={() => exportCSV(filteredVehicles as unknown as Record<string, unknown>[], 'mecalik-flotte.csv')}
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
-                  <Download size={11} /> Export CSV
+                  <Download size={11} /> {t('fleet.vehicles.exportCsv')}
                 </button>
               </div>
 
               <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 110px 100px 140px 130px 100px 90px', padding: '9px 18px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  {['Véhicule', 'Plaque', 'Type', 'Conducteur', 'Kilométrage', 'Statut', 'Action'].map(h => (
+                  {[t('fleet.vehicles.vehicle'), t('fleet.vehicles.plate'), t('fleet.vehicles.type'), t('fleet.vehicles.driver'), t('fleet.vehicles.mileage'), t('fleet.vehicles.status'), t('fleet.vehicles.action')].map(h => (
                     <div key={h} style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>{h}</div>
                   ))}
                 </div>
@@ -450,9 +450,9 @@ export default function FleetDashboard() {
                 {filteredVehicles.length === 0 ? (
                   <div style={{ padding: '40px', textAlign: 'center', background: '#0A0A0A' }}>
                     <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
-                      {vehicleSearch || vehicleFilter !== 'all' ? 'Aucun résultat' : 'Aucun véhicule enregistré'}
+                      {vehicleSearch || vehicleFilter !== 'all' ? t('fleet.vehicles.noResults') : t('fleet.vehicles.noVehicles')}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>Contactez MecaLIK pour enregistrer votre flotte</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>{t('fleet.vehicles.contactToRegister')}</div>
                   </div>
                 ) : filteredVehicles.map((v, i) => {
                   const s = VEHICLE_STATUS[v.status] || VEHICLE_STATUS.operational
@@ -491,17 +491,17 @@ export default function FleetDashboard() {
                         </div>
                         {lastBooking && (
                           <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
-                            Dernier: {new Date(lastBooking.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                            {t('fleet.reports.lastService')}: {new Date(lastBooking.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                           </div>
                         )}
                       </div>
                       <span style={{ padding: '3px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 500, background: s.bg, color: s.color }}>
-                        {s.label}
+                        {t(`status.${v.status}`)}
                       </span>
                       <button
                         onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
                         style={{ padding: '5px 10px', background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.2)', color: '#F0C040', borderRadius: '5px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>
-                        Réserver
+                        {t('fleet.vehicles.book')}
                       </button>
                     </div>
                   )
@@ -519,7 +519,7 @@ export default function FleetDashboard() {
                   <input
                     value={bookingSearch}
                     onChange={e => setBookingSearch(e.target.value)}
-                    placeholder="Rechercher par référence, service, adresse..."
+                    placeholder={t('fleet.interventions.search')}
                     style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: '12px', flex: 1, fontFamily: 'inherit' }}
                   />
                 </div>
@@ -530,20 +530,20 @@ export default function FleetDashboard() {
                       background: bookingFilter === f ? 'rgba(240,192,64,0.12)' : 'rgba(255,255,255,0.04)',
                       color: bookingFilter === f ? '#F0C040' : 'rgba(255,255,255,0.45)',
                     }}>
-                      {f === 'all' ? 'Tous' : BOOKING_STATUS[f]?.label}
+                      {f === 'all' ? t('common.all') : t(`status.${f}`)}
                     </button>
                   ))}
                 </div>
                 <button
                   onClick={() => exportCSV(filteredBookings as unknown as Record<string, unknown>[], 'mecalik-interventions.csv')}
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
-                  <Download size={11} /> Export CSV
+                  <Download size={11} /> {t('fleet.interventions.exportCsv')}
                 </button>
               </div>
 
               <div style={{ marginBottom: '10px', fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
-                {filteredBookings.length} intervention{filteredBookings.length !== 1 ? 's' : ''}
-                {bookingFilter !== 'all' || bookingSearch ? ` · filtrées de ${bookings.length}` : ' au total'}
+                {filteredBookings.length} {filteredBookings.length !== 1 ? t('fleet.interventions.totalPlural') : t('fleet.interventions.total')}
+                {bookingFilter !== 'all' || bookingSearch ? ` · ${t('fleet.interventions.filtered')} ${bookings.length}` : ` ${t('fleet.interventions.inTotal')}`}
               </div>
 
               <BookingsTable bookings={filteredBookings} onRowClick={id => navigate(`/booking/${id}`)} />
@@ -560,9 +560,9 @@ export default function FleetDashboard() {
                 overflow: 'hidden', marginBottom: '24px',
               }}>
                 {[
-                  { label: 'Dépenses ce mois',     value: `${monthSpend} MAD`, color: '#F0C040', sub: `${thisMonth.filter(b => b.status === 'completed').length} intervention${thisMonth.filter(b => b.status === 'completed').length !== 1 ? 's' : ''} terminée${thisMonth.filter(b => b.status === 'completed').length !== 1 ? 's' : ''}` },
-                  { label: 'Total cumulé',          value: `${totalSpend} MAD`, color: '#00DD88', sub: 'depuis le début' },
-                  { label: 'Coût moyen / véhicule', value: vehicles.length > 0 ? `${Math.round(totalSpend / vehicles.length)} MAD` : '0 MAD', color: '#43BCC9', sub: 'sur toute la période' },
+                  { label: t('fleet.finance.thisMonth'),     value: `${monthSpend} MAD`, color: '#F0C040', sub: `${thisMonth.filter(b => b.status === 'completed').length} ${t('fleet.finance.interventionsCompleted')}` },
+                  { label: t('fleet.finance.total'),          value: `${totalSpend} MAD`, color: '#00DD88', sub: t('fleet.finance.sinceStart') },
+                  { label: t('fleet.finance.avgPerVehicle'), value: vehicles.length > 0 ? `${Math.round(totalSpend / vehicles.length)} MAD` : '0 MAD', color: '#43BCC9', sub: t('fleet.finance.overPeriod') },
                 ].map((s, i) => (
                   <div key={i} style={{ background: '#0A0A0A', padding: '18px 22px' }}>
                     <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{s.label}</div>
@@ -574,25 +574,25 @@ export default function FleetDashboard() {
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Historique des paiements
+                  {t('fleet.finance.paymentHistory')}
                 </div>
                 <button
                   onClick={() => exportCSV(bookings.filter(b => b.status === 'completed') as unknown as Record<string, unknown>[], 'mecalik-factures.csv')}
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '6px', background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.18)', color: '#F0C040', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
-                  <Download size={11} /> Exporter
+                  <Download size={11} /> {t('fleet.finance.export')}
                 </button>
               </div>
 
               <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 100px 100px', padding: '9px 18px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  {['Référence', 'Service', 'Date', 'Montant', 'Statut'].map(h => (
+                  {[t('fleet.interventions.reference'), t('fleet.interventions.service'), t('fleet.interventions.date'), t('fleet.interventions.amount'), t('fleet.interventions.status')].map(h => (
                     <div key={h} style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>{h}</div>
                   ))}
                 </div>
 
                 {bookings.filter(b => b.amount_ttc).length === 0 ? (
                   <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px', background: '#0A0A0A' }}>
-                    Aucune facture disponible
+                    {t('fleet.finance.noInvoices')}
                   </div>
                 ) : bookings.filter(b => b.amount_ttc).slice(0, 30).map((b, i, arr) => {
                   const s = BOOKING_STATUS[b.status] || BOOKING_STATUS.completed
@@ -613,7 +613,7 @@ export default function FleetDashboard() {
                         {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
                       </div>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: '#00DD88' }}>{b.amount_ttc} MAD</div>
-                      <span style={{ padding: '3px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 500, background: s.bg, color: s.color }}>{s.label}</span>
+                      <span style={{ padding: '3px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 500, background: s.bg, color: s.color }}>{t(`status.${b.status}`)}</span>
                     </div>
                   )
                 })}
@@ -636,7 +636,7 @@ export default function FleetDashboard() {
                     TotalMAD:      bookings.filter(b => b.fleet_vehicle_id === v.id && b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0),
                   })), 'mecalik-rapport-flotte.csv')}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '7px', background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.2)', color: '#F0C040', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
-                  <Download size={12} /> Rapport flotte CSV
+                  <Download size={12} /> {t('fleet.reports.fleetReport')}
                 </button>
                 <button
                   onClick={() => exportCSV(bookings.map(b => ({
@@ -648,7 +648,7 @@ export default function FleetDashboard() {
                     Date:       new Date(b.created_at).toLocaleDateString('fr-FR'),
                   })), 'mecalik-rapport-interventions.csv')}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '7px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>
-                  <Download size={12} /> Interventions CSV
+                  <Download size={12} /> {t('fleet.reports.interventionsReport')}
                 </button>
               </div>
 
@@ -656,7 +656,7 @@ export default function FleetDashboard() {
               {chartData.length > 0 && (
                 <div style={{ background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.06)', borderTop: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '18px 22px', marginBottom: '20px' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'white', marginBottom: '14px', letterSpacing: '-0.01em' }}>
-                    Dépenses par type de service (MAD)
+                    {t('fleet.reports.spendByService')}
                   </div>
                   <ResponsiveContainer width="100%" height={180}>
                     <BarChart data={chartData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
@@ -676,16 +676,16 @@ export default function FleetDashboard() {
 
               {/* Per-vehicle consumption table */}
               <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
-                Consommation par véhicule
+                {t('fleet.reports.consumptionByVehicle')}
               </div>
               <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 110px 80px 110px 140px', padding: '9px 18px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  {['Véhicule', 'Plaque', 'Interventions', 'Total MAD', 'Dernier service'].map(h => (
+                  {[t('fleet.vehicles.vehicle'), t('fleet.vehicles.plate'), t('fleet.reports.interventionsCol'), t('fleet.reports.totalMad'), t('fleet.reports.lastService')].map(h => (
                     <div key={h} style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>{h}</div>
                   ))}
                 </div>
                 {vehicles.length === 0 ? (
-                  <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px', background: '#0A0A0A' }}>Aucun véhicule</div>
+                  <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px', background: '#0A0A0A' }}>{t('fleet.reports.noVehicles')}</div>
                 ) : vehicles.map((v, i) => {
                   const vBk    = bookings.filter(b => b.fleet_vehicle_id === v.id)
                   const vTotal = vBk.filter(b => b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0)
@@ -729,10 +729,12 @@ function BookingsTable({
   onRowClick: (id: string) => void
   compact?: boolean
 }) {
+  const { t } = useTranslation()
+
   if (bookings.length === 0) {
     return (
       <div style={{ padding: compact ? '24px' : '36px', textAlign: 'center', background: '#0A0A0A', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>
-        Aucune intervention
+        {t('fleet.interventions.noInterventions')}
       </div>
     )
   }
@@ -743,8 +745,8 @@ function BookingsTable({
     <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
       <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '9px 18px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         {(compact
-          ? ['Référence', 'Service', 'Statut', 'Date']
-          : ['Référence', 'Service', 'Adresse', 'Technicien', 'Montant', 'Statut']
+          ? [t('fleet.interventions.reference'), t('fleet.interventions.service'), t('fleet.interventions.status'), t('fleet.interventions.date')]
+          : [t('fleet.interventions.reference'), t('fleet.interventions.service'), t('fleet.interventions.address'), t('fleet.interventions.technician'), t('fleet.interventions.amount'), t('fleet.interventions.status')]
         ).map(h => (
           <div key={h} style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>{h}</div>
         ))}
@@ -785,7 +787,7 @@ function BookingsTable({
               </div>
             )}
             <span style={{ padding: '3px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 500, background: s.bg, color: s.color }}>
-              {s.label}
+              {t(`status.${b.status}`)}
             </span>
             {compact && (
               <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
