@@ -357,45 +357,62 @@ export default function CustomerDashboard() {
                     borderRadius: '16px', padding: '16px',
                     position: 'relative', overflow: 'hidden',
                   }}>
-                    {/* Hatchback silhouette */}
-                    <svg width="100%" height="56" viewBox="0 0 240 80" style={{ marginBottom: '8px', opacity: 0.7 }}>
-                      <defs>
-                        <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%"   stopColor="rgba(67,188,201,0.28)" />
-                          <stop offset="100%" stopColor="rgba(67,188,201,0.08)" />
-                        </linearGradient>
-                      </defs>
-                      {/* Shadow */}
-                      <ellipse cx="120" cy="74" rx="88" ry="5" fill="rgba(0,0,0,0.35)" />
-                      {/* Body */}
-                      <path
-                        d="M30 56 L30 50 L48 50 L72 30 L158 30 L178 50 L210 50 L210 56 Q210 62 204 62 L36 62 Q30 62 30 56 Z"
-                        fill="url(#bodyGradient)" stroke="rgba(67,188,201,0.5)" strokeWidth="1.2"
-                      />
-                      {/* Greenhouse / cabin */}
-                      <path
-                        d="M76 30 L90 16 L170 16 L178 30 Z"
-                        fill="rgba(67,188,201,0.12)" stroke="rgba(67,188,201,0.35)" strokeWidth="1"
-                      />
-                      {/* Windows */}
-                      <rect x="93"  y="19" width="26" height="9" rx="2" fill="rgba(67,188,201,0.18)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6" />
-                      <rect x="124" y="19" width="26" height="9" rx="2" fill="rgba(67,188,201,0.18)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6" />
-                      <rect x="155" y="19" width="17" height="9" rx="2" fill="rgba(67,188,201,0.12)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6" />
-                      {/* Door line */}
-                      <line x1="122" y1="30" x2="122" y2="62" stroke="rgba(255,255,255,0.08)" strokeWidth="0.8" />
-                      {/* Headlight */}
-                      <rect x="198" y="49" width="10" height="5" rx="2" fill="rgba(255,255,200,0.5)" />
-                      {/* Taillight */}
-                      <rect x="33"  y="49" width="10" height="5" rx="2" fill="rgba(255,80,80,0.55)" />
-                      {/* Front wheel */}
-                      <circle cx="180" cy="62" r="9" fill="#0E0E0E" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" />
-                      <circle cx="180" cy="62" r="5" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-                      <circle cx="180" cy="62" r="1.5" fill="rgba(67,188,201,0.5)" />
-                      {/* Rear wheel */}
-                      <circle cx="60"  cy="62" r="9" fill="#0E0E0E" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" />
-                      <circle cx="60"  cy="62" r="5" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-                      <circle cx="60"  cy="62" r="1.5" fill="rgba(67,188,201,0.5)" />
-                    </svg>
+                    <div style={{
+                      width: '100%', height: '90px',
+                      background: 'linear-gradient(135deg, rgba(67,188,201,0.12) 0%, rgba(67,188,201,0.04) 100%)',
+                      border: '1px solid rgba(67,188,201,0.15)',
+                      borderRadius: '12px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginBottom: '12px',
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      {/* Dot grid */}
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(67,188,201,0.08) 1px, transparent 0)',
+                        backgroundSize: '12px 12px',
+                        pointerEvents: 'none',
+                      }} />
+                      <svg width="140" height="60" viewBox="0 0 240 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position: 'relative', zIndex: 1 }}>
+                        {/* Body */}
+                        <path d="M30 65 L30 55 Q30 50 35 50 L55 50 L70 30 Q73 25 80 25 L160 25 Q167 25 173 30 L195 50 L215 50 Q220 50 220 55 L220 65 Q220 70 215 70 L205 70 Q205 80 195 80 Q185 80 185 70 L65 70 Q65 80 55 80 Q45 80 45 70 L35 70 Q30 70 30 65 Z"
+                              fill="#43BCC9" opacity="0.85"/>
+                        {/* Body highlight */}
+                        <path d="M70 30 Q73 25 80 25 L160 25 Q167 25 173 30 L195 50 L70 50 L70 30 Z"
+                              fill="rgba(255,255,255,0.15)"/>
+                        {/* Front window */}
+                        <path d="M78 30 L115 30 L115 48 L78 48 Z"
+                              fill="rgba(8,8,8,0.5)" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
+                        {/* Rear window */}
+                        <path d="M125 30 L160 30 L168 48 L125 48 Z"
+                              fill="rgba(8,8,8,0.5)" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
+                        {/* Door line */}
+                        <line x1="120" y1="50" x2="120" y2="70" stroke="rgba(8,8,8,0.4)" strokeWidth="1.5"/>
+                        {/* Door handles */}
+                        <rect x="100" y="58" width="10" height="2" rx="1" fill="rgba(8,8,8,0.6)"/>
+                        <rect x="135" y="58" width="10" height="2" rx="1" fill="rgba(8,8,8,0.6)"/>
+                        {/* Headlight */}
+                        <ellipse cx="208" cy="58" rx="5" ry="3" fill="#FEF3C7"/>
+                        <ellipse cx="208" cy="58" rx="3" ry="1.5" fill="#FFFFFF"/>
+                        {/* Taillight */}
+                        <rect x="35" y="55" width="6" height="6" rx="1" fill="#FF4444"/>
+                        {/* Front wheel */}
+                        <circle cx="195" cy="78" r="12" fill="#1A1A1A"/>
+                        <circle cx="195" cy="78" r="9" fill="#2A2A2A"/>
+                        <circle cx="195" cy="78" r="5" fill="#43BCC9" opacity="0.9"/>
+                        <circle cx="195" cy="78" r="2" fill="#1A1A1A"/>
+                        {/* Rear wheel */}
+                        <circle cx="55" cy="78" r="12" fill="#1A1A1A"/>
+                        <circle cx="55" cy="78" r="9" fill="#2A2A2A"/>
+                        <circle cx="55" cy="78" r="5" fill="#43BCC9" opacity="0.9"/>
+                        <circle cx="55" cy="78" r="2" fill="#1A1A1A"/>
+                        {/* Bumper details */}
+                        <rect x="200" y="65" width="15" height="1" fill="rgba(8,8,8,0.4)"/>
+                        <rect x="32" y="65" width="15" height="1" fill="rgba(8,8,8,0.4)"/>
+                        {/* Ground shadow */}
+                        <ellipse cx="125" cy="92" rx="100" ry="3" fill="rgba(67,188,201,0.15)"/>
+                      </svg>
+                    </div>
                     <div style={{ fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '2px' }}>
                       {car.brand} {car.model}
                     </div>
