@@ -3,14 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 import {
-  RefreshCw, Plus, Wrench,
-  LayoutDashboard, Car, Calendar, FileText,
-  LogOut, Download,
+  RefreshCw, Plus, Search, Download,
+  LayoutDashboard, Car, Wrench, CreditCard, FileText,
+  LogOut, ArrowUpRight, MessageCircle, ChevronRight,
 } from 'lucide-react'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell,
-} from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 type FleetVehicle = {
   id: string
@@ -34,7 +31,9 @@ type Booking = {
   address: string
   status: string
   amount_ttc: number | null
+  technician_name: string | null
   created_at: string
+  completed_at: string | null
   fleet_vehicle_id: string | null
 }
 
@@ -42,183 +41,198 @@ type Company = {
   id: string
   name: string
   contact_name: string | null
+  contact_email: string | null
+  contact_phone: string | null
   plan: string | null
   vehicle_count: number | null
+  is_active: boolean
 }
 
-type TabId = 'overview' | 'fleet' | 'planning' | 'interventions' | 'rapports'
+type TabId = 'overview' | 'vehicles' | 'interventions' | 'finance' | 'rapports'
 
 const VEHICLE_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  operational: { label: 'Opérationnel',  color: '#00DD88', bg: 'rgba(0,221,136,0.08)'   },
-  service_due:  { label: 'Service requis', color: '#F0C040', bg: 'rgba(240,192,64,0.08)'  },
-  in_service:   { label: 'En service',    color: '#43BCC9', bg: 'rgba(67,188,201,0.08)'  },
-  alert:        { label: 'Alerte',        color: '#FF4444', bg: 'rgba(255,68,68,0.08)'   },
+  operational: { label: 'Opérationnel',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)'  },
+  service_due:  { label: 'Service requis', color: '#F0C040', bg: 'rgba(240,192,64,0.08)' },
+  in_service:   { label: 'En intervention',color: '#43BCC9', bg: 'rgba(67,188,201,0.08)' },
+  alert:        { label: 'Alerte',         color: '#FF4444', bg: 'rgba(255,68,68,0.08)'  },
+  inactive:     { label: 'Inactif',        color: 'rgba(255,255,255,0.35)', bg: 'rgba(255,255,255,0.04)' },
 }
 
-const BOOKING_STATUS: Record<string, { label: string; color: string }> = {
-  pending:     { label: 'En attente', color: '#F0C040' },
-  confirmed:   { label: 'Confirmée',  color: '#43BCC9' },
-  in_progress: { label: 'En cours',   color: '#43BCC9' },
-  completed:   { label: 'Terminée',   color: '#00DD88' },
-  cancelled:   { label: 'Annulée',    color: '#FF4444' },
+const BOOKING_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  pending:     { label: 'En attente', color: '#F0C040', bg: 'rgba(240,192,64,0.08)' },
+  confirmed:   { label: 'Confirmée',  color: '#43BCC9', bg: 'rgba(67,188,201,0.08)' },
+  in_progress: { label: 'En cours',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)' },
+  completed:   { label: 'Terminée',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)'  },
+  cancelled:   { label: 'Annulée',    color: '#FF4444', bg: 'rgba(255,68,68,0.08)'  },
 }
+
+const NAV: { id: TabId; label: string; Icon: React.ElementType }[] = [
+  { id: 'overview',      label: "Vue d'ensemble", Icon: LayoutDashboard },
+  { id: 'vehicles',      label: 'Véhicules',       Icon: Car             },
+  { id: 'interventions', label: 'Interventions',   Icon: Wrench          },
+  { id: 'finance',       label: 'Finance',          Icon: CreditCard      },
+  { id: 'rapports',      label: 'Rapports',         Icon: FileText        },
+]
 
 export default function FleetDashboard() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
 
-  const [tab, setTab]           = useState<TabId>('overview')
-  const [vehicles, setVehicles] = useState<FleetVehicle[]>([])
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [company, setCompany]   = useState<Company | null>(null)
-  const [loading, setLoading]   = useState(true)
+  const [tab, setTab]                   = useState<TabId>('overview')
+  const [vehicles, setVehicles]         = useState<FleetVehicle[]>([])
+  const [bookings, setBookings]         = useState<Booking[]>([])
+  const [company, setCompany]           = useState<Company | null>(null)
+  const [loading, setLoading]           = useState(true)
+  const [vehicleSearch, setVehicleSearch] = useState('')
+  const [vehicleFilter, setVehicleFilter] = useState('all')
+  const [bookingSearch, setBookingSearch] = useState('')
+  const [bookingFilter, setBookingFilter] = useState('all')
 
   void loading
 
   useEffect(() => {
-    if (!user) return
-    fetchAll()
+    if (user) fetchAll()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   const fetchAll = async () => {
     if (!user) return
     setLoading(true)
-    try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single()
+    const { data: prof } = await supabase
+      .from('profiles').select('company_id').eq('id', user.id).single()
 
-      if (profileData?.company_id) {
-        const [companyRes, vehiclesRes, bookingsRes] = await Promise.all([
-          supabase.from('companies').select('*').eq('id', profileData.company_id).single(),
-          supabase.from('fleet_vehicles').select('*').eq('company_id', profileData.company_id).order('created_at', { ascending: false }),
-          supabase.from('bookings').select('*').eq('company_id', profileData.company_id).order('created_at', { ascending: false }).limit(100),
-        ])
-        setCompany(companyRes.data)
-        setVehicles(vehiclesRes.data || [])
-        setBookings(bookingsRes.data || [])
-      }
-    } catch (_) {}
+    if (prof?.company_id) {
+      const [co, veh, bk] = await Promise.all([
+        supabase.from('companies').select('*').eq('id', prof.company_id).single(),
+        supabase.from('fleet_vehicles').select('*').eq('company_id', prof.company_id).order('created_at', { ascending: false }),
+        supabase.from('bookings').select('*').eq('company_id', prof.company_id).order('created_at', { ascending: false }),
+      ])
+      setCompany(co.data)
+      setVehicles(veh.data || [])
+      setBookings(bk.data || [])
+    }
     setLoading(false)
-  }
-
-  const handleSignOut = async () => {
-    await signOut()
-    navigate('/')
   }
 
   // ── Stats ──
   const operational = vehicles.filter(v => v.status === 'operational').length
   const serviceDue  = vehicles.filter(v => v.status === 'service_due').length
-  const inService   = vehicles.filter(v => v.status === 'in_service').length
   const alerts      = vehicles.filter(v => v.status === 'alert').length
-  const totalSpent  = bookings.filter(b => b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0)
-
-  // ── Chart data ──
-  const serviceTypeCounts: Record<string, number> = {}
-  bookings.forEach(b => {
-    const key = b.service_name.split(' ')[0]
-    serviceTypeCounts[key] = (serviceTypeCounts[key] || 0) + 1
-  })
-  const barData = Object.entries(serviceTypeCounts)
-    .map(([name, count]) => ({ name, count }))
-    .slice(0, 6)
-
-  const pieData = [
-    { name: 'Opérationnel',  value: operational, color: '#00DD88' },
-    { name: 'Service requis', value: serviceDue,  color: '#F0C040' },
-    { name: 'En service',    value: inService,   color: '#43BCC9' },
-    { name: 'Alerte',        value: alerts,      color: '#FF4444' },
-  ].filter(d => d.value > 0)
-
-  // Ensure pie has at least one segment
-  const pieDataSafe = pieData.length > 0 ? pieData : [{ name: 'Aucun', value: 1, color: 'rgba(255,255,255,0.1)' }]
-
-  const NAV_ITEMS: { id: TabId; label: string; Icon: React.ElementType }[] = [
-    { id: 'overview',      label: "Vue d'ensemble", Icon: LayoutDashboard },
-    { id: 'fleet',         label: 'Ma flotte',       Icon: Car             },
-    { id: 'planning',      label: 'Planning',         Icon: Calendar        },
-    { id: 'interventions', label: 'Interventions',    Icon: Wrench          },
-    { id: 'rapports',      label: 'Rapports',         Icon: FileText        },
-  ]
+  const inService   = vehicles.filter(v => v.status === 'in_service').length
 
   const now = new Date()
-  const thisMonthBookings    = bookings.filter(b => new Date(b.created_at).getMonth() === now.getMonth() && new Date(b.created_at).getFullYear() === now.getFullYear())
-  const thisMonthSpent       = thisMonthBookings.filter(b => b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0)
-  const avgCostPerVehicle    = vehicles.length > 0 ? Math.round(totalSpent / vehicles.length) : 0
+  const thisMonth = bookings.filter(b => {
+    const d = new Date(b.created_at)
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+  })
+  const monthSpend = thisMonth.filter(b => b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0)
+  const totalSpend = bookings.filter(b => b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0)
+
+  // ── Filtered lists ──
+  const filteredVehicles = vehicles.filter(v => {
+    const q = `${v.brand} ${v.model} ${v.plate} ${v.driver_name || ''}`.toLowerCase()
+    return (vehicleSearch === '' || q.includes(vehicleSearch.toLowerCase())) &&
+      (vehicleFilter === 'all' || v.status === vehicleFilter)
+  })
+
+  const filteredBookings = bookings.filter(b => {
+    const q = `${b.reference || ''} ${b.service_name} ${b.address}`.toLowerCase()
+    return (bookingSearch === '' || q.includes(bookingSearch.toLowerCase())) &&
+      (bookingFilter === 'all' || b.status === bookingFilter)
+  })
+
+  // ── Chart data ──
+  const spendByService: Record<string, number> = {}
+  bookings.filter(b => b.status === 'completed' && b.amount_ttc).forEach(b => {
+    const key = b.service_name.split(' ')[0]
+    spendByService[key] = (spendByService[key] || 0) + (b.amount_ttc || 0)
+  })
+  const chartData = Object.entries(spendByService).map(([name, total]) => ({ name, total }))
+
+  // ── CSV export ──
+  const exportCSV = (data: Record<string, unknown>[], filename: string) => {
+    if (data.length === 0) return
+    const keys = Object.keys(data[0])
+    const csv = [
+      keys.join(','),
+      ...data.map(row => keys.map(k => `"${row[k] ?? ''}"`).join(',')),
+    ].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div style={{
       display: 'flex', minHeight: '100vh',
-      background: '#080808',
-      fontFamily: 'Outfit, system-ui, sans-serif',
+      background: '#080808', fontFamily: 'Outfit, system-ui, sans-serif', fontSize: '13px',
     }}>
 
       {/* ═══ SIDEBAR ═══ */}
       <aside style={{
         width: '220px', flexShrink: 0,
-        background: '#050505',
-        borderRight: '1px solid rgba(255,255,255,0.05)',
+        background: '#050505', borderRight: '1px solid rgba(255,255,255,0.05)',
         display: 'flex', flexDirection: 'column',
-        position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
+        height: '100vh', position: 'sticky', top: 0, overflowY: 'auto',
       }}>
 
-        {/* Logo */}
-        <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{
-            fontSize: '15px', fontWeight: 700, color: 'white',
-            fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em', marginBottom: '2px',
-          }}>
+        {/* Brand */}
+        <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '15px', fontWeight: 700, color: 'white', letterSpacing: '-0.02em' }}>
             Meca<span style={{ color: '#43BCC9' }}>LIK</span>
           </div>
-          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Fleet Management
+          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: '1px' }}>
+            Fleet Portal
           </div>
         </div>
 
-        {/* Company badge */}
-        <div style={{ padding: '14px 18px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-          <div style={{
-            fontSize: '12px', fontWeight: 600, color: 'white',
-            marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
+        {/* Company */}
+        <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'white', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {company?.name || 'Ma flotte'}
           </div>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center',
-            padding: '2px 8px', borderRadius: '4px',
-            background: 'rgba(240,192,64,0.1)', border: '1px solid rgba(240,192,64,0.2)',
-            fontSize: '9px', fontWeight: 700, color: '#F0C040', letterSpacing: '0.08em',
-          }}>
-            {company?.plan?.toUpperCase() || 'FLOTTE'}
-          </span>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{
+              padding: '1px 7px', borderRadius: '3px',
+              background: 'rgba(240,192,64,0.1)', border: '1px solid rgba(240,192,64,0.2)',
+              fontSize: '9px', fontWeight: 700, color: '#F0C040', letterSpacing: '0.08em',
+            }}>
+              {company?.plan?.toUpperCase() || 'FLOTTE'}
+            </span>
+            {company?.is_active && (
+              <span style={{
+                padding: '1px 7px', borderRadius: '3px',
+                background: 'rgba(0,221,136,0.08)',
+                fontSize: '9px', fontWeight: 600, color: '#00DD88',
+              }}>
+                Actif
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Nav */}
-        <nav style={{ padding: '10px', flex: 1 }}>
-          {NAV_ITEMS.map(({ id, label, Icon }) => {
-            const isActive = tab === id
+        <nav style={{ padding: '8px', flex: 1 }}>
+          {NAV.map(({ id, label, Icon }) => {
+            const active = tab === id
             return (
               <button key={id} onClick={() => setTab(id)} style={{
-                width: '100%',
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '8px 10px', borderRadius: '8px', border: 'none',
-                marginBottom: '2px', cursor: 'pointer',
-                background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
-                color: isActive ? 'white' : 'rgba(255,255,255,0.4)',
-                fontSize: '13px', fontWeight: isActive ? 500 : 400,
-                textAlign: 'left', position: 'relative', transition: 'all 0.15s',
+                width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
+                padding: '8px 10px', borderRadius: '7px', border: 'none',
+                marginBottom: '1px', cursor: 'pointer', textAlign: 'left',
+                background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
+                color: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)',
+                fontSize: '12px', fontWeight: active ? 500 : 400,
+                position: 'relative', transition: 'all 0.12s',
               }}>
-                {isActive && (
+                {active && (
                   <div style={{
-                    position: 'absolute', left: 0, top: '20%', bottom: '20%',
+                    position: 'absolute', left: 0, top: '18%', bottom: '18%',
                     width: '2px', background: '#F0C040', borderRadius: '0 2px 2px 0',
                   }} />
                 )}
-                <Icon size={14} style={{ opacity: isActive ? 1 : 0.5, flexShrink: 0 }} />
+                <Icon size={13} style={{ opacity: active ? 1 : 0.5, flexShrink: 0 }} />
                 {label}
               </button>
             )
@@ -226,244 +240,242 @@ export default function FleetDashboard() {
         </nav>
 
         {/* Bottom */}
-        <div style={{ padding: '12px 18px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{
-            fontSize: '11px', color: 'rgba(255,255,255,0.25)',
-            marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
+        <div style={{ padding: '10px 14px 14px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user?.email}
           </div>
-          <button onClick={handleSignOut} style={{
+          <button onClick={async () => { await signOut(); navigate('/') }} style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             background: 'transparent', border: 'none', cursor: 'pointer',
-            color: 'rgba(255,255,255,0.3)', fontSize: '12px', padding: 0,
+            color: 'rgba(255,255,255,0.25)', fontSize: '11px', padding: 0,
           }}>
-            <LogOut size={12} /> Déconnexion
+            <LogOut size={11} /> Déconnexion
           </button>
         </div>
       </aside>
 
       {/* ═══ MAIN ═══ */}
-      <main style={{ flex: 1, overflow: 'auto', background: '#080808' }}>
+      <main style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
 
-        {/* Top bar */}
+        {/* Sticky top bar */}
         <div style={{
-          padding: '14px 32px',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          padding: '12px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+          background: 'rgba(8,8,8,0.9)', backdropFilter: 'blur(12px)',
+          position: 'sticky', top: 0, zIndex: 20,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: '#080808',
-          position: 'sticky', top: 0, zIndex: 10,
         }}>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
-              {NAV_ITEMS.find(n => n.id === tab)?.label}
+            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
+              {NAV.find(n => n.id === tab)?.label}
             </div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
-              MecaLIK Fleet · {company?.name || 'Tableau de bord'}
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
+              {company?.name || 'MecaLIK Fleet'} · {vehicles.length} véhicule{vehicles.length !== 1 ? 's' : ''}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button onClick={fetchAll} style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '8px', padding: '6px 12px',
-              cursor: 'pointer', color: 'rgba(255,255,255,0.5)',
-              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '7px', padding: '6px 10px', cursor: 'pointer',
+              color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px',
             }}>
-              <RefreshCw size={12} /> Actualiser
+              <RefreshCw size={11} /> Actualiser
             </button>
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-              style={{
-                background: '#F0C040', color: '#080808',
-                border: 'none', padding: '7px 16px', borderRadius: '8px',
-                fontSize: '13px', fontWeight: 600,
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-              }}
-            >
-              <Plus size={14} /> Demander une intervention
+            <button onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))} style={{
+              background: '#F0C040', color: '#080808', border: 'none',
+              padding: '7px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: 700,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+            }}>
+              <Plus size={13} /> Demander une intervention
             </button>
           </div>
         </div>
 
         {/* ── CONTENT ── */}
-        <div style={{ padding: '28px 32px' }}>
+        <div style={{ padding: '24px 28px', flex: 1 }}>
 
-          {/* ══ OVERVIEW ══ */}
+          {/* ══ VUE D'ENSEMBLE ══ */}
           {tab === 'overview' && (
             <div>
-              {/* Stat row */}
+              {/* Stats bar */}
               <div style={{
                 display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
-                gap: '1px', background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.05)',
-                borderRadius: '12px', overflow: 'hidden', marginBottom: '28px',
+                borderRadius: '10px', overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(255,255,255,0.04)',
+                gap: '1px', marginBottom: '24px',
               }}>
                 {[
-                  { label: 'Véhicules',      value: vehicles.length, color: 'white',    sub: 'total'        },
-                  { label: 'Opérationnels',  value: operational,     color: '#00DD88',  sub: 'en service'   },
-                  { label: 'Service requis', value: serviceDue,      color: '#F0C040',  sub: 'à planifier'  },
-                  { label: 'En intervention',value: inService,       color: '#43BCC9',  sub: 'actuellement' },
-                  { label: 'Alertes',        value: alerts,          color: '#FF4444',  sub: 'urgent'       },
+                  { label: 'Flotte totale',   value: vehicles.length, color: 'white',   sub: 'véhicules'   },
+                  { label: 'Opérationnels',   value: operational,     color: '#00DD88', sub: 'en service'  },
+                  { label: 'Service requis',  value: serviceDue,      color: '#F0C040', sub: 'à planifier' },
+                  { label: 'En intervention', value: inService,       color: '#43BCC9', sub: 'actuellement'},
+                  { label: 'Alertes',         value: alerts,          color: '#FF4444', sub: 'urgent'      },
                 ].map((s, i) => (
-                  <div key={i} style={{ background: '#0D0D0D', padding: '18px 20px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                  <div key={i} style={{ background: '#0A0A0A', padding: '16px 18px' }}>
+                    <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
                       {s.label}
                     </div>
-                    <div style={{ fontSize: '28px', fontWeight: 700, color: s.color, fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: '4px' }}>
+                    <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '26px', fontWeight: 700, color: s.color, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: '3px' }}>
                       {s.value}
                     </div>
-                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>{s.sub}</div>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)' }}>{s.sub}</div>
                   </div>
                 ))}
               </div>
 
-              {/* Charts */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '16px', marginBottom: '28px' }}>
-                {/* Bar chart */}
-                <div style={{
-                  background: '#0D0D0D',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderTop: '2px solid rgba(67,188,201,0.25)',
-                  borderRadius: '12px', padding: '20px 24px',
-                }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', marginBottom: '16px', letterSpacing: '-0.01em' }}>
-                    Interventions par type
+              {/* Two-column: quick actions + recent interventions */}
+              <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '16px' }}>
+
+                {/* Quick actions */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                    Actions rapides
                   </div>
-                  {barData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={180}>
-                      <BarChart data={barData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                        <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                        <Tooltip
-                          contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-                          itemStyle={{ color: 'white' }}
-                          formatter={(val: number) => [`${val} interventions`]}
-                        />
-                        <Bar dataKey="count" fill="#43BCC9" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '13px' }}>
-                      Aucune donnée
+
+                  {[
+                    { label: 'Nouvelle intervention', sub: 'Réserver un service',       color: '#F0C040',              bg: 'rgba(240,192,64,0.06)',   border: 'rgba(240,192,64,0.2)',  Icon: Plus,          onClick: () => window.dispatchEvent(new CustomEvent('openBooking')) },
+                    { label: 'Voir les véhicules',    sub: `${vehicles.length} enregistrés`, color: 'white',           bg: 'rgba(255,255,255,0.03)',  border: 'rgba(255,255,255,0.07)', Icon: Car,           onClick: () => setTab('vehicles') },
+                    { label: 'Rapport du mois',       sub: `${monthSpend} MAD dépensés`, color: 'rgba(255,255,255,0.7)', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', Icon: FileText,      onClick: () => setTab('rapports') },
+                    { label: 'Contacter MecaLIK',     sub: 'WhatsApp · Réponse 5 min', color: '#00DD88',              bg: 'rgba(0,221,136,0.05)',    border: 'rgba(0,221,136,0.15)',  Icon: MessageCircle, onClick: () => window.open('https://wa.me/212777348065', '_blank') },
+                  ].map((a, i) => (
+                    <button key={i} onClick={a.onClick} style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '12px 14px', borderRadius: '8px', cursor: 'pointer',
+                      background: a.bg, border: `1px solid ${a.border}`, textAlign: 'left',
+                    }}>
+                      <a.Icon size={14} color={a.color} style={{ flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '12px', fontWeight: 500, color: a.color, marginBottom: '1px' }}>{a.label}</div>
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>{a.sub}</div>
+                      </div>
+                      <ChevronRight size={12} color="rgba(255,255,255,0.2)" />
+                    </button>
+                  ))}
+
+                  {/* Company contact */}
+                  {(company?.contact_phone || company?.contact_name) && (
+                    <div style={{ marginTop: '8px', padding: '12px 14px', background: '#0A0A0A', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                        Contact entreprise
+                      </div>
+                      {company?.contact_name  && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '3px' }}>{company.contact_name}</div>}
+                      {company?.contact_phone && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{company.contact_phone}</div>}
                     </div>
                   )}
                 </div>
 
-                {/* Pie chart */}
-                <div style={{
-                  background: '#0D0D0D',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderTop: '2px solid rgba(240,192,64,0.25)',
-                  borderRadius: '12px', padding: '20px 24px',
-                }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', marginBottom: '16px', letterSpacing: '-0.01em' }}>
-                    État de la flotte
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <PieChart width={120} height={120}>
-                      <Pie data={pieDataSafe} cx={55} cy={55} innerRadius={35} outerRadius={55} dataKey="value" strokeWidth={0}>
-                        {pieDataSafe.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                      </Pie>
-                    </PieChart>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {pieData.map((d, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: d.color, flexShrink: 0 }} />
-                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>{d.name}</span>
-                          </div>
-                          <span style={{ fontSize: '12px', fontWeight: 600, color: 'white' }}>{d.value}</span>
-                        </div>
-                      ))}
-                      {pieData.length === 0 && (
-                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>Ajoutez des véhicules</div>
-                      )}
+                {/* Recent interventions */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      Interventions récentes
                     </div>
+                    <button onClick={() => setTab('interventions')} style={{
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      color: '#43BCC9', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px',
+                    }}>
+                      Voir tout <ArrowUpRight size={11} />
+                    </button>
                   </div>
+                  <BookingsTable bookings={bookings.slice(0, 8)} onRowClick={id => navigate(`/booking/${id}`)} compact />
                 </div>
               </div>
-
-              {/* Recent interventions */}
-              <TableLabel>Interventions récentes</TableLabel>
-              <BookingsTable bookings={bookings.slice(0, 8)} onRowClick={id => navigate(`/booking/${id}`)} />
             </div>
           )}
 
-          {/* ══ FLEET ══ */}
-          {tab === 'fleet' && (
+          {/* ══ VÉHICULES ══ */}
+          {tab === 'vehicles' && (
             <div>
-              <TableLabel>{vehicles.length} véhicule{vehicles.length !== 1 ? 's' : ''} enregistré{vehicles.length !== 1 ? 's' : ''}</TableLabel>
+              {/* Toolbar */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '7px', padding: '7px 12px' }}>
+                  <Search size={13} color="rgba(255,255,255,0.3)" />
+                  <input
+                    value={vehicleSearch}
+                    onChange={e => setVehicleSearch(e.target.value)}
+                    placeholder="Rechercher par véhicule, plaque, conducteur..."
+                    style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: '12px', flex: 1, fontFamily: 'inherit' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  {(['all', 'operational', 'service_due', 'in_service', 'alert'] as const).map(f => (
+                    <button key={f} onClick={() => setVehicleFilter(f)} style={{
+                      padding: '5px 10px', borderRadius: '5px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 500,
+                      background: vehicleFilter === f ? 'rgba(240,192,64,0.12)' : 'rgba(255,255,255,0.04)',
+                      color: vehicleFilter === f ? '#F0C040' : 'rgba(255,255,255,0.45)',
+                    }}>
+                      {f === 'all' ? 'Tous' : VEHICLE_STATUS[f]?.label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => exportCSV(filteredVehicles as unknown as Record<string, unknown>[], 'mecalik-flotte.csv')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
+                  <Download size={11} /> Export CSV
+                </button>
+              </div>
 
-              <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{
-                  display: 'grid', gridTemplateColumns: '2fr 110px 1fr 140px 130px 90px',
-                  padding: '10px 20px', background: '#0D0D0D',
-                  borderBottom: '1px solid rgba(255,255,255,0.05)',
-                }}>
-                  {['Véhicule', 'Plaque', 'Type', 'Kilométrage', 'Statut', 'Action'].map(h => (
-                    <div key={h} style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                      {h}
-                    </div>
+              <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 110px 100px 140px 130px 100px 90px', padding: '9px 18px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  {['Véhicule', 'Plaque', 'Type', 'Conducteur', 'Kilométrage', 'Statut', 'Action'].map(h => (
+                    <div key={h} style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>{h}</div>
                   ))}
                 </div>
 
-                {vehicles.length === 0 ? (
-                  <div style={{ padding: '52px', textAlign: 'center', background: '#0A0A0A' }}>
-                    <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>Aucun véhicule enregistré</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)' }}>Contactez MecaLIK pour enregistrer votre flotte</div>
+                {filteredVehicles.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', background: '#0A0A0A' }}>
+                    <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
+                      {vehicleSearch || vehicleFilter !== 'all' ? 'Aucun résultat' : 'Aucun véhicule enregistré'}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>Contactez MecaLIK pour enregistrer votre flotte</div>
                   </div>
-                ) : vehicles.map((v, i) => {
-                  const statusCfg = VEHICLE_STATUS[v.status] || VEHICLE_STATUS.operational
+                ) : filteredVehicles.map((v, i) => {
+                  const s = VEHICLE_STATUS[v.status] || VEHICLE_STATUS.operational
+                  const vBookings = bookings.filter(b => b.fleet_vehicle_id === v.id)
+                  const lastBooking = vBookings[0]
                   return (
-                    <div
-                      key={v.id}
+                    <div key={v.id}
                       style={{
-                        display: 'grid', gridTemplateColumns: '2fr 110px 1fr 140px 130px 90px',
-                        padding: '14px 20px', alignItems: 'center',
-                        borderBottom: i < vehicles.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                        background: 'transparent', transition: 'background 0.1s',
+                        display: 'grid', gridTemplateColumns: '2fr 110px 100px 140px 130px 100px 90px',
+                        padding: '12px 18px', alignItems: 'center',
+                        borderBottom: i < filteredVehicles.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                        transition: 'background 0.1s',
                       }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       <div>
                         <div style={{ fontSize: '13px', fontWeight: 500, color: 'white' }}>{v.brand} {v.model}</div>
-                        {v.driver_name && (
-                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '1px' }}>{v.driver_name}</div>
-                        )}
+                        {v.year && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '1px' }}>{v.year}</div>}
                       </div>
-                      <div style={{
-                        fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.75)',
-                        background: 'rgba(255,255,255,0.05)', padding: '3px 7px', borderRadius: '4px',
-                        display: 'inline-block', letterSpacing: '0.05em',
-                      }}>
+                      <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.8)', background: 'rgba(255,255,255,0.05)', padding: '3px 7px', borderRadius: '4px', display: 'inline-block' }}>
                         {v.plate}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>{v.type || '—'}</div>
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
-                        {v.mileage ? v.mileage.toLocaleString('fr-FR') + ' km' : '—'}
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>{v.type || '—'}</div>
+                      <div>
+                        {v.driver_name ? (
+                          <div>
+                            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>{v.driver_name}</div>
+                            {v.driver_phone && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{v.driver_phone}</div>}
+                          </div>
+                        ) : <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px' }}>—</span>}
                       </div>
                       <div>
-                        <span style={{
-                          padding: '3px 8px', borderRadius: '4px',
-                          fontSize: '11px', fontWeight: 500,
-                          background: statusCfg.bg, color: statusCfg.color,
-                        }}>
-                          {statusCfg.label}
-                        </span>
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+                          {v.mileage ? v.mileage.toLocaleString('fr-FR') + ' km' : '—'}
+                        </div>
+                        {lastBooking && (
+                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
+                            Dernier: {new Date(lastBooking.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                          </div>
+                        )}
                       </div>
+                      <span style={{ padding: '3px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 500, background: s.bg, color: s.color }}>
+                        {s.label}
+                      </span>
                       <button
                         onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-                        style={{
-                          padding: '5px 10px',
-                          background: 'rgba(240,192,64,0.08)',
-                          border: '1px solid rgba(240,192,64,0.18)',
-                          color: '#F0C040', borderRadius: '6px',
-                          fontSize: '11px', fontWeight: 600, cursor: 'pointer',
-                        }}
-                      >
+                        style={{ padding: '5px 10px', background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.2)', color: '#F0C040', borderRadius: '5px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>
                         Réserver
                       </button>
                     </div>
@@ -473,179 +485,288 @@ export default function FleetDashboard() {
             </div>
           )}
 
-          {/* ══ PLANNING ══ */}
-          {tab === 'planning' && (
-            <div style={{
-              background: '#0D0D0D',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: '12px', padding: '60px',
-              textAlign: 'center',
-            }}>
-              <Calendar size={28} color="rgba(255,255,255,0.2)" style={{ marginBottom: '12px' }} />
-              <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
-                Planification des interventions
-              </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)' }}>
-                Fonctionnalité disponible prochainement
-              </div>
-            </div>
-          )}
-
           {/* ══ INTERVENTIONS ══ */}
           {tab === 'interventions' && (
             <div>
-              <TableLabel>{bookings.length} intervention{bookings.length !== 1 ? 's' : ''} au total</TableLabel>
-              <BookingsTable bookings={bookings} onRowClick={id => navigate(`/booking/${id}`)} />
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '7px', padding: '7px 12px' }}>
+                  <Search size={13} color="rgba(255,255,255,0.3)" />
+                  <input
+                    value={bookingSearch}
+                    onChange={e => setBookingSearch(e.target.value)}
+                    placeholder="Rechercher par référence, service, adresse..."
+                    style={{ background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: '12px', flex: 1, fontFamily: 'inherit' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  {(['all', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] as const).map(f => (
+                    <button key={f} onClick={() => setBookingFilter(f)} style={{
+                      padding: '5px 10px', borderRadius: '5px', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 500,
+                      background: bookingFilter === f ? 'rgba(240,192,64,0.12)' : 'rgba(255,255,255,0.04)',
+                      color: bookingFilter === f ? '#F0C040' : 'rgba(255,255,255,0.45)',
+                    }}>
+                      {f === 'all' ? 'Tous' : BOOKING_STATUS[f]?.label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => exportCSV(filteredBookings as unknown as Record<string, unknown>[], 'mecalik-interventions.csv')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
+                  <Download size={11} /> Export CSV
+                </button>
+              </div>
+
+              <div style={{ marginBottom: '10px', fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+                {filteredBookings.length} intervention{filteredBookings.length !== 1 ? 's' : ''}
+                {bookingFilter !== 'all' || bookingSearch ? ` · filtrées de ${bookings.length}` : ' au total'}
+              </div>
+
+              <BookingsTable bookings={filteredBookings} onRowClick={id => navigate(`/booking/${id}`)} />
+            </div>
+          )}
+
+          {/* ══ FINANCE ══ */}
+          {tab === 'finance' && (
+            <div>
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '1px', background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px',
+                overflow: 'hidden', marginBottom: '24px',
+              }}>
+                {[
+                  { label: 'Dépenses ce mois',     value: `${monthSpend} MAD`, color: '#F0C040', sub: `${thisMonth.filter(b => b.status === 'completed').length} intervention${thisMonth.filter(b => b.status === 'completed').length !== 1 ? 's' : ''} terminée${thisMonth.filter(b => b.status === 'completed').length !== 1 ? 's' : ''}` },
+                  { label: 'Total cumulé',          value: `${totalSpend} MAD`, color: '#00DD88', sub: 'depuis le début' },
+                  { label: 'Coût moyen / véhicule', value: vehicles.length > 0 ? `${Math.round(totalSpend / vehicles.length)} MAD` : '0 MAD', color: '#43BCC9', sub: 'sur toute la période' },
+                ].map((s, i) => (
+                  <div key={i} style={{ background: '#0A0A0A', padding: '18px 22px' }}>
+                    <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{s.label}</div>
+                    <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '24px', fontWeight: 700, color: s.color, letterSpacing: '-0.02em', marginBottom: '4px' }}>{s.value}</div>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>{s.sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Historique des paiements
+                </div>
+                <button
+                  onClick={() => exportCSV(bookings.filter(b => b.status === 'completed') as unknown as Record<string, unknown>[], 'mecalik-factures.csv')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '6px', background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.18)', color: '#F0C040', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Download size={11} /> Exporter
+                </button>
+              </div>
+
+              <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 100px 100px', padding: '9px 18px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  {['Référence', 'Service', 'Date', 'Montant', 'Statut'].map(h => (
+                    <div key={h} style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>{h}</div>
+                  ))}
+                </div>
+
+                {bookings.filter(b => b.amount_ttc).length === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px', background: '#0A0A0A' }}>
+                    Aucune facture disponible
+                  </div>
+                ) : bookings.filter(b => b.amount_ttc).slice(0, 30).map((b, i, arr) => {
+                  const s = BOOKING_STATUS[b.status] || BOOKING_STATUS.completed
+                  return (
+                    <div key={b.id} onClick={() => navigate(`/booking/${b.id}`)}
+                      style={{
+                        display: 'grid', gridTemplateColumns: '120px 1fr 1fr 100px 100px',
+                        padding: '12px 18px', alignItems: 'center', cursor: 'pointer',
+                        borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                        transition: 'background 0.1s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <div style={{ fontFamily: 'monospace', fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{b.reference || b.id.substring(0, 8).toUpperCase()}</div>
+                      <div style={{ fontSize: '12px', color: 'white' }}>{b.service_name}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                        {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                      </div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#00DD88' }}>{b.amount_ttc} MAD</div>
+                      <span style={{ padding: '3px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 500, background: s.bg, color: s.color }}>{s.label}</span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 
           {/* ══ RAPPORTS ══ */}
           {tab === 'rapports' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-              {/* KPI row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', overflow: 'hidden' }}>
-                {[
-                  { label: 'Interventions ce mois', value: String(thisMonthBookings.length), color: '#43BCC9' },
-                  { label: 'Dépenses ce mois',      value: `${thisMonthSpent} MAD`,           color: '#00DD88' },
-                  { label: 'Coût moyen / véhicule', value: `${avgCostPerVehicle} MAD`,        color: '#F0C040' },
-                ].map((s, i) => (
-                  <div key={i} style={{ background: '#0D0D0D', padding: '20px 24px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-                      {s.label}
-                    </div>
-                    <div style={{ fontSize: '26px', fontWeight: 700, color: s.color, fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
-                      {s.value}
-                    </div>
-                  </div>
-                ))}
+            <div>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                <button
+                  onClick={() => exportCSV(vehicles.map(v => ({
+                    Plaque:        v.plate,
+                    Véhicule:      `${v.brand} ${v.model}`,
+                    Conducteur:    v.driver_name || '',
+                    Kilométrage:   v.mileage || '',
+                    Statut:        VEHICLE_STATUS[v.status]?.label || v.status,
+                    Interventions: bookings.filter(b => b.fleet_vehicle_id === v.id).length,
+                    TotalMAD:      bookings.filter(b => b.fleet_vehicle_id === v.id && b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0),
+                  })), 'mecalik-rapport-flotte.csv')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '7px', background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.2)', color: '#F0C040', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Download size={12} /> Rapport flotte CSV
+                </button>
+                <button
+                  onClick={() => exportCSV(bookings.map(b => ({
+                    Reference:  b.reference,
+                    Service:    b.service_name,
+                    Adresse:    b.address,
+                    Statut:     b.status,
+                    MontantMAD: b.amount_ttc || 0,
+                    Date:       new Date(b.created_at).toLocaleDateString('fr-FR'),
+                  })), 'mecalik-rapport-interventions.csv')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '7px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>
+                  <Download size={12} /> Interventions CSV
+                </button>
               </div>
 
-              {/* Table + export */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <TableLabel>Toutes les interventions</TableLabel>
-                  <button
-                    onClick={() => {
-                      const csv = [
-                        'Reference,Service,Adresse,Statut,Montant,Date',
-                        ...bookings.map(b =>
-                          `${b.reference || b.id},${b.service_name},"${b.address}",${b.status},${b.amount_ttc || 0},${b.created_at}`
-                        ),
-                      ].join('\n')
-                      const blob = new Blob([csv], { type: 'text/csv' })
-                      const url  = URL.createObjectURL(blob)
-                      const a    = document.createElement('a')
-                      a.href = url; a.download = 'mecalik-fleet-report.csv'; a.click()
-                      URL.revokeObjectURL(url)
-                    }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '6px',
-                      background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.18)',
-                      color: '#F0C040', padding: '6px 12px', borderRadius: '8px',
-                      fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    }}
-                  >
-                    <Download size={12} /> Exporter CSV
-                  </button>
+              {/* Spend chart */}
+              {chartData.length > 0 && (
+                <div style={{ background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.06)', borderTop: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '18px 22px', marginBottom: '20px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'white', marginBottom: '14px', letterSpacing: '-0.01em' }}>
+                    Dépenses par type de service (MAD)
+                  </div>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={chartData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
+                        itemStyle={{ color: 'white' }}
+                        formatter={(val: number) => [`${val} MAD`]}
+                      />
+                      <Bar dataKey="total" fill="#F0C040" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <BookingsTable bookings={bookings} onRowClick={id => navigate(`/booking/${id}`)} />
+              )}
+
+              {/* Per-vehicle consumption table */}
+              <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+                Consommation par véhicule
+              </div>
+              <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 110px 80px 110px 140px', padding: '9px 18px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  {['Véhicule', 'Plaque', 'Interventions', 'Total MAD', 'Dernier service'].map(h => (
+                    <div key={h} style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>{h}</div>
+                  ))}
+                </div>
+                {vehicles.length === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px', background: '#0A0A0A' }}>Aucun véhicule</div>
+                ) : vehicles.map((v, i) => {
+                  const vBk    = bookings.filter(b => b.fleet_vehicle_id === v.id)
+                  const vTotal = vBk.filter(b => b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0)
+                  const last   = vBk[0]
+                  return (
+                    <div key={v.id}
+                      style={{
+                        display: 'grid', gridTemplateColumns: '2fr 110px 80px 110px 140px',
+                        padding: '12px 18px', alignItems: 'center',
+                        borderBottom: i < vehicles.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                        transition: 'background 0.1s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <div style={{ fontSize: '12px', fontWeight: 500, color: 'white' }}>{v.brand} {v.model}</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '3px', display: 'inline-block' }}>{v.plate}</div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{vBk.length}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: vTotal > 0 ? '#F0C040' : 'rgba(255,255,255,0.3)' }}>{vTotal > 0 ? `${vTotal} MAD` : '—'}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>
+                        {last ? new Date(last.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
-
         </div>
       </main>
     </div>
   )
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function TableLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      fontSize: '11px', fontWeight: 600,
-      color: 'rgba(255,255,255,0.3)',
-      textTransform: 'uppercase', letterSpacing: '0.08em',
-      marginBottom: '12px',
-    }}>
-      {children}
-    </div>
-  )
-}
+// ── BookingsTable ─────────────────────────────────────────────────────────────
 
 function BookingsTable({
-  bookings, onRowClick,
+  bookings, onRowClick, compact = false,
 }: {
   bookings: Booking[]
   onRowClick: (id: string) => void
+  compact?: boolean
 }) {
   if (bookings.length === 0) {
     return (
-      <div style={{
-        padding: '48px', textAlign: 'center',
-        background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: '12px', color: 'rgba(255,255,255,0.3)', fontSize: '13px',
-      }}>
+      <div style={{ padding: compact ? '24px' : '36px', textAlign: 'center', background: '#0A0A0A', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>
         Aucune intervention
       </div>
     )
   }
 
+  const cols = compact ? '100px 1fr 100px 80px' : '120px 1.2fr 1.5fr 110px 80px 100px'
+
   return (
-    <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
-      {/* Header */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '120px 1fr 1.5fr 110px 90px 90px',
-        padding: '10px 20px', background: '#0D0D0D',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-      }}>
-        {['Référence', 'Service', 'Adresse', 'Statut', 'Montant', 'Date'].map(h => (
-          <div key={h} style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            {h}
-          </div>
+    <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', overflow: 'hidden' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '9px 18px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        {(compact
+          ? ['Référence', 'Service', 'Statut', 'Date']
+          : ['Référence', 'Service', 'Adresse', 'Technicien', 'Montant', 'Statut']
+        ).map(h => (
+          <div key={h} style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>{h}</div>
         ))}
       </div>
 
       {bookings.map((b, i) => {
-        const s = BOOKING_STATUS[b.status] || { label: b.status, color: 'rgba(255,255,255,0.5)' }
+        const s = BOOKING_STATUS[b.status] || { label: b.status, color: 'rgba(255,255,255,0.4)', bg: 'rgba(255,255,255,0.04)' }
         return (
-          <div
-            key={b.id}
-            onClick={() => onRowClick(b.id)}
+          <div key={b.id} onClick={() => onRowClick(b.id)}
             style={{
-              display: 'grid', gridTemplateColumns: '120px 1fr 1.5fr 110px 90px 90px',
-              padding: '13px 20px', alignItems: 'center',
+              display: 'grid', gridTemplateColumns: cols,
+              padding: compact ? '10px 18px' : '12px 18px', alignItems: 'center',
               borderBottom: i < bookings.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
               cursor: 'pointer', transition: 'background 0.1s',
-              background: 'transparent',
             }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
-            <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.04em' }}>
+            <div style={{ fontFamily: 'monospace', fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
               {b.reference || b.id.substring(0, 8).toUpperCase()}
             </div>
-            <div style={{ fontSize: '13px', color: 'white', fontWeight: 500 }}>{b.service_name}</div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {b.address}
+            <div style={{ fontSize: compact ? '12px' : '13px', color: 'white', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
+              {b.service_name}
             </div>
-            <div>
-              <span style={{
-                padding: '3px 7px', borderRadius: '4px',
-                fontSize: '10px', fontWeight: 600, letterSpacing: '0.03em',
-                background: s.color + '18', color: s.color,
-              }}>
-                {s.label}
-              </span>
-            </div>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
-              {b.amount_ttc ? b.amount_ttc + ' MAD' : '—'}
-            </div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
-              {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-            </div>
+            {!compact && (
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
+                {b.address}
+              </div>
+            )}
+            {!compact && (
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+                {b.technician_name || '—'}
+              </div>
+            )}
+            {!compact && (
+              <div style={{ fontSize: '12px', fontWeight: b.amount_ttc ? 600 : 400, color: b.amount_ttc ? '#00DD88' : 'rgba(255,255,255,0.3)' }}>
+                {b.amount_ttc ? `${b.amount_ttc} MAD` : '—'}
+              </div>
+            )}
+            <span style={{ padding: '3px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 500, background: s.bg, color: s.color }}>
+              {s.label}
+            </span>
+            {compact && (
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+                {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+              </div>
+            )}
           </div>
         )
       })}
