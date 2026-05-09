@@ -100,6 +100,12 @@ export default function BookingModal() {
       setError('Tous les champs marqués * sont obligatoires')
       return
     }
+    // Guard: must be authenticated so user_id is never null
+    if (!user) {
+      close()
+      navigate('/login')
+      return
+    }
     setSubmitting(true)
     setError('')
 
@@ -113,7 +119,7 @@ export default function BookingModal() {
     const { data: booking, error: insertError } = await supabase
       .from('bookings')
       .insert({
-        user_id:       user?.id || null,
+        user_id:       user.id,
         car_id:        selectedCarId || null,
         service_name:  serviceLabel,
         address,
