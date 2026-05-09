@@ -1,4 +1,5 @@
 import { MapPin, Phone, Mail, AtSign } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const serviceLinks = [
   'Lavage Auto',
@@ -9,14 +10,18 @@ const serviceLinks = [
   'Urgence 24/7',
 ]
 
-const companyLinks: { label: string; href: string }[] = [
-  { label: 'À propos', href: '/about' },
-  { label: 'Flottes & Entreprises', href: '/fleet' },
-  { label: 'Contact', href: '/contact' },
-  { label: 'WhatsApp', href: 'https://wa.me/212777348065' },
-]
+const companyLinksBase = [
+  { labelKey: 'landing.footerAbout',  href: '/about' },
+  { labelKey: 'landing.footerFleets', href: '/fleet' },
+  { labelKey: 'landing.footerContact2', href: '/contact' },
+  { labelKey: null, label: 'WhatsApp', href: 'https://wa.me/212777348065' },
+] as const
 
 export default function Footer() {
+  const { t } = useTranslation()
+  const companyLinks = companyLinksBase.map(item =>
+    item.labelKey ? { label: t(item.labelKey), href: item.href } : { label: item.label, href: item.href }
+  )
   return (
     <footer
       className="px-6 pt-16 pb-8"
@@ -43,7 +48,7 @@ export default function Footer() {
               }}
             />
             <p className="text-[rgba(255,255,255,0.4)] text-sm mt-4 max-w-xs leading-relaxed">
-              Le mécanicien certifié qui vient à vous. Casablanca.
+              {t('landing.footerTagline')} Casablanca.
             </p>
             <div className="flex gap-3 mt-6">
               <a
@@ -86,7 +91,7 @@ export default function Footer() {
           {/* Column 3 — Company */}
           <div>
             <p className="font-heading font-semibold text-white text-sm uppercase tracking-wider mb-5">
-              Entreprise
+              {t('landing.footerEntreprise')}
             </p>
             <ul className="flex flex-col gap-3">
               {companyLinks.map(({ label, href }) => (
@@ -141,7 +146,7 @@ export default function Footer() {
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
         >
           <span className="text-[rgba(255,255,255,0.3)] text-xs">
-            © 2026 MecaLIK. Tous droits réservés.
+            © 2026 MecaLIK. {t('landing.footerRights')}
           </span>
           <span className="text-[rgba(255,255,255,0.3)] text-xs">
             Casablanca, Maroc

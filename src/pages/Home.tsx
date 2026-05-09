@@ -10,16 +10,17 @@ import { supabase } from '../lib/supabase'
 
 
 const ACTIVITIES = [
-  { service: 'Vidange', location: 'Maarif', time: 'il y a 4 min' },
-  { service: 'Batterie', location: 'Ain Diab', time: 'il y a 11 min' },
-  { service: 'Lavage', location: 'Anfa', time: 'il y a 18 min' },
-  { service: 'Diagnostic', location: 'Bourgogne', time: 'il y a 23 min' },
-  { service: 'Pneus', location: 'CIL', time: 'il y a 31 min' },
-  { service: 'Urgence', location: 'Hay Hassani', time: 'il y a 42 min' },
-  { service: 'Vidange', location: 'Sidi Maarouf', time: 'il y a 55 min' },
+  { service: 'Vidange', location: 'Maarif', time: '4 min' },
+  { service: 'Batterie', location: 'Ain Diab', time: '11 min' },
+  { service: 'Lavage', location: 'Anfa', time: '18 min' },
+  { service: 'Diagnostic', location: 'Bourgogne', time: '23 min' },
+  { service: 'Pneus', location: 'CIL', time: '31 min' },
+  { service: 'Urgence', location: 'Hay Hassani', time: '42 min' },
+  { service: 'Vidange', location: 'Sidi Maarouf', time: '55 min' },
 ]
 
 function LiveActivityTicker() {
+  const { t } = useTranslation()
   const [currentIndex, setCurrentIndex] = useState(0)
 
   useEffect(() => {
@@ -46,7 +47,7 @@ function LiveActivityTicker() {
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-wider"
           style={{ color: '#43BCC9' }}>
-          Activité en direct
+          {t('landing.reviewLiveActivity')}
         </span>
       </div>
       <div key={currentIndex} style={{ animation: 'fadeIn 0.4s ease' }}>
@@ -57,7 +58,7 @@ function LiveActivityTicker() {
           {activity.location}, Casablanca
         </div>
         <div className="text-[10px] mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          {activity.time}
+          {t('landing.reviewDaysAgo')} {activity.time}
         </div>
       </div>
       <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
@@ -896,30 +897,30 @@ export default function Home() {
                       <div className="text-sm font-semibold" style={{ color: 'white' }}>Votre devis</div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#00DD88' }} />
-                        <span className="text-xs" style={{ color: '#00DD88' }}>Envoyé il y a 3 min</span>
+                        <span className="text-xs" style={{ color: '#00DD88' }}>{t('landing.step1QuoteLabel')}</span>
                       </div>
                     </div>
                   </div>
                   <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <div className="text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>Détail du devis</div>
                     {[
-                      { label: 'Main d\'œuvre', value: '180 MAD' },
-                      { label: 'Huile moteur 5L', value: '220 MAD' },
-                      { label: 'Filtre à huile', value: '45 MAD' },
-                      { label: 'Déplacement', value: '0 MAD' },
+                      { labelKey: 'landing.quoteLabour',    value: '180 MAD' },
+                      { labelKey: 'landing.quoteMotorOil',  value: '220 MAD' },
+                      { labelKey: 'landing.quoteOilFilter', value: '45 MAD' },
+                      { labelKey: 'landing.quoteTravel',    value: '0 MAD' },
                     ].map(row => (
-                      <div key={row.label} className="flex justify-between py-1.5">
-                        <span className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{row.label}</span>
+                      <div key={row.labelKey} className="flex justify-between py-1.5">
+                        <span className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{t(row.labelKey)}</span>
                         <span className="text-sm font-medium" style={{ color: row.value === '0 MAD' ? '#00DD88' : 'white' }}>{row.value}</span>
                       </div>
                     ))}
                     <div className="flex justify-between pt-3 mt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                      <span className="text-sm font-bold" style={{ color: 'white' }}>Total TTC</span>
+                      <span className="text-sm font-bold" style={{ color: 'white' }}>{t('landing.quoteTotalTTC')}</span>
                       <span className="text-base font-bold" style={{ color: '#43BCC9' }}>445 MAD</span>
                     </div>
                   </div>
                   <div className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                    Prix garanti — aucun frais supplémentaire
+                    {t('landing.quoteGuaranteed')}
                   </div>
                 </div>
               </div>
@@ -945,15 +946,13 @@ export default function Home() {
                 </h3>
                 <p className="text-base lg:text-lg leading-relaxed mb-8"
                   style={{ color: 'rgba(255,255,255,0.55)' }}>
-                  Notre équipe analyse votre demande et vous envoie un prix précis,
-                  adapté à votre véhicule. Pas de fourchette, pas d'approximation.
-                  Le prix affiché est le prix final.
+                  {t('landing.step3QuoteDesc')}
                 </p>
                 <div className="space-y-3">
                   {[
-                    'Prix spécifique à votre modèle',
-                    'Détail ligne par ligne',
-                    'Zéro frais de déplacement',
+                    t('landing.step3Feature1'),
+                    t('landing.step3Feature2'),
+                    t('landing.step3Feature3'),
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <CheckCircle2 size={14} style={{ color: '#43BCC9', flexShrink: 0 }} />
@@ -988,9 +987,7 @@ export default function Home() {
                 </h3>
                 <p className="text-base lg:text-lg leading-relaxed mb-8"
                   style={{ color: 'rgba(255,255,255,0.55)' }}>
-                  Confirmez le devis. Notre technicien certifié se déplace jusqu'à votre véhicule.
-                  Vous suivez l'avancement en temps réel. Paiement uniquement après que le service
-                  est terminé et validé.
+                  {t('landing.step2Desc2')}
                 </p>
                 <div className="space-y-3 mb-10">
                   {[
@@ -1166,7 +1163,7 @@ export default function Home() {
                     Salma Amrani
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    Casablanca · il y a 3 jours · Batterie
+                    Casablanca · {t('landing.reviewDaysAgo')} 3 {t('landing.reviewDays')} · Batterie
                   </div>
                 </div>
                 <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full"
@@ -1175,7 +1172,7 @@ export default function Home() {
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                   <span className="text-[10px] font-semibold" style={{ color: '#00DD88' }}>
-                    Vérifié
+                    {t('landing.reviewVerified')}
                   </span>
                 </div>
               </div>
@@ -1209,7 +1206,7 @@ export default function Home() {
                   <div>
                     <div className="text-sm font-medium" style={{ color: 'white' }}>Karim Ouazzani</div>
                     <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      Maarif · il y a 1 semaine · Vidange
+                      Maarif · {t('landing.reviewDaysAgo')} 1 {t('landing.reviewWeek')} · Vidange
                     </div>
                   </div>
                 </div>
@@ -1240,7 +1237,7 @@ export default function Home() {
                   <div>
                     <div className="text-sm font-medium" style={{ color: 'white' }}>Nadia Benali</div>
                     <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      Ain Diab · il y a 2 jours · Urgence 24/7
+                      Ain Diab · {t('landing.reviewDaysAgo')} 2 {t('landing.reviewDays')} · Urgence 24/7
                     </div>
                   </div>
                 </div>
@@ -1275,7 +1272,7 @@ export default function Home() {
                   <div>
                     <div className="text-xs font-medium" style={{ color: 'white' }}>Youssef Mejdoub</div>
                     <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      Gestionnaire flotte · Flottes B2B
+                      {t('landing.reviewFleetManager')} · {t('landing.reviewFleetB2B')}
                     </div>
                   </div>
                 </div>
@@ -1453,7 +1450,7 @@ export default function Home() {
 
           <div className="mt-8 text-center text-xs"
             style={{ color: 'rgba(255,255,255,0.25)' }}>
-            Service disponible à Casablanca · Agrandissement prévu 2026
+            {t('landing.ctaAvailability')}
           </div>
 
         </div>
