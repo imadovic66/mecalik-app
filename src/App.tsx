@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
@@ -20,21 +19,8 @@ import PublicRoute from './components/ui/PublicRoute'
 
 // AppShell lives inside <BrowserRouter> so it can call useLocation
 function AppShell() {
-  const location   = useLocation()
+  const location    = useLocation()
   const isDashboard = location.pathname.startsWith('/dashboard')
-
-  const [bookingOpen, setBookingOpen]               = useState(false)
-  const [preselectedService, setPreselectedService] = useState<string | undefined>(undefined)
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ service?: string }>).detail
-      setPreselectedService(detail?.service || undefined)
-      setBookingOpen(true)
-    }
-    window.addEventListener('openBooking', handler)
-    return () => window.removeEventListener('openBooking', handler)
-  }, [])
 
   return (
     <>
@@ -44,13 +30,13 @@ function AppShell() {
 
       <div className={isDashboard ? '' : 'pt-16'}>
         <Routes>
-          <Route path="/"        element={<PublicRoute><Home /></PublicRoute>} />
+          <Route path="/"         element={<PublicRoute><Home /></PublicRoute>} />
           <Route path="/services" element={<PublicRoute><Services /></PublicRoute>} />
-          <Route path="/fleet"   element={<PublicRoute><Fleet /></PublicRoute>} />
-          <Route path="/about"   element={<PublicRoute><About /></PublicRoute>} />
-          <Route path="/devis"   element={<QuoteCalculator />} />
-          <Route path="/login"   element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/signup"  element={<PublicRoute><Signup /></PublicRoute>} />
+          <Route path="/fleet"    element={<PublicRoute><Fleet /></PublicRoute>} />
+          <Route path="/about"    element={<PublicRoute><About /></PublicRoute>} />
+          <Route path="/devis"    element={<QuoteCalculator />} />
+          <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/signup"   element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/booking/:id" element={<BookingConfirmation />} />
           <Route path="/dashboard" element={
             <ProtectedRoute requiredRole="customer"><CustomerDashboard /></ProtectedRoute>
@@ -66,11 +52,8 @@ function AppShell() {
         {!isDashboard && <Footer />}
         {!isDashboard && <WhatsAppFAB />}
 
-        <BookingModal
-          isOpen={bookingOpen}
-          onClose={() => { setBookingOpen(false); setPreselectedService(undefined) }}
-          preselectedService={preselectedService}
-        />
+        {/* BookingModal is self-contained — listens for openBooking events internally */}
+        <BookingModal />
       </div>
     </>
   )

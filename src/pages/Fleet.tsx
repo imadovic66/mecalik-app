@@ -3,7 +3,6 @@ import {
   ChevronRight, Shield, Clock, FileText,
   CheckCircle, Phone, Mail,
 } from 'lucide-react'
-import BookingModal from '../components/ui/BookingModal'
 
 const WA_FLEET =
   'https://wa.me/212777348065?text=' +
@@ -30,7 +29,6 @@ export default function Fleet() {
   const [formData, setFormData] = useState({ name: '', company: '', email: '', phone: '' })
   const [errors, setErrors] = useState({ name: false, company: false, email: false, phone: false })
   const [submitted, setSubmitted] = useState(false)
-  const [bookingOpen, setBookingOpen] = useState(false)
 
   const update = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -468,7 +466,6 @@ export default function Fleet() {
 
       </main>
 
-      <BookingModal isOpen={bookingOpen} onClose={() => setBookingOpen(false)} />
     </>
   )
 }

@@ -1,626 +1,541 @@
-import { X, ChevronRight, Car, MapPin, Calendar, User, Phone, MessageSquare } from 'lucide-react'
-import { useState, useEffect } from 'react'
-import { SERVICES as PRICING_SERVICES, getPrice } from '../../data/pricing'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { X, ArrowLeft, Phone, MapPin, User, Car as CarIcon, MessageCircle, Check } from 'lucide-react'
+import { supabase, type Car } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
+import { SERVICES, getPrice } from '../../data/pricing'
 
-type Service = {
-  id: string
-  name: string
-  duration: string
-}
-
-type CarType = {
-  id: string
-  brand: string
-  model: string
-  year: number
-  license_plate: string | null
-  is_default: boolean | null
-}
-
-const SERVICES: Service[] = [
-  { id: 'lavage',     name: 'Lavage Auto',       duration: '~45 min' },
-  { id: 'vidange',    name: 'Vidange & Filtres',  duration: '~60 min' },
-  { id: 'batterie',   name: 'Batterie',           duration: '~30 min' },
-  { id: 'pneus',      name: 'Pneus',              duration: '~45 min' },
-  { id: 'diagnostic', name: 'Diagnostic',         duration: '~30 min' },
-  { id: 'urgence',    name: 'Urgence 24/7',       duration: 'ASAP'    },
+const SERVICE_OPTIONS = [
+  { id: 'lavage',     label: 'Lavage Auto',       duration: '~45 min' },
+  { id: 'vidange',    label: 'Vidange & Filtres', duration: '~60 min' },
+  { id: 'batterie',   label: 'Batterie',          duration: '~30 min' },
+  { id: 'pneus',      label: 'Pneus',             duration: '~45 min' },
+  { id: 'diagnostic', label: 'Diagnostic',        duration: '~30 min' },
+  { id: 'urgence',    label: 'Urgence 24/7',      duration: 'ASAP' },
 ]
 
-function carLabel(car: CarType): string {
-  return `${car.brand} ${car.model} ${car.year}${car.license_plate ? ' · ' + car.license_plate : ''}`
+const SERVICE_LABEL_MAP: Record<string, string> = {
+  lavage: 'Lavage Auto',
+  vidange: 'Vidange & Filtres',
+  batterie: 'Batterie',
+  pneus: 'Pneus',
+  diagnostic: 'Diagnostic',
+  urgence: 'Urgence 24/7',
 }
 
-type BookingModalProps = {
-  isOpen: boolean
-  onClose: () => void
-  preselectedService?: string
-}
-
-type FormState = {
-  name: string
-  phone: string
-  car: string
-  address: string
-  date: string
-  note: string
-}
-
-type ErrorState = {
-  name: boolean
-  phone: boolean
-  car: boolean
-  address: boolean
-}
-
-export default function BookingModal({ isOpen, onClose, preselectedService }: BookingModalProps) {
-  const navigate = useNavigate()
+export default function BookingModal() {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
 
-  const [step, setStep]               = useState(1)
-  const [submitting, setSubmitting]   = useState(false)
-  const [selectedService, setSelectedService] = useState(preselectedService || '')
+  const [isOpen, setIsOpen]                 = useState(false)
+  const [step, setStep]                     = useState(1)
+  const [selectedService, setSelectedService] = useState<string>('')
+  const [name, setName]                     = useState('')
+  const [phone, setPhone]                   = useState('')
+  const [address, setAddress]               = useState('')
+  const [addressNotes, setAddressNotes]     = useState('')
+  const [cars, setCars]                     = useState<Car[]>([])
+  const [selectedCarId, setSelectedCarId]   = useState<string>('')
+  const [submitting, setSubmitting]         = useState(false)
+  const [error, setError]                   = useState('')
 
-  const [form, setForm] = useState<FormState>({
-    name: '', phone: '', car: '', address: '', date: 'today', note: '',
-  })
-  const [errors, setErrors] = useState<ErrorState>({
-    name: false, phone: false, car: false, address: false,
-  })
-
-  // ── vehicle state ─────────────────────────────────────────────────────────
-  const [userCars, setUserCars]               = useState<CarType[]>([])
-  const [carsLoaded, setCarsLoaded]           = useState(false)
-  const [showCarSelector, setShowCarSelector] = useState(false) // Case A → expand
-
-  // ── pre-fill on open ──────────────────────────────────────────────────────
+  // Listen for openBooking events
   useEffect(() => {
-    if (!isOpen) {
-      // reset navigation state when modal closes
-      setShowCarSelector(false)
-      return
-    }
-
-    // Sync preselected service from parent (e.g. quick-service tiles)
-    if (preselectedService) {
-      setSelectedService(preselectedService)
-      setStep(2) // jump directly to step 2 — no need to pick a service
-    } else {
-      setStep(1)
-    }
-
-    // Pre-fill name + phone from profile (already in memory — no extra fetch)
-    setForm(prev => ({
-      ...prev,
-      name:  profile?.full_name ?? prev.name,
-      phone: profile?.phone     ?? prev.phone,
-    }))
-
-    // Fetch cars for logged-in users
-    if (!user) return
-
-    ;(async () => {
-      try {
-        const { data } = await supabase
-          .from('cars')
-          .select('id, brand, model, year, license_plate, is_default')
-          .eq('user_id', user.id)
-          .order('is_default', { ascending: false })
-          .order('created_at',  { ascending: false })
-
-        const cars: CarType[] = data ?? []
-        setUserCars(cars)
-        setCarsLoaded(true)
-
-        if (cars.length === 0) return // Case C — leave form.car empty
-
-        const best = cars.find(c => c.is_default) ?? cars[0]
-        setForm(prev => ({ ...prev, car: carLabel(best) }))
-      } catch {
-        setCarsLoaded(true) // graceful fallback — show plain text input
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ service?: string }>).detail
+      setIsOpen(true)
+      setError('')
+      if (detail?.service) {
+        setSelectedService(detail.service.toLowerCase())
+        setStep(2)
+      } else {
+        setStep(1)
       }
-    })()
+    }
+    window.addEventListener('openBooking', handler)
+    return () => window.removeEventListener('openBooking', handler)
+  }, [])
+
+  // Load user info + cars when modal opens
+  useEffect(() => {
+    if (!user || !isOpen) return
+    if (profile?.full_name) setName(profile.full_name)
+    if (profile?.phone)     setPhone(profile.phone)
+
+    supabase
+      .from('cars')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('is_primary', { ascending: false })
+      .then(({ data }) => {
+        const list = data ?? []
+        setCars(list)
+        if (list.length > 0 && !selectedCarId) {
+          setSelectedCarId(list[0].id)
+        }
+      })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen])
+  }, [user, profile, isOpen])
 
   if (!isOpen) return null
 
-  const updateField = (field: keyof FormState, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }))
-    if (field in errors) setErrors(prev => ({ ...prev, [field]: false }))
+  const close = () => {
+    setIsOpen(false)
+    setStep(1)
+    setSelectedService('')
+    setError('')
   }
 
-  const handleCarSelect = (carId: string) => {
-    const car = userCars.find(c => c.id === carId)
-    if (car) {
-      setForm(prev => ({ ...prev, car: carLabel(car) }))
-      setErrors(prev => ({ ...prev, car: false }))
+  const goToStep2 = () => {
+    if (!selectedService) {
+      setError('Veuillez choisir un service')
+      return
     }
+    setError('')
+    setStep(2)
   }
 
-  // Car is required only for non-logged-in users or logged-in with 0 cars
-  // (but we still accept an empty car for Case C to allow booking anyway)
-  const carRequired = !user
-
-  const handleSubmit = async () => {
-    const newErrors: ErrorState = {
-      name:    !form.name.trim(),
-      phone:   !form.phone.trim(),
-      car:     carRequired ? !form.car.trim() : false,
-      address: !form.address.trim(),
+  const submit = async () => {
+    if (!name || !phone || !address) {
+      setError('Tous les champs marqués * sont obligatoires')
+      return
     }
-    setErrors(newErrors)
-    if (Object.values(newErrors).some(Boolean)) return
-
-    const service   = SERVICES.find(s => s.id === selectedService)
-    const dateLabel = form.date === 'today' ? "Aujourd'hui" : form.date === 'tomorrow' ? 'Demain' : form.date
-
-    const msg =
-      `Bonjour MecaLIK\n\n` +
-      `*Nouvelle demande de devis*\n\n` +
-      `Service: ${service?.name}\n` +
-      `Nom: ${form.name}\n` +
-      `Telephone: ${form.phone}\n` +
-      (form.car ? `Voiture: ${form.car}\n` : '') +
-      `Lieu: ${form.address}\n` +
-      `Date: ${dateLabel}` +
-      (form.note ? `\nNote: ${form.note}` : '') +
-      `\n\nMerci !`
-
-    const url = 'https://wa.me/212777348065?text=' + encodeURIComponent(msg)
-
     setSubmitting(true)
-    const { data: newBooking, error: insertError } = await supabase
+    setError('')
+
+    const selectedCar = cars.find(c => c.id === selectedCarId)
+    const carInfo = selectedCar
+      ? `${selectedCar.brand} ${selectedCar.model}${selectedCar.year ? ' ' + selectedCar.year : ''}${selectedCar.license_plate ? ' · ' + selectedCar.license_plate : ''}`
+      : ''
+
+    const serviceLabel = SERVICE_LABEL_MAP[selectedService] || selectedService
+
+    const { data: booking, error: insertError } = await supabase
       .from('bookings')
       .insert({
-        user_id:        user?.id || null,
-        service_name:   selectedService,
-        address:        form.address,
-        notes_admin:    form.note || null,
-        preferred_date: form.date === 'tomorrow'
-          ? new Date(Date.now() + 86400000).toISOString().split('T')[0]
-          : null,
+        user_id:       user?.id || null,
+        car_id:        selectedCarId || null,
+        service_name:  serviceLabel,
+        address,
+        address_notes: addressNotes || null,
+        status:        'pending',
       })
-      .select('id')
+      .select()
       .single()
 
     if (insertError) {
-      console.error('Booking insert error:', insertError.message, insertError.code)
+      setSubmitting(false)
+      setError('Erreur: ' + insertError.message)
+      return
     }
+
+    const message = encodeURIComponent(
+      `Bonjour MecaLIK,\n\n` +
+      `Je souhaite réserver:\n` +
+      `Service: ${serviceLabel}\n` +
+      (carInfo ? `Véhicule: ${carInfo}\n` : '') +
+      `Adresse: ${address}\n` +
+      (addressNotes ? `Précisions: ${addressNotes}\n` : '') +
+      `Nom: ${name}\n` +
+      `Téléphone: ${phone}\n\n` +
+      `Référence: ${(booking as { reference?: string } | null)?.reference ?? ''}\n\n` +
+      `Merci !`
+    )
+    window.open(`https://wa.me/212777348065?text=${message}`, '_blank')
 
     setSubmitting(false)
+    close()
 
-    if (newBooking) {
-      fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role:  'admin',
-          title: 'Nouvelle réservation',
-          body:  `${service?.name} — ${form.address}`,
-          url:   '/admin',
-        }),
-      }).catch(() => {})
-    }
-
-    if (newBooking && user) {
-      window.open(url, '_blank')
-      onClose()
-      setTimeout(() => navigate('/booking/' + newBooking.id), 500)
-    } else {
-      window.open(url, '_blank')
-      onClose()
+    if (user && booking?.id) {
+      navigate(`/booking/${booking.id}`)
     }
   }
 
-  const selectedServiceData = SERVICES.find(s => s.id === selectedService)
-
-  const inputBase: React.CSSProperties = {
-    background: '#141414',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '12px',
-    color: '#ffffff',
-    fontSize: '14px',
-    width: '100%',
-    padding: '14px 16px 14px 40px',
-    outline: 'none',
-  }
-  const inputError: React.CSSProperties = { ...inputBase, border: '1px solid #FF4444' }
-
-  // ── vehicle section helpers ───────────────────────────────────────────────
-  const loggedIn      = !!user
-  const caseA         = loggedIn && carsLoaded && userCars.length === 1 && !showCarSelector
-  const caseB         = loggedIn && carsLoaded && (userCars.length > 1 || (userCars.length === 1 && showCarSelector))
-  const caseC         = loggedIn && carsLoaded && userCars.length === 0
-  const noAuthOrLoad  = !loggedIn || !carsLoaded // show plain input while loading or if guest
+  const canSubmit = !submitting && !!name && !!phone && !!address
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
-      {/* Overlay */}
+    <>
+      {/* Backdrop */}
       <div
-        className="absolute inset-0"
-        style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}
-        onClick={onClose}
+        onClick={close}
+        style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 100,
+          animation: 'bmFadeIn 0.2s ease',
+        }}
       />
 
-      {/* Modal card */}
-      <div
-        className="relative z-10 w-full md:max-w-lg mx-0 md:mx-4 overflow-y-auto"
-        style={{
-          background: '#0D0D0D',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '16px 16px 0 0',
-          maxHeight: '92vh',
-        }}
-      >
+      {/* Bottom sheet */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '480px',
+        maxHeight: '92vh',
+        background: '#0A0A0A',
+        borderTopLeftRadius: '24px',
+        borderTopRightRadius: '24px',
+        zIndex: 101,
+        animation: 'bmSlideUp 0.25s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
+      }}>
+
+        {/* Drag handle */}
+        <div style={{ padding: '10px 0 4px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.15)' }} />
+        </div>
+
         {/* Header */}
-        <div
-          className="px-6 pt-6 pb-4 flex items-center justify-between"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          <div>
-            <div className="font-heading font-bold text-lg" style={{ color: '#ffffff' }}>
-              Demander un devis
-            </div>
-            <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Réponse WhatsApp en moins de 5 min
+        <div style={{
+          padding: '8px 20px 16px',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px',
+          flexShrink: 0,
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {step === 2 && (
+              <button
+                onClick={() => { setStep(1); setError('') }}
+                style={{
+                  background: 'transparent', border: 'none',
+                  color: 'rgba(255,255,255,0.55)',
+                  fontSize: '12px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                  padding: '0 0 6px 0', marginLeft: '-2px',
+                }}
+              >
+                <ArrowLeft size={13} />
+                Changer de service
+              </button>
+            )}
+            <h2 style={{
+              fontFamily: 'Space Grotesk, sans-serif',
+              fontSize: '20px', fontWeight: 600, color: 'white',
+              letterSpacing: '-0.015em', marginBottom: '2px',
+            }}>
+              {step === 1 ? 'Choisir un service' : 'Vos informations'}
+            </h2>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+              {step === 1 ? 'Que souhaitez-vous réserver ?' : 'Réponse WhatsApp en moins de 5 min'}
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200"
-            style={{ background: 'rgba(255,255,255,0.06)' }}
-            aria-label="Fermer"
+            onClick={close}
+            style={{
+              width: '32px', height: '32px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', flexShrink: 0,
+            }}
           >
-            <X size={16} color="rgba(255,255,255,0.6)" />
+            <X size={15} color="rgba(255,255,255,0.6)" />
           </button>
         </div>
 
-        {/* Step indicator */}
-        <div className="px-6 pt-4 pb-2 flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-              style={{
-                background: step >= 1 ? '#43BCC9' : 'rgba(255,255,255,0.08)',
-                color: step >= 1 ? '#080808' : 'rgba(255,255,255,0.4)',
-              }}
-            >1</div>
-            <span className="text-xs" style={{ color: step === 1 ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>
-              Service
-            </span>
-          </div>
-          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
-          <div className="flex items-center gap-2">
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-              style={{
-                background: step === 2 ? '#43BCC9' : 'rgba(255,255,255,0.08)',
-                color: step === 2 ? '#080808' : 'rgba(255,255,255,0.4)',
-              }}
-            >2</div>
-            <span className="text-xs" style={{ color: step === 2 ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>
-              Vos infos
-            </span>
-          </div>
+        {/* Progress bar */}
+        <div style={{
+          padding: '12px 20px',
+          display: 'flex', alignItems: 'center', gap: '6px',
+          flexShrink: 0,
+        }}>
+          <div style={{
+            flex: step === 1 ? 1 : 0.3,
+            height: '3px', background: '#43BCC9',
+            borderRadius: '2px', transition: 'flex 0.3s',
+          }} />
+          <div style={{
+            flex: step === 2 ? 1 : 0.3,
+            height: '3px',
+            background: step === 2 ? '#43BCC9' : 'rgba(255,255,255,0.1)',
+            borderRadius: '2px', transition: 'all 0.3s',
+          }} />
         </div>
 
-        {/* ── STEP 1 ── */}
-        {step === 1 && (
-          <>
-            <div className="px-6 py-4">
-              <p className="text-sm font-medium mb-4" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                Quel service souhaitez-vous ?
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {SERVICES.map(s => {
-                  const active         = selectedService === s.id
-                  const pricingService = PRICING_SERVICES.find(p => p.id === s.id)
-                  const priceLabel     = pricingService
-                    ? (pricingService.contactOnly ? 'Sur devis' : `À partir de ${getPrice(pricingService, 'zone1')}`)
-                    : null
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => setSelectedService(s.id)}
-                      className="w-full text-left p-4 rounded-xl transition-all duration-200"
-                      style={{
-                        border:     active ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
-                        background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
-                      }}
-                    >
-                      <div className="text-sm font-semibold" style={{ color: active ? 'white' : 'rgba(255,255,255,0.6)' }}>
-                        {s.name}
-                      </div>
-                      <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                        {s.duration}
-                      </div>
-                      {priceLabel && (
-                        <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
-                          {priceLabel}
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+        {/* Scrollable body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 20px' }}>
 
-            <div className="px-6 pb-6 pt-4">
-              <button
-                onClick={() => { if (selectedService) setStep(2) }}
-                disabled={!selectedService}
-                className="w-full rounded-full py-4 text-sm font-semibold transition-all"
-                style={{
-                  background: selectedService ? 'white' : 'rgba(255,255,255,0.06)',
-                  color:      selectedService ? '#080808' : 'rgba(255,255,255,0.3)',
-                  cursor:     selectedService ? 'pointer' : 'not-allowed',
-                }}
-              >
-                Continuer
-              </button>
-            </div>
-          </>
-        )}
+          {/* ── STEP 1 — service selection ── */}
+          {step === 1 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {SERVICE_OPTIONS.map(svc => {
+                const isSelected     = selectedService === svc.id
+                const pricingService = SERVICES.find(s => s.id === svc.id)
+                const price          = pricingService && !pricingService.contactOnly
+                  ? getPrice(pricingService, 'zone1')
+                  : null
+                const isUrgent = svc.id === 'urgence'
 
-        {/* ── STEP 2 ── */}
-        {step === 2 && (
-          <>
-            <div className="px-6 py-4 space-y-4">
-              {/* Back / service badge */}
-              <button
-                onClick={() => setStep(1)}
-                className="flex items-center gap-1 text-sm"
-                style={{ color: 'rgba(255,255,255,0.45)' }}
-              >
-                ← Changer de service
-              </button>
-
-              <div
-                className="inline-flex items-center gap-2 rounded-full px-3 py-1.5"
-                style={{ background: 'rgba(67,188,201,0.08)', border: '1px solid rgba(67,188,201,0.2)' }}
-              >
-                <span className="text-xs font-medium" style={{ color: '#43BCC9' }}>
-                  {selectedServiceData?.name} · {selectedServiceData?.duration}
-                </span>
-              </div>
-
-              {/* ── Name ── */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Nom complet *
-                </label>
-                <div className="relative">
-                  <User size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Votre nom complet"
-                    value={form.name}
-                    onChange={e => updateField('name', e.target.value)}
-                    style={errors.name ? inputError : inputBase}
-                  />
-                </div>
-                {errors.name && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
-              </div>
-
-              {/* ── Phone ── */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Téléphone *
-                </label>
-                <div className="relative">
-                  <Phone size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="tel"
-                    placeholder="06 XX XX XX XX"
-                    value={form.phone}
-                    onChange={e => updateField('phone', e.target.value)}
-                    style={errors.phone ? inputError : inputBase}
-                  />
-                </div>
-                {errors.phone && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
-              </div>
-
-              {/* ── Vehicle — smart selection ── */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Véhicule{carRequired ? ' *' : ''}
-                </label>
-
-                {/* CASE A — 1 car, auto-selected, read-only display */}
-                {caseA && (
-                  <div>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      background: '#141414',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: '12px',
-                      padding: '13px 16px',
-                    }}>
-                      <Car size={15} color="rgba(255,255,255,0.3)" style={{ flexShrink: 0 }} />
-                      <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)' }}>
-                        {form.car}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setShowCarSelector(true)}
-                      style={{
-                        marginTop: '6px',
-                        fontSize: '12px',
-                        color: '#43BCC9',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 0,
-                      }}
-                    >
-                      Changer de véhicule
-                    </button>
-                  </div>
-                )}
-
-                {/* CASE B — 2+ cars or "Changer" clicked — dropdown */}
-                {caseB && (
-                  <div>
-                    <div className="relative">
-                      <Car size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <select
-                        value={userCars.find(c => carLabel(c) === form.car)?.id ?? ''}
-                        onChange={e => handleCarSelect(e.target.value)}
-                        style={{ ...inputBase, appearance: 'none' as const }}
-                      >
-                        <option value="" disabled>Sélectionnez votre véhicule</option>
-                        {userCars.map(car => (
-                          <option key={car.id} value={car.id}>
-                            {carLabel(car)}{car.is_default ? ' (par défaut)' : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {errors.car && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
-                  </div>
-                )}
-
-                {/* CASE C — 0 cars — prompt + optional free-text */}
-                {caseC && (
-                  <div>
-                    <div style={{
-                      background: 'rgba(67,188,201,0.04)',
-                      border: '1px solid rgba(67,188,201,0.12)',
-                      borderRadius: '10px',
-                      padding: '12px 14px',
-                      marginBottom: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '12px',
-                    }}>
-                      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.4' }}>
-                        Ajoutez votre véhicule pour accélérer vos réservations
-                      </span>
-                      <button
-                        onClick={() => { onClose(); navigate('/dashboard?tab=vehicles') }}
-                        style={{
-                          fontSize: '12px', fontWeight: 600,
-                          color: '#43BCC9', background: 'none',
-                          border: '1px solid rgba(67,188,201,0.25)',
-                          borderRadius: '100px', padding: '5px 12px',
-                          cursor: 'pointer', flexShrink: 0,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        Ajouter
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Car size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        placeholder="Ex: Dacia Logan 2019 (facultatif)"
-                        value={form.car}
-                        onChange={e => updateField('car', e.target.value)}
-                        style={inputBase}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Guest or loading — plain text input */}
-                {noAuthOrLoad && (
-                  <div className="relative">
-                    <Car size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Ex: Dacia Logan 2019"
-                      value={form.car}
-                      onChange={e => updateField('car', e.target.value)}
-                      style={errors.car ? inputError : inputBase}
-                    />
-                    {errors.car && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
-                  </div>
-                )}
-              </div>
-
-              {/* ── Address ── */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Adresse / Lieu *
-                </label>
-                <div className="relative">
-                  <MapPin size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Domicile, bureau, parking..."
-                    value={form.address}
-                    onChange={e => updateField('address', e.target.value)}
-                    style={errors.address ? inputError : inputBase}
-                  />
-                </div>
-                {errors.address && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
-              </div>
-
-              {/* ── Date ── */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Date souhaitée
-                </label>
-                <div className="relative">
-                  <Calendar size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <select
-                    value={form.date}
-                    onChange={e => updateField('date', e.target.value)}
-                    style={{ ...inputBase, appearance: 'none' as const }}
+                return (
+                  <button
+                    key={svc.id}
+                    onClick={() => setSelectedService(svc.id)}
+                    style={{
+                      width: '100%', padding: '16px',
+                      background: isSelected ? 'rgba(67,188,201,0.08)' : '#0F0F0F',
+                      border: isSelected
+                        ? '1.5px solid rgba(67,188,201,0.4)'
+                        : '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: '14px',
+                      cursor: 'pointer', textAlign: 'left',
+                      display: 'flex', alignItems: 'center', gap: '14px',
+                      transition: 'all 0.15s',
+                    }}
                   >
-                    <option value="today">{"Aujourd'hui — dès que possible"}</option>
-                    <option value="tomorrow">Demain matin</option>
-                    <option value="choose">Choisir une date</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* ── Note ── */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Note optionnelle
-                </label>
-                <div className="relative">
-                  <MessageSquare size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-4" />
-                  <textarea
-                    rows={2}
-                    placeholder="Précisions sur le problème, accès, etc."
-                    value={form.note}
-                    onChange={e => updateField('note', e.target.value)}
-                    style={{ ...inputBase, padding: '14px 16px 14px 40px', resize: 'none' }}
-                  />
-                </div>
-              </div>
+                    <div style={{
+                      width: '40px', height: '40px', borderRadius: '10px',
+                      background: isSelected ? 'rgba(67,188,201,0.15)' : 'rgba(255,255,255,0.04)',
+                      border: isSelected ? '1px solid rgba(67,188,201,0.25)' : '1px solid rgba(255,255,255,0.06)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {isSelected ? (
+                        <Check size={16} color="#43BCC9" />
+                      ) : (
+                        <div style={{
+                          width: '8px', height: '8px', borderRadius: '50%',
+                          background: isUrgent ? 'rgba(255,68,68,0.6)' : 'rgba(255,255,255,0.2)',
+                        }} />
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '15px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
+                        {svc.label}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', display: 'flex', gap: '8px' }}>
+                        <span>{svc.duration}</span>
+                        {price && !isUrgent && (
+                          <>
+                            <span>·</span>
+                            <span>Dès {price}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
+          )}
 
-            {/* Submit */}
-            <div className="px-6 pb-6 pt-2">
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 font-bold py-4 rounded-full transition-colors duration-200 text-sm"
+          {/* ── STEP 2 — user info ── */}
+          {step === 2 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+              {/* Service chip */}
+              {selectedService && (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 14px', borderRadius: '10px',
+                  background: 'rgba(67,188,201,0.08)',
+                  border: '1px solid rgba(67,188,201,0.2)',
+                  alignSelf: 'flex-start',
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#43BCC9', display: 'inline-block' }} />
+                  <span style={{ fontSize: '12px', color: '#43BCC9', fontWeight: 600 }}>
+                    {SERVICE_LABEL_MAP[selectedService] || selectedService}
+                  </span>
+                </div>
+              )}
+
+              {/* Name */}
+              <FieldLabel>Nom complet *</FieldLabel>
+              <FieldWrapper icon={<User size={14} color="rgba(255,255,255,0.4)" />}>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Votre nom"
+                  style={inputStyle}
+                />
+              </FieldWrapper>
+
+              {/* Phone */}
+              <FieldLabel>Téléphone *</FieldLabel>
+              <FieldWrapper icon={<Phone size={14} color="rgba(255,255,255,0.4)" />}>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="06 XX XX XX XX"
+                  style={inputStyle}
+                />
+              </FieldWrapper>
+
+              {/* Vehicle */}
+              {cars.length > 0 && (
+                <>
+                  <FieldLabel>Véhicule</FieldLabel>
+                  <FieldWrapper icon={<CarIcon size={14} color="rgba(255,255,255,0.4)" />}>
+                    <select
+                      value={selectedCarId}
+                      onChange={e => setSelectedCarId(e.target.value)}
+                      style={{ ...inputStyle, cursor: 'pointer' }}
+                    >
+                      {cars.map(car => (
+                        <option key={car.id} value={car.id} style={{ background: '#111111' }}>
+                          {car.brand} {car.model}{car.year ? ` ${car.year}` : ''}{car.license_plate ? ` · ${car.license_plate}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </FieldWrapper>
+                </>
+              )}
+
+              {/* Address */}
+              <FieldLabel>Adresse / Lieu *</FieldLabel>
+              <FieldWrapper icon={<MapPin size={14} color="rgba(255,255,255,0.4)" />}>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  placeholder="Domicile, bureau, parking..."
+                  style={inputStyle}
+                />
+              </FieldWrapper>
+
+              {/* Address notes */}
+              <FieldLabel>Précisions (facultatif)</FieldLabel>
+              <textarea
+                value={addressNotes}
+                onChange={e => setAddressNotes(e.target.value)}
+                placeholder="Étage, code, points de repère..."
+                rows={2}
                 style={{
-                  background: submitting ? 'rgba(67,188,201,0.5)' : '#43BCC9',
-                  color:  '#080808',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  ...inputStyle,
+                  padding: '12px 14px',
+                  resize: 'none',
+                  minHeight: '60px',
+                  fontFamily: 'inherit',
+                  background: '#111111',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: '12px',
                 }}
-              >
-                {submitting
-                  ? 'Envoi...'
-                  : <><span>Envoyer sur WhatsApp</span><ChevronRight size={18} /></>}
-              </button>
-              <p className="text-center text-xs mt-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                Vous recevrez une réponse en moins de 5 minutes
-              </p>
+              />
             </div>
-          </>
-        )}
+          )}
+
+          {/* Error */}
+          {error && (
+            <div style={{
+              marginTop: '14px', padding: '10px 14px',
+              borderRadius: '10px',
+              background: 'rgba(255,68,68,0.08)',
+              border: '1px solid rgba(255,68,68,0.18)',
+              color: '#FF6B6B', fontSize: '12px',
+            }}>
+              {error}
+            </div>
+          )}
+        </div>
+
+        {/* Footer CTA */}
+        <div style={{
+          padding: '14px 20px 28px',
+          background: '#0A0A0A',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          flexShrink: 0,
+        }}>
+          {step === 1 && (
+            <button
+              onClick={goToStep2}
+              disabled={!selectedService}
+              style={{
+                width: '100%', padding: '14px',
+                borderRadius: '12px', border: 'none',
+                background: selectedService ? 'white' : 'rgba(255,255,255,0.06)',
+                color:      selectedService ? '#080808' : 'rgba(255,255,255,0.3)',
+                fontSize: '15px', fontWeight: 600,
+                cursor: selectedService ? 'pointer' : 'not-allowed',
+                transition: 'all 0.15s',
+              }}
+            >
+              Continuer
+            </button>
+          )}
+
+          {step === 2 && (
+            <button
+              onClick={submit}
+              disabled={!canSubmit}
+              style={{
+                width: '100%', padding: '14px',
+                borderRadius: '12px', border: 'none',
+                background: canSubmit ? '#00DD88' : 'rgba(255,255,255,0.06)',
+                color:      canSubmit ? '#0A0A0A' : 'rgba(255,255,255,0.3)',
+                fontSize: '15px', fontWeight: 600,
+                cursor: canSubmit ? 'pointer' : 'not-allowed',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                transition: 'all 0.15s',
+              }}
+            >
+              {submitting ? 'Envoi...' : (
+                <>
+                  <MessageCircle size={16} />
+                  Envoyer sur WhatsApp
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
+
+      <style>{`
+        @keyframes bmFadeIn  { from { opacity: 0 }             to { opacity: 1 } }
+        @keyframes bmSlideUp { from { transform: translate(-50%, 100%) } to { transform: translate(-50%, 0) } }
+        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
+        input:focus, select:focus, textarea:focus { outline: none; }
+        select option { background: #111111 !important; color: white !important; }
+      `}</style>
+    </>
+  )
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: '11px', fontWeight: 600,
+      color: 'rgba(255,255,255,0.45)',
+      textTransform: 'uppercase', letterSpacing: '0.06em',
+      marginBottom: '-8px', marginTop: '4px',
+    }}>
+      {children}
     </div>
   )
+}
+
+function FieldWrapper({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center',
+      background: '#111111',
+      border: '1px solid rgba(255,255,255,0.07)',
+      borderRadius: '12px',
+      paddingLeft: '14px', gap: '10px',
+    }}>
+      {icon}
+      {children}
+    </div>
+  )
+}
+
+const inputStyle: React.CSSProperties = {
+  flex: 1,
+  background: 'transparent',
+  border: 'none',
+  padding: '12px 14px 12px 0',
+  color: 'white',
+  fontSize: '14px',
+  outline: 'none',
+  fontFamily: 'inherit',
+  width: '100%',
 }
