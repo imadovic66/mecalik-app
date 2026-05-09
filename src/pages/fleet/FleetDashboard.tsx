@@ -1,787 +1,654 @@
-import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../hooks/useAuth'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabase'
 import {
-  Car, CheckCircle, AlertTriangle, Clock,
-  Wrench, Plus, LogOut,
-  BarChart3, Calendar, FileText,
-  ChevronRight, RefreshCw,
+  RefreshCw, Plus, Wrench,
+  LayoutDashboard, Car, Calendar, FileText,
+  LogOut, Download,
 } from 'lucide-react'
-import FleetCalendar from './FleetCalendar'
-import { generateInvoice } from '../../utils/generateInvoice'
 import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer, LineChart,
-  Line, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts'
 
-type Vehicle = {
+type FleetVehicle = {
   id: string
   company_id: string
+  plate: string
   brand: string
   model: string
-  year: number
-  plate: string | null
-  status: 'ok' | 'service_due' | 'in_service' | 'alert'
+  year: number | null
+  type: string | null
   driver_name: string | null
+  driver_phone: string | null
   mileage: number | null
+  status: string
   created_at: string
+}
+
+type Booking = {
+  id: string
+  reference: string
+  service_name: string
+  address: string
+  status: string
+  amount_ttc: number | null
+  created_at: string
+  fleet_vehicle_id: string | null
 }
 
 type Company = {
   id: string
   name: string
-  contact_email: string | null
-  contact_phone: string | null
+  contact_name: string | null
+  plan: string | null
+  vehicle_count: number | null
 }
 
-const VEHICLE_STATUS = {
-  ok:          { label: 'Opérationnel',   color: '#00DD88', bg: 'rgba(0,221,136,0.1)',  border: 'rgba(0,221,136,0.25)',  icon: CheckCircle   },
-  service_due: { label: 'Service requis', color: '#F0C040', bg: 'rgba(240,192,64,0.1)', border: 'rgba(240,192,64,0.25)', icon: Clock         },
-  in_service:  { label: 'En service',     color: '#43BCC9', bg: 'rgba(67,188,201,0.1)', border: 'rgba(67,188,201,0.25)', icon: Wrench        },
-  alert:       { label: 'Alerte',         color: '#FF4444', bg: 'rgba(255,68,68,0.1)',  border: 'rgba(255,68,68,0.25)',  icon: AlertTriangle },
+type TabId = 'overview' | 'fleet' | 'planning' | 'interventions' | 'rapports'
+
+const VEHICLE_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  operational: { label: 'Opérationnel',  color: '#00DD88', bg: 'rgba(0,221,136,0.08)'   },
+  service_due:  { label: 'Service requis', color: '#F0C040', bg: 'rgba(240,192,64,0.08)'  },
+  in_service:   { label: 'En service',    color: '#43BCC9', bg: 'rgba(67,188,201,0.08)'  },
+  alert:        { label: 'Alerte',        color: '#FF4444', bg: 'rgba(255,68,68,0.08)'   },
 }
 
-type Tab = 'overview' | 'fleet' | 'calendar' | 'bookings' | 'reports'
-type StatusFilter = 'all' | 'ok' | 'service_due' | 'in_service' | 'alert'
-
-const WA_FLEET_URL = 'https://wa.me/212777348065?text=' +
-  encodeURIComponent("Bonjour MecaLIK, je suis gestionnaire de flotte et j'ai besoin d'une intervention.")
-
-function VehicleStatusIcon({ status }: { status: keyof typeof VEHICLE_STATUS }) {
-  const cfg = VEHICLE_STATUS[status]
-  const Icon = cfg.icon
-  return (
-    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-      style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
-      <Icon size={18} style={{ color: cfg.color }} />
-    </div>
-  )
-}
-
-function StatusPill({ status }: { status: keyof typeof VEHICLE_STATUS }) {
-  const cfg = VEHICLE_STATUS[status]
-  return (
-    <span className="px-3 py-1 rounded-full text-xs font-medium"
-      style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
-      {cfg.label}
-    </span>
-  )
+const BOOKING_STATUS: Record<string, { label: string; color: string }> = {
+  pending:     { label: 'En attente', color: '#F0C040' },
+  confirmed:   { label: 'Confirmée',  color: '#43BCC9' },
+  in_progress: { label: 'En cours',   color: '#43BCC9' },
+  completed:   { label: 'Terminée',   color: '#00DD88' },
+  cancelled:   { label: 'Annulée',    color: '#FF4444' },
 }
 
 export default function FleetDashboard() {
-  const { user, profile, signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
 
-  const [activeTab, setActiveTab] = useState<Tab>('overview')
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [company, setCompany] = useState<Company | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [showAddVehicle, setShowAddVehicle] = useState(false)
-  const [newVehicle, setNewVehicle] = useState({ brand: '', model: '', year: '', plate: '' })
-  const [addingVehicle, setAddingVehicle] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [tab, setTab]           = useState<TabId>('overview')
+  const [vehicles, setVehicles] = useState<FleetVehicle[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [company, setCompany]   = useState<Company | null>(null)
+  const [loading, setLoading]   = useState(true)
 
-  useEffect(() => { if (!user) navigate('/login') }, [user, navigate])
+  void loading
 
-  const fetchData = useCallback(async () => {
-    if (!user || !profile) return
+  useEffect(() => {
+    if (!user) return
+    fetchAll()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  const fetchAll = async () => {
+    if (!user) return
     setLoading(true)
-
-    let companyId = profile.company_id
-
-    if (!companyId && profile.role === 'admin') {
-      const { data: firstCompany } = await supabase
-        .from('companies')
-        .select('id')
-        .limit(1)
+    try {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
         .single()
-      companyId = firstCompany?.id || null
-    }
 
-    if (!companyId) {
-      setLoading(false)
-      return
-    }
-
-    const { data: companyData } = await supabase
-      .from('companies')
-      .select('*')
-      .eq('id', companyId)
-      .single()
-    setCompany(companyData)
-
-    const { data: vehiclesData } = await supabase
-      .from('fleet_vehicles')
-      .select('*')
-      .eq('company_id', companyId)
-      .order('created_at', { ascending: false })
-    setVehicles(vehiclesData || [])
-
+      if (profileData?.company_id) {
+        const [companyRes, vehiclesRes, bookingsRes] = await Promise.all([
+          supabase.from('companies').select('*').eq('id', profileData.company_id).single(),
+          supabase.from('fleet_vehicles').select('*').eq('company_id', profileData.company_id).order('created_at', { ascending: false }),
+          supabase.from('bookings').select('*').eq('company_id', profileData.company_id).order('created_at', { ascending: false }).limit(100),
+        ])
+        setCompany(companyRes.data)
+        setVehicles(vehiclesRes.data || [])
+        setBookings(bookingsRes.data || [])
+      }
+    } catch (_) {}
     setLoading(false)
-  }, [user, profile])
-
-  useEffect(() => { if (user && profile) fetchData() }, [user, profile, fetchData])
-
-  const addVehicle = async () => {
-    if (!newVehicle.brand || !newVehicle.model || !newVehicle.year) return
-    setAddingVehicle(true)
-    const companyId = profile?.company_id || company?.id
-    if (!companyId) { setAddingVehicle(false); return }
-
-    await supabase.from('fleet_vehicles').insert({
-      company_id: companyId,
-      brand: newVehicle.brand,
-      model: newVehicle.model,
-      year: parseInt(newVehicle.year),
-      plate: newVehicle.plate || null,
-      status: 'ok',
-    })
-    const { data } = await supabase.from('fleet_vehicles').select('*').eq('company_id', companyId).order('created_at', { ascending: false })
-    setVehicles(data ?? [])
-    setNewVehicle({ brand: '', model: '', year: '', plate: '' })
-    setShowAddVehicle(false)
-    setAddingVehicle(false)
   }
 
-  const filteredVehicles = statusFilter === 'all'
-    ? vehicles
-    : vehicles.filter(v => v.status === statusFilter)
-
-  const stats = {
-    total:      vehicles.length,
-    ok:         vehicles.filter(v => v.status === 'ok').length,
-    serviceDue: vehicles.filter(v => v.status === 'service_due').length,
-    inService:  vehicles.filter(v => v.status === 'in_service').length,
-    alert:      vehicles.filter(v => v.status === 'alert').length,
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/')
   }
 
-  const tabTitles: Record<Tab, string> = {
-    overview: "Vue d'ensemble",
-    fleet:    'Ma flotte',
-    calendar: 'Planning',
-    bookings: 'Interventions',
-    reports:  'Rapports',
-  }
+  // ── Stats ──
+  const operational = vehicles.filter(v => v.status === 'operational').length
+  const serviceDue  = vehicles.filter(v => v.status === 'service_due').length
+  const inService   = vehicles.filter(v => v.status === 'in_service').length
+  const alerts      = vehicles.filter(v => v.status === 'alert').length
+  const totalSpent  = bookings.filter(b => b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0)
 
-  const navItems: { tab: Tab; icon: React.ReactNode; label: string }[] = [
-    { tab: 'overview',  icon: <BarChart3 size={18} />,  label: "Vue d'ensemble" },
-    { tab: 'fleet',     icon: <Car size={18} />,        label: 'Ma flotte' },
-    { tab: 'calendar',  icon: <Calendar size={18} />,   label: 'Planning' },
-    { tab: 'bookings',  icon: <Wrench size={18} />,     label: 'Interventions' },
-    { tab: 'reports',   icon: <FileText size={18} />,   label: 'Rapports' },
+  // ── Chart data ──
+  const serviceTypeCounts: Record<string, number> = {}
+  bookings.forEach(b => {
+    const key = b.service_name.split(' ')[0]
+    serviceTypeCounts[key] = (serviceTypeCounts[key] || 0) + 1
+  })
+  const barData = Object.entries(serviceTypeCounts)
+    .map(([name, count]) => ({ name, count }))
+    .slice(0, 6)
+
+  const pieData = [
+    { name: 'Opérationnel',  value: operational, color: '#00DD88' },
+    { name: 'Service requis', value: serviceDue,  color: '#F0C040' },
+    { name: 'En service',    value: inService,   color: '#43BCC9' },
+    { name: 'Alerte',        value: alerts,      color: '#FF4444' },
+  ].filter(d => d.value > 0)
+
+  // Ensure pie has at least one segment
+  const pieDataSafe = pieData.length > 0 ? pieData : [{ name: 'Aucun', value: 1, color: 'rgba(255,255,255,0.1)' }]
+
+  const NAV_ITEMS: { id: TabId; label: string; Icon: React.ElementType }[] = [
+    { id: 'overview',      label: "Vue d'ensemble", Icon: LayoutDashboard },
+    { id: 'fleet',         label: 'Ma flotte',       Icon: Car             },
+    { id: 'planning',      label: 'Planning',         Icon: Calendar        },
+    { id: 'interventions', label: 'Interventions',    Icon: Wrench          },
+    { id: 'rapports',      label: 'Rapports',         Icon: FileText        },
   ]
 
-  const mobileNavItems = navItems.filter(item => item.tab !== 'reports')
-
-  const inputStyle = {
-    background: '#141414',
-    border: '1px solid rgba(255,255,255,0.08)',
-    color: '#ffffff',
-  }
-
+  const now = new Date()
+  const thisMonthBookings    = bookings.filter(b => new Date(b.created_at).getMonth() === now.getMonth() && new Date(b.created_at).getFullYear() === now.getFullYear())
+  const thisMonthSpent       = thisMonthBookings.filter(b => b.status === 'completed').reduce((s, b) => s + (b.amount_ttc || 0), 0)
+  const avgCostPerVehicle    = vehicles.length > 0 ? Math.round(totalSpent / vehicles.length) : 0
 
   return (
-    <div className="min-h-screen bg-[#080808] flex">
+    <div style={{
+      display: 'flex', minHeight: '100vh',
+      background: '#080808',
+      fontFamily: 'Outfit, system-ui, sans-serif',
+    }}>
 
-      {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-64 flex-col z-40"
-        style={{ background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="p-6">
-          <img src="/logo.jpg" alt="MecaLIK"
-            style={{ height: '36px', width: '120px', objectFit: 'cover', borderRadius: '6px' }} />
-          <div className="mt-4">
-            <div className="text-xs uppercase tracking-wider mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              Entreprise
-            </div>
-            <div className="text-sm font-medium" style={{ color: '#ffffff' }}>
-              {company?.name || 'Chargement...'}
-            </div>
+      {/* ═══ SIDEBAR ═══ */}
+      <aside style={{
+        width: '220px', flexShrink: 0,
+        background: '#050505',
+        borderRight: '1px solid rgba(255,255,255,0.05)',
+        display: 'flex', flexDirection: 'column',
+        position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
+      }}>
+
+        {/* Logo */}
+        <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{
+            fontSize: '15px', fontWeight: 700, color: 'white',
+            fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em', marginBottom: '2px',
+          }}>
+            Meca<span style={{ color: '#43BCC9' }}>LIK</span>
+          </div>
+          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            Fleet Management
           </div>
         </div>
 
-        <nav className="flex-1 px-3 mt-2 space-y-1">
-          {navItems.map(({ tab, icon, label }) => {
-            const isActive = activeTab === tab
+        {/* Company badge */}
+        <div style={{ padding: '14px 18px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <div style={{
+            fontSize: '12px', fontWeight: 600, color: 'white',
+            marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {company?.name || 'Ma flotte'}
+          </div>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center',
+            padding: '2px 8px', borderRadius: '4px',
+            background: 'rgba(240,192,64,0.1)', border: '1px solid rgba(240,192,64,0.2)',
+            fontSize: '9px', fontWeight: 700, color: '#F0C040', letterSpacing: '0.08em',
+          }}>
+            {company?.plan?.toUpperCase() || 'FLOTTE'}
+          </span>
+        </div>
+
+        {/* Nav */}
+        <nav style={{ padding: '10px', flex: 1 }}>
+          {NAV_ITEMS.map(({ id, label, Icon }) => {
+            const isActive = tab === id
             return (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all"
-                style={{
-                  color: isActive ? '#F0C040' : 'rgba(255,255,255,0.5)',
-                  background: isActive ? 'rgba(240,192,64,0.1)' : 'transparent',
-                  border: isActive ? '1px solid rgba(240,192,64,0.15)' : '1px solid transparent',
-                }}>
-                {icon}{label}
+              <button key={id} onClick={() => setTab(id)} style={{
+                width: '100%',
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '8px 10px', borderRadius: '8px', border: 'none',
+                marginBottom: '2px', cursor: 'pointer',
+                background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                color: isActive ? 'white' : 'rgba(255,255,255,0.4)',
+                fontSize: '13px', fontWeight: isActive ? 500 : 400,
+                textAlign: 'left', position: 'relative', transition: 'all 0.15s',
+              }}>
+                {isActive && (
+                  <div style={{
+                    position: 'absolute', left: 0, top: '20%', bottom: '20%',
+                    width: '2px', background: '#F0C040', borderRadius: '0 2px 2px 0',
+                  }} />
+                )}
+                <Icon size={14} style={{ opacity: isActive ? 1 : 0.5, flexShrink: 0 }} />
+                {label}
               </button>
             )
           })}
         </nav>
 
-        <div className="p-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          {company?.contact_email && (
-            <div className="text-xs mb-1 px-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{company.contact_email}</div>
-          )}
-          {company?.contact_phone && (
-            <div className="text-xs mb-3 px-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{company.contact_phone}</div>
-          )}
-          <button onClick={async () => { await signOut(); navigate('/') }}
-            className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm w-full transition-colors"
-            style={{ color: 'rgba(255,255,255,0.4)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}>
-            <LogOut size={16} />Déconnexion
+        {/* Bottom */}
+        <div style={{ padding: '12px 18px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{
+            fontSize: '11px', color: 'rgba(255,255,255,0.25)',
+            marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {user?.email}
+          </div>
+          <button onClick={handleSignOut} style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'rgba(255,255,255,0.3)', fontSize: '12px', padding: 0,
+          }}>
+            <LogOut size={12} /> Déconnexion
           </button>
         </div>
       </aside>
 
-      {/* ── MAIN ─────────────────────────────────────────────────────── */}
-      <div className="lg:ml-64 flex-1 flex flex-col min-h-screen">
+      {/* ═══ MAIN ═══ */}
+      <main style={{ flex: 1, overflow: 'auto', background: '#080808' }}>
 
         {/* Top bar */}
-        <div className="px-6 py-4 flex items-center justify-between"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#080808' }}>
+        <div style={{
+          padding: '14px 32px',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: '#080808',
+          position: 'sticky', top: 0, zIndex: 10,
+        }}>
           <div>
-            <h1 className="font-heading font-bold text-xl" style={{ color: '#ffffff' }}>
-              {tabTitles[activeTab]}
-            </h1>
-            <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {company?.name || 'Votre flotte'}
-            </p>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
+              {NAV_ITEMS.find(n => n.id === tab)?.label}
+            </div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+              MecaLIK Fleet · {company?.name || 'Tableau de bord'}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={fetchData}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: 'rgba(255,255,255,0.06)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}>
-              <RefreshCw size={16} style={{ color: 'rgba(255,255,255,0.5)' }} />
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button onClick={fetchAll} style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '8px', padding: '6px 12px',
+              cursor: 'pointer', color: 'rgba(255,255,255,0.5)',
+              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px',
+            }}>
+              <RefreshCw size={12} /> Actualiser
             </button>
-            <button onClick={() => window.open(WA_FLEET_URL, '_blank')}
-              className="flex items-center gap-2 font-semibold px-4 py-2 rounded-full text-sm"
-              style={{ background: '#43BCC9', color: '#080808' }}>
-              <ChevronRight size={16} />
-              Demander une intervention
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+              style={{
+                background: '#F0C040', color: '#080808',
+                border: 'none', padding: '7px 16px', borderRadius: '8px',
+                fontSize: '13px', fontWeight: 600,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+              }}
+            >
+              <Plus size={14} /> Demander une intervention
             </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 p-6">
+        {/* ── CONTENT ── */}
+        <div style={{ padding: '28px 32px' }}>
 
-          {/* ── OVERVIEW ── */}
-          {activeTab === 'overview' && (
-            <>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* ══ OVERVIEW ══ */}
+          {tab === 'overview' && (
+            <div>
+              {/* Stat row */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: '1px', background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '12px', overflow: 'hidden', marginBottom: '28px',
+              }}>
                 {[
-                  { label: 'Véhicules total', value: stats.total,      color: '#ffffff',  icon: <Car size={18} />,           iconBg: 'rgba(255,255,255,0.05)' },
-                  { label: 'Opérationnels',   value: stats.ok,         color: '#00DD88',  icon: <CheckCircle size={18} />,   iconBg: 'rgba(0,221,136,0.08)'   },
-                  { label: 'Service requis',  value: stats.serviceDue, color: '#F0C040',  icon: <Clock size={18} />,         iconBg: 'rgba(240,192,64,0.08)'  },
-                  { label: 'Alertes',         value: stats.alert,      color: '#FF4444',  icon: <AlertTriangle size={18} />, iconBg: 'rgba(255,68,68,0.08)'   },
-                ].map(kpi => (
-                  <div key={kpi.label} className="rounded-2xl p-6 flex items-start justify-between"
-                    style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div>
-                      <div className="text-sm mb-2" style={{ color: 'rgba(255,255,255,0.45)' }}>{kpi.label}</div>
-                      <div className="font-heading font-bold text-3xl" style={{ color: kpi.color }}>{kpi.value}</div>
+                  { label: 'Véhicules',      value: vehicles.length, color: 'white',    sub: 'total'        },
+                  { label: 'Opérationnels',  value: operational,     color: '#00DD88',  sub: 'en service'   },
+                  { label: 'Service requis', value: serviceDue,      color: '#F0C040',  sub: 'à planifier'  },
+                  { label: 'En intervention',value: inService,       color: '#43BCC9',  sub: 'actuellement' },
+                  { label: 'Alertes',        value: alerts,          color: '#FF4444',  sub: 'urgent'       },
+                ].map((s, i) => (
+                  <div key={i} style={{ background: '#0D0D0D', padding: '18px 20px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                      {s.label}
                     </div>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: kpi.iconBg, color: kpi.color }}>
-                      {kpi.icon}
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: s.color, fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: '4px' }}>
+                      {s.value}
                     </div>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>{s.sub}</div>
                   </div>
                 ))}
               </div>
 
-              <h2 className="font-heading font-semibold text-lg mb-6" style={{ color: '#ffffff' }}>
-                Tableau de bord analytique
-              </h2>
+              {/* Charts */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '16px', marginBottom: '28px' }}>
+                {/* Bar chart */}
+                <div style={{
+                  background: '#0D0D0D',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderTop: '2px solid rgba(67,188,201,0.25)',
+                  borderRadius: '12px', padding: '20px 24px',
+                }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', marginBottom: '16px', letterSpacing: '-0.01em' }}>
+                    Interventions par type
+                  </div>
+                  {barData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={barData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
+                          itemStyle={{ color: 'white' }}
+                          formatter={(val: number) => [`${val} interventions`]}
+                        />
+                        <Bar dataKey="count" fill="#43BCC9" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '13px' }}>
+                      Aucune donnée
+                    </div>
+                  )}
+                </div>
 
-              {loading ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="h-64 rounded-2xl animate-pulse" style={{ background: '#141414' }} />
+                {/* Pie chart */}
+                <div style={{
+                  background: '#0D0D0D',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderTop: '2px solid rgba(240,192,64,0.25)',
+                  borderRadius: '12px', padding: '20px 24px',
+                }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', marginBottom: '16px', letterSpacing: '-0.01em' }}>
+                    État de la flotte
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <PieChart width={120} height={120}>
+                      <Pie data={pieDataSafe} cx={55} cy={55} innerRadius={35} outerRadius={55} dataKey="value" strokeWidth={0}>
+                        {pieDataSafe.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                      </Pie>
+                    </PieChart>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {pieData.map((d, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>{d.name}</span>
+                          </div>
+                          <span style={{ fontSize: '12px', fontWeight: 600, color: 'white' }}>{d.value}</span>
+                        </div>
+                      ))}
+                      {pieData.length === 0 && (
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>Ajoutez des véhicules</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent interventions */}
+              <TableLabel>Interventions récentes</TableLabel>
+              <BookingsTable bookings={bookings.slice(0, 8)} onRowClick={id => navigate(`/booking/${id}`)} />
+            </div>
+          )}
+
+          {/* ══ FLEET ══ */}
+          {tab === 'fleet' && (
+            <div>
+              <TableLabel>{vehicles.length} véhicule{vehicles.length !== 1 ? 's' : ''} enregistré{vehicles.length !== 1 ? 's' : ''}</TableLabel>
+
+              <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '2fr 110px 1fr 140px 130px 90px',
+                  padding: '10px 20px', background: '#0D0D0D',
+                  borderBottom: '1px solid rgba(255,255,255,0.05)',
+                }}>
+                  {['Véhicule', 'Plaque', 'Type', 'Kilométrage', 'Statut', 'Action'].map(h => (
+                    <div key={h} style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      {h}
+                    </div>
                   ))}
                 </div>
-              ) : (() => {
-                const statusData = [
-                  { name: 'Opérationnels', value: stats.ok,         color: '#00DD88' },
-                  { name: 'Service requis', value: stats.serviceDue, color: '#F0C040' },
-                  { name: 'En service',     value: stats.inService,  color: '#43BCC9' },
-                  { name: 'Alertes',        value: stats.alert,      color: '#FF4444' },
-                ].filter(d => d.value > 0)
 
-                const serviceTypeData = [
-                  { service: 'Vidange',     count: Math.max(1, Math.floor(vehicles.length * 0.4))  },
-                  { service: 'Pneus',       count: Math.max(1, Math.floor(vehicles.length * 0.25)) },
-                  { service: 'Batterie',    count: Math.max(1, Math.floor(vehicles.length * 0.15)) },
-                  { service: 'Lavage',      count: Math.max(1, Math.floor(vehicles.length * 0.2))  },
-                  { service: 'Diagnostic',  count: Math.max(0, Math.floor(vehicles.length * 0.1))  },
-                ].filter(d => d.count > 0)
-
-                const now = new Date()
-                const monthlyData = Array.from({ length: 6 }, (_, i) => {
-                  const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
-                  const monthLabel = d.toLocaleDateString('fr-FR', { month: 'short' })
-                  const baseCost = vehicles.length * 250
-                  const variance = 0.7 + (((i * 7 + 3) % 10) / 10) * 0.6
-                  return {
-                    month: monthLabel,
-                    ht: Math.round(baseCost * variance),
-                    ttc: Math.round(baseCost * variance * 1.2),
-                  }
-                })
-
-                const mileageSorted = vehicles
-                  .filter(v => v.mileage !== null)
-                  .sort((a, b) => (b.mileage ?? 0) - (a.mileage ?? 0))
-                  .slice(0, 5)
-
-                const tooltipStyle = {
-                  background: '#141414',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '12px',
-                }
-
-                return (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                    {/* Chart 1 — Donut */}
-                    <div className="rounded-2xl p-6"
-                      style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-heading font-semibold text-base" style={{ color: 'white' }}>
-                          État de la flotte
-                        </h3>
-                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                          {vehicles.length} véhicules
+                {vehicles.length === 0 ? (
+                  <div style={{ padding: '52px', textAlign: 'center', background: '#0A0A0A' }}>
+                    <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>Aucun véhicule enregistré</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)' }}>Contactez MecaLIK pour enregistrer votre flotte</div>
+                  </div>
+                ) : vehicles.map((v, i) => {
+                  const statusCfg = VEHICLE_STATUS[v.status] || VEHICLE_STATUS.operational
+                  return (
+                    <div
+                      key={v.id}
+                      style={{
+                        display: 'grid', gridTemplateColumns: '2fr 110px 1fr 140px 130px 90px',
+                        padding: '14px 20px', alignItems: 'center',
+                        borderBottom: i < vehicles.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                        background: 'transparent', transition: 'background 0.1s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 500, color: 'white' }}>{v.brand} {v.model}</div>
+                        {v.driver_name && (
+                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '1px' }}>{v.driver_name}</div>
+                        )}
+                      </div>
+                      <div style={{
+                        fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.75)',
+                        background: 'rgba(255,255,255,0.05)', padding: '3px 7px', borderRadius: '4px',
+                        display: 'inline-block', letterSpacing: '0.05em',
+                      }}>
+                        {v.plate}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>{v.type || '—'}</div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
+                        {v.mileage ? v.mileage.toLocaleString('fr-FR') + ' km' : '—'}
+                      </div>
+                      <div>
+                        <span style={{
+                          padding: '3px 8px', borderRadius: '4px',
+                          fontSize: '11px', fontWeight: 500,
+                          background: statusCfg.bg, color: statusCfg.color,
+                        }}>
+                          {statusCfg.label}
                         </span>
                       </div>
-                      {statusData.length === 0 ? (
-                        <div className="text-center py-8 text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                          Ajoutez des véhicules pour voir les statistiques
-                        </div>
-                      ) : (
-                        <>
-                          <ResponsiveContainer width="100%" height={220}>
-                            <PieChart>
-                              <Pie
-                                data={statusData}
-                                cx="50%" cy="50%"
-                                innerRadius={60} outerRadius={90}
-                                paddingAngle={3}
-                                dataKey="value"
-                              >
-                                {statusData.map((entry, index) => (
-                                  <Cell key={index} fill={entry.color} stroke="transparent" />
-                                ))}
-                              </Pie>
-                              <Tooltip
-                                contentStyle={tooltipStyle}
-                                formatter={(value: unknown, name: unknown) => [`${value} véhicule(s)`, String(name)]}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                          <div className="flex flex-wrap justify-center gap-4 mt-2">
-                            {statusData.map(entry => (
-                              <div key={entry.name} className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full flex-shrink-0"
-                                  style={{ background: entry.color }} />
-                                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                                  {entry.name} ({entry.value})
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+                        style={{
+                          padding: '5px 10px',
+                          background: 'rgba(240,192,64,0.08)',
+                          border: '1px solid rgba(240,192,64,0.18)',
+                          color: '#F0C040', borderRadius: '6px',
+                          fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                        }}
+                      >
+                        Réserver
+                      </button>
                     </div>
-
-                    {/* Chart 2 — Bar */}
-                    <div className="rounded-2xl p-6"
-                      style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-heading font-semibold text-base" style={{ color: 'white' }}>
-                          Services planifiés par type
-                        </h3>
-                      </div>
-                      <ResponsiveContainer width="100%" height={220}>
-                        <BarChart data={serviceTypeData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                          <XAxis dataKey="service"
-                            tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
-                            axisLine={false} tickLine={false} />
-                          <YAxis
-                            tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
-                            axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={tooltipStyle}
-                            cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                          <Bar dataKey="count" name="Interventions"
-                            fill="#F0C040" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Chart 3 — Line (full width) */}
-                    <div className="rounded-2xl p-6 lg:col-span-2"
-                      style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-heading font-semibold text-base" style={{ color: 'white' }}>
-                          Évolution des coûts (6 derniers mois)
-                        </h3>
-                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>MAD</span>
-                      </div>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <LineChart data={monthlyData} margin={{ top: 5, right: 20, bottom: 5, left: -10 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                          <XAxis dataKey="month"
-                            tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
-                            axisLine={false} tickLine={false} />
-                          <YAxis
-                            tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
-                            axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={tooltipStyle}
-                            formatter={(val: unknown) => [`${val} MAD`]} />
-                          <Legend wrapperStyle={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }} />
-                          <Line type="monotone" dataKey="ht" name="Coût HT"
-                            stroke="#43BCC9" strokeWidth={2}
-                            dot={{ fill: '#43BCC9', r: 3 }} activeDot={{ r: 5 }} />
-                          <Line type="monotone" dataKey="ttc" name="Coût TTC"
-                            stroke="#F0C040" strokeWidth={2} strokeDasharray="5 5"
-                            dot={{ fill: '#F0C040', r: 3 }} activeDot={{ r: 5 }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Chart 4 — Mileage list (full width) */}
-                    <div className="rounded-2xl p-6 lg:col-span-2"
-                      style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-heading font-semibold text-base" style={{ color: 'white' }}>
-                          État des véhicules par kilométrage
-                        </h3>
-                        <button onClick={() => setActiveTab('fleet')}
-                          className="text-sm" style={{ color: '#43BCC9' }}>
-                          Voir tout →
-                        </button>
-                      </div>
-                      {mileageSorted.length === 0 ? (
-                        <div className="text-sm text-center py-6" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                          Kilométrage non renseigné
-                        </div>
-                      ) : (
-                        <div>
-                          {mileageSorted.map(v => (
-                            <div key={v.id}
-                              className="flex items-center justify-between py-3"
-                              style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                              <div className="flex items-center gap-4">
-                                <VehicleStatusIcon status={v.status} />
-                                <div>
-                                  <div className="font-medium text-sm" style={{ color: 'white' }}>
-                                    {v.brand} {v.model} {v.year}
-                                  </div>
-                                  <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                                    {v.plate || 'Sans immatriculation'}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3 flex-shrink-0">
-                                <span className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                                  {v.mileage!.toLocaleString('fr-FR')} km
-                                </span>
-                                <StatusPill status={v.status} />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                  </div>
-                )
-              })()}
-            </>
-          )}
-
-          {/* ── FLEET ── */}
-          {activeTab === 'fleet' && (
-            <>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="font-heading font-semibold text-lg" style={{ color: '#ffffff' }}>Ma flotte</h2>
-                  <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    {stats.total} véhicule{stats.total !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <button onClick={() => setShowAddVehicle(!showAddVehicle)}
-                  className="flex items-center gap-2 font-semibold px-4 py-2 rounded-full text-sm"
-                  style={{ background: '#F0C040', color: '#080808' }}>
-                  <Plus size={16} />Ajouter un véhicule
-                </button>
+                  )
+                })}
               </div>
-
-              {/* Status filter */}
-              <div className="flex gap-2 mb-6 flex-wrap">
-                {(['all', 'ok', 'service_due', 'in_service', 'alert'] as StatusFilter[]).map(s => (
-                  <button key={s} onClick={() => setStatusFilter(s)}
-                    className="rounded-full px-4 py-2 text-xs font-medium transition-all"
-                    style={statusFilter === s
-                      ? { background: '#F0C040', color: '#080808' }
-                      : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }
-                    }>
-                    {s === 'all' ? 'Tous' : VEHICLE_STATUS[s].label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Add vehicle form */}
-              {showAddVehicle && (
-                <div className="rounded-2xl p-6 mb-6"
-                  style={{ background: '#0F0F0F', border: '1px solid rgba(240,192,64,0.2)' }}>
-                  <h3 className="font-heading font-semibold mb-4" style={{ color: '#ffffff' }}>
-                    Ajouter un véhicule
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { key: 'brand', label: 'Marque *',        type: 'text',   placeholder: 'Ex: Renault' },
-                      { key: 'model', label: 'Modèle *',        type: 'text',   placeholder: 'Ex: Kangoo' },
-                      { key: 'year',  label: 'Année *',         type: 'number', placeholder: '2021' },
-                      { key: 'plate', label: 'Immatriculation', type: 'text',   placeholder: '123-A-45' },
-                    ].map(field => (
-                      <div key={field.key}>
-                        <label className="block text-xs font-medium uppercase tracking-wide mb-2"
-                          style={{ color: 'rgba(255,255,255,0.5)' }}>{field.label}</label>
-                        <input
-                          type={field.type}
-                          placeholder={field.placeholder}
-                          value={newVehicle[field.key as keyof typeof newVehicle]}
-                          onChange={e => setNewVehicle(prev => ({ ...prev, [field.key]: e.target.value }))}
-                          className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-colors"
-                          style={inputStyle}
-                          onFocus={e => (e.target.style.borderColor = '#F0C040')}
-                          onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-3 mt-4">
-                    <button onClick={() => setShowAddVehicle(false)}
-                      className="px-5 py-2.5 rounded-full text-sm"
-                      style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#ffffff' }}>
-                      Annuler
-                    </button>
-                    <button onClick={addVehicle} disabled={addingVehicle}
-                      className="px-5 py-2.5 rounded-full font-semibold text-sm"
-                      style={{
-                        background: addingVehicle ? 'rgba(240,192,64,0.5)' : '#F0C040',
-                        color: '#080808',
-                        cursor: addingVehicle ? 'not-allowed' : 'pointer',
-                      }}>
-                      {addingVehicle ? 'Enregistrement...' : 'Enregistrer'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Vehicles grid */}
-              {filteredVehicles.length === 0 ? (
-                <div className="rounded-2xl p-12 text-center"
-                  style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <Car size={40} style={{ color: 'rgba(255,255,255,0.1)', margin: '0 auto 16px' }} />
-                  <div className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    Aucun véhicule dans cette catégorie
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredVehicles.map(vehicle => {
-                    const cfg = VEHICLE_STATUS[vehicle.status]
-                    return (
-                      <div key={vehicle.id} className="rounded-2xl p-6"
-                        style={{ background: '#0F0F0F', border: `1px solid ${cfg.border}` }}>
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <VehicleStatusIcon status={vehicle.status} />
-                            <div>
-                              <div className="font-heading font-semibold" style={{ color: '#ffffff' }}>
-                                {vehicle.brand} {vehicle.model}
-                              </div>
-                              <div className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                                {vehicle.year}{vehicle.plate ? ' · ' + vehicle.plate : ''}
-                              </div>
-                            </div>
-                          </div>
-                          <StatusPill status={vehicle.status} />
-                        </div>
-
-                        <div className="mt-4 space-y-2">
-                          {vehicle.mileage !== null && (
-                            <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                              <Clock size={12} />
-                              {vehicle.mileage.toLocaleString('fr-FR')} km
-                            </div>
-                          )}
-                          {vehicle.driver_name && (
-                            <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                              <Car size={12} />
-                              {vehicle.driver_name}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                          <button
-                            onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-                            className="w-full py-2.5 rounded-full text-xs font-semibold transition-colors"
-                            style={{
-                              background: 'rgba(240,192,64,0.1)',
-                              border: '1px solid rgba(240,192,64,0.2)',
-                              color: '#F0C040',
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(240,192,64,0.15)')}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(240,192,64,0.1)')}>
-                            Demander un service pour ce véhicule
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ── CALENDAR ── */}
-          {activeTab === 'calendar' && (
-            <FleetCalendar />
-          )}
-
-          {/* ── BOOKINGS ── */}
-          {activeTab === 'bookings' && (
-            <div className="rounded-2xl p-12 text-center"
-              style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <Wrench size={40} style={{ color: 'rgba(255,255,255,0.1)', margin: '0 auto 16px' }} />
-              <div className="font-medium mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Historique des interventions
-              </div>
-              <div className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                Les interventions de votre flotte apparaîtront ici.
-              </div>
-              <button onClick={() => window.open(WA_FLEET_URL, '_blank')}
-                className="mt-6 px-6 py-3 rounded-full font-semibold text-sm"
-                style={{ background: '#43BCC9', color: '#080808' }}>
-                Demander une intervention
-              </button>
             </div>
           )}
 
-          {/* ── REPORTS ── */}
-          {activeTab === 'reports' && (
-            <div className="space-y-6">
-              <div className="rounded-2xl p-8"
-                style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <h3 className="font-heading font-semibold text-lg mb-2" style={{ color: 'white' }}>
-                  Facture mensuelle
-                </h3>
-                <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  Générez une facture PDF de vos interventions du mois.
-                </p>
+          {/* ══ PLANNING ══ */}
+          {tab === 'planning' && (
+            <div style={{
+              background: '#0D0D0D',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '12px', padding: '60px',
+              textAlign: 'center',
+            }}>
+              <Calendar size={28} color="rgba(255,255,255,0.2)" style={{ marginBottom: '12px' }} />
+              <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
+                Planification des interventions
+              </div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)' }}>
+                Fonctionnalité disponible prochainement
+              </div>
+            </div>
+          )}
 
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <label className="block text-xs font-medium uppercase tracking-wide mb-2"
-                      style={{ color: 'rgba(255,255,255,0.5)' }}>Mois</label>
-                    <select
-                      id="invoice-month"
-                      className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                      style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)', color: 'white' }}
-                    >
-                      {['01','02','03','04','05','06','07','08','09','10','11','12'].map((m, i) => (
-                        <option key={m} value={m}>
-                          {new Date(2024, i, 1).toLocaleDateString('fr-FR', { month: 'long' })}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium uppercase tracking-wide mb-2"
-                      style={{ color: 'rgba(255,255,255,0.5)' }}>Année</label>
-                    <select
-                      id="invoice-year"
-                      className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                      style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)', color: 'white' }}
-                    >
-                      <option value="2026">2026</option>
-                      <option value="2025">2025</option>
-                    </select>
-                  </div>
-                </div>
+          {/* ══ INTERVENTIONS ══ */}
+          {tab === 'interventions' && (
+            <div>
+              <TableLabel>{bookings.length} intervention{bookings.length !== 1 ? 's' : ''} au total</TableLabel>
+              <BookingsTable bookings={bookings} onRowClick={id => navigate(`/booking/${id}`)} />
+            </div>
+          )}
 
-                <button
-                  onClick={() => {
-                    const month = (document.getElementById('invoice-month') as HTMLSelectElement)?.value || '05'
-                    const year = parseInt((document.getElementById('invoice-year') as HTMLSelectElement)?.value || '2026')
-                    const monthName = new Date(year, parseInt(month) - 1, 1).toLocaleDateString('fr-FR', { month: 'long' })
-                    generateInvoice({
-                      companyName: company?.name || 'Votre Entreprise',
-                      companyEmail: company?.contact_email || null,
-                      month: monthName,
-                      year,
-                      vehicles: vehicles.slice(0, 5).map(v => ({
-                        plate: v.plate,
-                        make: v.brand,
-                        model: v.model,
-                        services: [{
-                          date: new Date().toISOString(),
-                          service: 'Service MecaLIK',
-                          amount_ht: 250,
-                        }],
-                      })),
-                      totals: {
-                        ht: vehicles.length * 250,
-                        tva: vehicles.length * 250 * 0.2,
-                        ttc: vehicles.length * 250 * 1.2,
-                      },
-                    })
-                  }}
-                  className="w-full py-4 rounded-full font-bold text-sm flex items-center justify-center gap-2 transition-colors"
-                  style={{ background: '#F0C040', color: '#080808' }}
-                >
-                  <FileText size={18} />
-                  Télécharger la facture PDF
-                </button>
+          {/* ══ RAPPORTS ══ */}
+          {tab === 'rapports' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+              {/* KPI row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', overflow: 'hidden' }}>
+                {[
+                  { label: 'Interventions ce mois', value: String(thisMonthBookings.length), color: '#43BCC9' },
+                  { label: 'Dépenses ce mois',      value: `${thisMonthSpent} MAD`,           color: '#00DD88' },
+                  { label: 'Coût moyen / véhicule', value: `${avgCostPerVehicle} MAD`,        color: '#F0C040' },
+                ].map((s, i) => (
+                  <div key={i} style={{ background: '#0D0D0D', padding: '20px 24px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                      {s.label}
+                    </div>
+                    <div style={{ fontSize: '26px', fontWeight: 700, color: s.color, fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
+                      {s.value}
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="rounded-2xl p-8 text-center"
-                style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <BarChart3 size={40} style={{ color: 'rgba(255,255,255,0.1)', margin: '0 auto 16px' }} />
-                <div style={{ color: 'rgba(255,255,255,0.5)' }}>Analytics détaillés</div>
-                <div className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  Statistiques par véhicule disponibles prochainement.
+              {/* Table + export */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <TableLabel>Toutes les interventions</TableLabel>
+                  <button
+                    onClick={() => {
+                      const csv = [
+                        'Reference,Service,Adresse,Statut,Montant,Date',
+                        ...bookings.map(b =>
+                          `${b.reference || b.id},${b.service_name},"${b.address}",${b.status},${b.amount_ttc || 0},${b.created_at}`
+                        ),
+                      ].join('\n')
+                      const blob = new Blob([csv], { type: 'text/csv' })
+                      const url  = URL.createObjectURL(blob)
+                      const a    = document.createElement('a')
+                      a.href = url; a.download = 'mecalik-fleet-report.csv'; a.click()
+                      URL.revokeObjectURL(url)
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.18)',
+                      color: '#F0C040', padding: '6px 12px', borderRadius: '8px',
+                      fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                    }}
+                  >
+                    <Download size={12} /> Exporter CSV
+                  </button>
                 </div>
+                <BookingsTable bookings={bookings} onRowClick={id => navigate(`/booking/${id}`)} />
               </div>
             </div>
           )}
 
         </div>
+      </main>
+    </div>
+  )
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function TableLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: '11px', fontWeight: 600,
+      color: 'rgba(255,255,255,0.3)',
+      textTransform: 'uppercase', letterSpacing: '0.08em',
+      marginBottom: '12px',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function BookingsTable({
+  bookings, onRowClick,
+}: {
+  bookings: Booking[]
+  onRowClick: (id: string) => void
+}) {
+  if (bookings.length === 0) {
+    return (
+      <div style={{
+        padding: '48px', textAlign: 'center',
+        background: '#0D0D0D', border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '12px', color: 'rgba(255,255,255,0.3)', fontSize: '13px',
+      }}>
+        Aucune intervention
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '120px 1fr 1.5fr 110px 90px 90px',
+        padding: '10px 20px', background: '#0D0D0D',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        {['Référence', 'Service', 'Adresse', 'Statut', 'Montant', 'Date'].map(h => (
+          <div key={h} style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {h}
+          </div>
+        ))}
       </div>
 
-      {/* ── MOBILE BOTTOM NAV ─────────────────────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex items-center justify-around px-4 py-3 z-40"
-        style={{ background: '#0A0A0A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        {mobileNavItems.map(({ tab, icon, label }) => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className="flex flex-col items-center gap-1 transition-colors"
-            style={{ color: activeTab === tab ? '#F0C040' : 'rgba(255,255,255,0.4)' }}>
-            {icon}
-            <span className="text-xs">{label}</span>
-          </button>
-        ))}
-      </nav>
-
+      {bookings.map((b, i) => {
+        const s = BOOKING_STATUS[b.status] || { label: b.status, color: 'rgba(255,255,255,0.5)' }
+        return (
+          <div
+            key={b.id}
+            onClick={() => onRowClick(b.id)}
+            style={{
+              display: 'grid', gridTemplateColumns: '120px 1fr 1.5fr 110px 90px 90px',
+              padding: '13px 20px', alignItems: 'center',
+              borderBottom: i < bookings.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+              cursor: 'pointer', transition: 'background 0.1s',
+              background: 'transparent',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >
+            <div style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.04em' }}>
+              {b.reference || b.id.substring(0, 8).toUpperCase()}
+            </div>
+            <div style={{ fontSize: '13px', color: 'white', fontWeight: 500 }}>{b.service_name}</div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {b.address}
+            </div>
+            <div>
+              <span style={{
+                padding: '3px 7px', borderRadius: '4px',
+                fontSize: '10px', fontWeight: 600, letterSpacing: '0.03em',
+                background: s.color + '18', color: s.color,
+              }}>
+                {s.label}
+              </span>
+            </div>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
+              {b.amount_ttc ? b.amount_ttc + ' MAD' : '—'}
+            </div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+              {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
