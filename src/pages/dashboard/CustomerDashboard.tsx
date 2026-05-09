@@ -353,83 +353,92 @@ export default function CustomerDashboard() {
                   <div key={car.id} style={{
                     minWidth: '230px', flexShrink: 0, scrollSnapAlign: 'start',
                     background: 'linear-gradient(135deg, #131313 0%, #0E0E0E 100%)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: '16px', padding: '16px',
-                    position: 'relative', overflow: 'hidden',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '16px',
+                    padding: '18px',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    minHeight: '180px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
                   }}>
+                    {/* Teal corner glow */}
                     <div style={{
-                      width: '100%', height: '90px',
-                      background: 'linear-gradient(135deg, rgba(67,188,201,0.12) 0%, rgba(67,188,201,0.04) 100%)',
-                      border: '1px solid rgba(67,188,201,0.15)',
-                      borderRadius: '12px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      position: 'absolute', top: '-50px', right: '-50px',
+                      width: '160px', height: '160px',
+                      background: 'radial-gradient(circle, rgba(67,188,201,0.12) 0%, transparent 70%)',
+                      borderRadius: '50%', pointerEvents: 'none',
+                    }} />
+
+                    {/* Top — icon + plate */}
+                    <div style={{
+                      position: 'relative',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
                       marginBottom: '12px',
-                      position: 'relative', overflow: 'hidden',
                     }}>
-                      {/* Dot grid */}
                       <div style={{
-                        position: 'absolute', inset: 0,
-                        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(67,188,201,0.08) 1px, transparent 0)',
-                        backgroundSize: '12px 12px',
-                        pointerEvents: 'none',
-                      }} />
-                      <svg width="140" height="60" viewBox="0 0 240 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position: 'relative', zIndex: 1 }}>
-                        {/* Body */}
-                        <path d="M30 65 L30 55 Q30 50 35 50 L55 50 L70 30 Q73 25 80 25 L160 25 Q167 25 173 30 L195 50 L215 50 Q220 50 220 55 L220 65 Q220 70 215 70 L205 70 Q205 80 195 80 Q185 80 185 70 L65 70 Q65 80 55 80 Q45 80 45 70 L35 70 Q30 70 30 65 Z"
-                              fill="#43BCC9" opacity="0.85"/>
-                        {/* Body highlight */}
-                        <path d="M70 30 Q73 25 80 25 L160 25 Q167 25 173 30 L195 50 L70 50 L70 30 Z"
-                              fill="rgba(255,255,255,0.15)"/>
-                        {/* Front window */}
-                        <path d="M78 30 L115 30 L115 48 L78 48 Z"
-                              fill="rgba(8,8,8,0.5)" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
-                        {/* Rear window */}
-                        <path d="M125 30 L160 30 L168 48 L125 48 Z"
-                              fill="rgba(8,8,8,0.5)" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
-                        {/* Door line */}
-                        <line x1="120" y1="50" x2="120" y2="70" stroke="rgba(8,8,8,0.4)" strokeWidth="1.5"/>
-                        {/* Door handles */}
-                        <rect x="100" y="58" width="10" height="2" rx="1" fill="rgba(8,8,8,0.6)"/>
-                        <rect x="135" y="58" width="10" height="2" rx="1" fill="rgba(8,8,8,0.6)"/>
-                        {/* Headlight */}
-                        <ellipse cx="208" cy="58" rx="5" ry="3" fill="#FEF3C7"/>
-                        <ellipse cx="208" cy="58" rx="3" ry="1.5" fill="#FFFFFF"/>
-                        {/* Taillight */}
-                        <rect x="35" y="55" width="6" height="6" rx="1" fill="#FF4444"/>
-                        {/* Front wheel */}
-                        <circle cx="195" cy="78" r="12" fill="#1A1A1A"/>
-                        <circle cx="195" cy="78" r="9" fill="#2A2A2A"/>
-                        <circle cx="195" cy="78" r="5" fill="#43BCC9" opacity="0.9"/>
-                        <circle cx="195" cy="78" r="2" fill="#1A1A1A"/>
-                        {/* Rear wheel */}
-                        <circle cx="55" cy="78" r="12" fill="#1A1A1A"/>
-                        <circle cx="55" cy="78" r="9" fill="#2A2A2A"/>
-                        <circle cx="55" cy="78" r="5" fill="#43BCC9" opacity="0.9"/>
-                        <circle cx="55" cy="78" r="2" fill="#1A1A1A"/>
-                        {/* Bumper details */}
-                        <rect x="200" y="65" width="15" height="1" fill="rgba(8,8,8,0.4)"/>
-                        <rect x="32" y="65" width="15" height="1" fill="rgba(8,8,8,0.4)"/>
-                        {/* Ground shadow */}
-                        <ellipse cx="125" cy="92" rx="100" ry="3" fill="rgba(67,188,201,0.15)"/>
-                      </svg>
-                    </div>
-                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '2px' }}>
-                      {car.brand} {car.model}
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px' }}>
-                      {car.year ?? '—'}{car.fuel_type ? ` · ${car.fuel_type}` : ''}
-                    </div>
-                    {car.license_plate && (
-                      <span style={{
-                        padding: '3px 8px', borderRadius: '5px',
-                        background: 'rgba(255,255,255,0.06)',
-                        fontSize: '10px', fontFamily: 'monospace',
-                        color: 'rgba(255,255,255,0.65)', letterSpacing: '0.05em',
-                        display: 'inline-block',
+                        width: '40px', height: '40px', borderRadius: '10px',
+                        background: 'rgba(67,188,201,0.1)',
+                        border: '1px solid rgba(67,188,201,0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        {car.license_plate}
-                      </span>
-                    )}
+                        <CarIcon size={18} color="#43BCC9" />
+                      </div>
+                      {car.license_plate && (
+                        <div style={{
+                          padding: '5px 10px', borderRadius: '6px',
+                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          fontSize: '11px', fontFamily: 'monospace',
+                          color: 'rgba(255,255,255,0.85)',
+                          letterSpacing: '0.05em', fontWeight: 600,
+                        }}>
+                          {car.license_plate}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Middle — brand + model */}
+                    <div style={{ position: 'relative', flex: 1 }}>
+                      <div style={{
+                        fontFamily: 'Space Grotesk, sans-serif',
+                        fontSize: '20px', fontWeight: 600,
+                        color: 'white', marginBottom: '4px',
+                        letterSpacing: '-0.015em', lineHeight: 1.1,
+                      }}>
+                        {car.brand}
+                      </div>
+                      <div style={{
+                        fontSize: '14px', fontWeight: 500,
+                        color: 'rgba(255,255,255,0.75)',
+                        marginBottom: '8px',
+                      }}>
+                        {car.model}
+                      </div>
+                    </div>
+
+                    {/* Bottom — year · fuel · mileage */}
+                    <div style={{
+                      position: 'relative',
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid rgba(255,255,255,0.05)',
+                      fontSize: '11px', color: 'rgba(255,255,255,0.45)',
+                    }}>
+                      {car.year && <span>{car.year}</span>}
+                      {car.year && car.fuel_type && (
+                        <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'inline-block' }} />
+                      )}
+                      {car.fuel_type && <span>{car.fuel_type}</span>}
+                      {car.mileage && (
+                        <>
+                          <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'inline-block' }} />
+                          <span>{(car.mileage / 1000).toFixed(0)}k km</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {/* Add tile */}
