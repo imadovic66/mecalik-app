@@ -79,7 +79,6 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
   useEffect(() => {
     if (!isOpen) {
       // reset navigation state when modal closes
-      setStep(1)
       setShowCarSelector(false)
       return
     }
@@ -87,6 +86,9 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
     // Sync preselected service from parent (e.g. quick-service tiles)
     if (preselectedService) {
       setSelectedService(preselectedService)
+      setStep(2) // jump directly to step 2 — no need to pick a service
+    } else {
+      setStep(1)
     }
 
     // Pre-fill name + phone from profile (already in memory — no extra fetch)
@@ -367,13 +369,13 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
         {step === 2 && (
           <>
             <div className="px-6 py-4 space-y-4">
-              {/* Back */}
+              {/* Back / service badge */}
               <button
                 onClick={() => setStep(1)}
                 className="flex items-center gap-1 text-sm"
                 style={{ color: 'rgba(255,255,255,0.45)' }}
               >
-                ← {selectedServiceData?.name}
+                ← Changer de service
               </button>
 
               <div

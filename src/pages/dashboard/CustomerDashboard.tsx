@@ -287,12 +287,17 @@ export default function CustomerDashboard() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               marginBottom: '14px',
             }}>
-              <h2 style={{
-                fontFamily: 'Space Grotesk, sans-serif',
-                fontSize: '17px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em',
-              }}>
-                Mon garage
-              </h2>
+              <div>
+                <h2 style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: '17px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em',
+                }}>
+                  Mon garage
+                </h2>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
+                  {cars.length > 0 ? `${cars.length} véhicule${cars.length > 1 ? 's' : ''} enregistré${cars.length > 1 ? 's' : ''}` : 'Ajoutez votre voiture'}
+                </div>
+              </div>
               {cars.length > 0 && (
                 <button
                   onClick={() => setShowAddCar(true)}
@@ -352,15 +357,44 @@ export default function CustomerDashboard() {
                     borderRadius: '16px', padding: '16px',
                     position: 'relative', overflow: 'hidden',
                   }}>
-                    {/* Minimal car silhouette */}
-                    <svg width="100%" height="46" viewBox="0 0 200 50" style={{ marginBottom: '10px', opacity: 0.65 }}>
-                      <path d="M20 35 L40 35 L50 22 L130 22 L150 35 L180 35 L180 38 Q180 42 176 42 L24 42 Q20 42 20 38 Z"
-                        fill="rgba(67,188,201,0.14)" stroke="rgba(67,188,201,0.35)" strokeWidth="1" />
-                      <circle cx="55"  cy="42" r="6" fill="#131313" stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
-                      <circle cx="145" cy="42" r="6" fill="#131313" stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
-                      <rect x="56"  y="25" width="19" height="9" fill="rgba(67,188,201,0.1)" rx="1" />
-                      <rect x="81"  y="25" width="19" height="9" fill="rgba(67,188,201,0.1)" rx="1" />
-                      <rect x="106" y="25" width="19" height="9" fill="rgba(67,188,201,0.1)" rx="1" />
+                    {/* Hatchback silhouette */}
+                    <svg width="100%" height="56" viewBox="0 0 240 80" style={{ marginBottom: '8px', opacity: 0.7 }}>
+                      <defs>
+                        <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%"   stopColor="rgba(67,188,201,0.28)" />
+                          <stop offset="100%" stopColor="rgba(67,188,201,0.08)" />
+                        </linearGradient>
+                      </defs>
+                      {/* Shadow */}
+                      <ellipse cx="120" cy="74" rx="88" ry="5" fill="rgba(0,0,0,0.35)" />
+                      {/* Body */}
+                      <path
+                        d="M30 56 L30 50 L48 50 L72 30 L158 30 L178 50 L210 50 L210 56 Q210 62 204 62 L36 62 Q30 62 30 56 Z"
+                        fill="url(#bodyGradient)" stroke="rgba(67,188,201,0.5)" strokeWidth="1.2"
+                      />
+                      {/* Greenhouse / cabin */}
+                      <path
+                        d="M76 30 L90 16 L170 16 L178 30 Z"
+                        fill="rgba(67,188,201,0.12)" stroke="rgba(67,188,201,0.35)" strokeWidth="1"
+                      />
+                      {/* Windows */}
+                      <rect x="93"  y="19" width="26" height="9" rx="2" fill="rgba(67,188,201,0.18)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6" />
+                      <rect x="124" y="19" width="26" height="9" rx="2" fill="rgba(67,188,201,0.18)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6" />
+                      <rect x="155" y="19" width="17" height="9" rx="2" fill="rgba(67,188,201,0.12)" stroke="rgba(255,255,255,0.12)" strokeWidth="0.6" />
+                      {/* Door line */}
+                      <line x1="122" y1="30" x2="122" y2="62" stroke="rgba(255,255,255,0.08)" strokeWidth="0.8" />
+                      {/* Headlight */}
+                      <rect x="198" y="49" width="10" height="5" rx="2" fill="rgba(255,255,200,0.5)" />
+                      {/* Taillight */}
+                      <rect x="33"  y="49" width="10" height="5" rx="2" fill="rgba(255,80,80,0.55)" />
+                      {/* Front wheel */}
+                      <circle cx="180" cy="62" r="9" fill="#0E0E0E" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" />
+                      <circle cx="180" cy="62" r="5" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                      <circle cx="180" cy="62" r="1.5" fill="rgba(67,188,201,0.5)" />
+                      {/* Rear wheel */}
+                      <circle cx="60"  cy="62" r="9" fill="#0E0E0E" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" />
+                      <circle cx="60"  cy="62" r="5" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                      <circle cx="60"  cy="62" r="1.5" fill="rgba(67,188,201,0.5)" />
                     </svg>
                     <div style={{ fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '2px' }}>
                       {car.brand} {car.model}
@@ -400,13 +434,18 @@ export default function CustomerDashboard() {
 
           {/* ── QUICK SERVICES — coloured gradient 2×3 grid ─────────── */}
           <section style={{ marginBottom: '28px' }}>
-            <h2 style={{
-              fontFamily: 'Space Grotesk, sans-serif',
-              fontSize: '17px', fontWeight: 600, color: 'white',
-              letterSpacing: '-0.01em', marginBottom: '14px',
-            }}>
-              Services
-            </h2>
+            <div style={{ marginBottom: '14px' }}>
+              <h2 style={{
+                fontFamily: 'Space Grotesk, sans-serif',
+                fontSize: '17px', fontWeight: 600, color: 'white',
+                letterSpacing: '-0.01em',
+              }}>
+                Services
+              </h2>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
+                Tap pour réserver instantanément
+              </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
               {QUICK_SERVICES.map(({ id, label, icon: Icon, price, gradient, dot }) => (
                 <button
@@ -415,10 +454,10 @@ export default function CustomerDashboard() {
                   style={{
                     background: gradient,
                     border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '16px', padding: '16px',
+                    borderRadius: '16px', padding: '18px',
                     cursor: 'pointer', textAlign: 'left',
                     position: 'relative', overflow: 'hidden',
-                    minHeight: '110px',
+                    minHeight: '120px',
                     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                   }}
                 >
@@ -447,6 +486,15 @@ export default function CustomerDashboard() {
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)' }}>
                       Dès {price} MAD
                     </div>
+                  </div>
+                  {/* Arrow chevron */}
+                  <div style={{
+                    position: 'absolute', bottom: '12px', right: '12px',
+                    width: '22px', height: '22px', borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.12)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <ArrowRight size={11} color="white" />
                   </div>
                 </button>
               ))}
@@ -596,13 +644,21 @@ export default function CustomerDashboard() {
               style={{
                 background: 'transparent', border: 'none', cursor: onClick ? 'pointer' : 'default',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: '4px', padding: '4px',
+                gap: '0', padding: '0',
               }}
             >
-              <Icon size={20} color={active ? '#43BCC9' : 'rgba(255,255,255,0.35)'} />
-              <span style={{ fontSize: '10px', color: active ? '#43BCC9' : 'rgba(255,255,255,0.35)', fontWeight: active ? 600 : 400 }}>
-                {label}
-              </span>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+                padding: active ? '5px 14px' : '5px 10px',
+                borderRadius: '10px',
+                background: active ? 'rgba(67,188,201,0.1)' : 'transparent',
+                transition: 'background 0.2s, padding 0.2s',
+              }}>
+                <Icon size={20} color={active ? '#43BCC9' : 'rgba(255,255,255,0.35)'} />
+                <span style={{ fontSize: '10px', color: active ? '#43BCC9' : 'rgba(255,255,255,0.35)', fontWeight: active ? 600 : 400 }}>
+                  {label}
+                </span>
+              </div>
             </button>
           ))}
         </div>
