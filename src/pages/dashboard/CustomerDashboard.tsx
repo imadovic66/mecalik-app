@@ -265,9 +265,9 @@ export default function CustomerDashboard() {
             </div>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+              className="btn-teal-solid"
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
-                background: '#43BCC9', color: '#080808', border: 'none',
                 borderRadius: '100px', padding: '10px 20px',
                 fontSize: '13px', fontWeight: 600, cursor: 'pointer', flexShrink: 0,
               }}

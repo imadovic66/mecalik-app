@@ -20,3 +20,15 @@
   @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
   .animate-pulse-slow { animation: pulse 3s ease-in-out infinite; }
 }
+
+/* Overrides Tailwind Preflight's background-color:transparent on <button> */
+.btn-teal-solid {
+  background-color: #43BCC9 !important;
+  background-image: none !important;
+  color: #1A1A1A !important;
+  border: none !important;
+  transition: background-color 0.15s ease !important;
+}
+.btn-teal-solid:hover {
+  background-color: #2EA8B4 !important;
+}
