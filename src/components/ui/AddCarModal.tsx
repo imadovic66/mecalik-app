@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Car as CarIcon } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { supabase, type Car } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 
 type Props = {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  editingCar?: Car | null
 }
 
 const POPULAR_BRANDS = [
@@ -39,26 +40,36 @@ const labelStyle: React.CSSProperties = {
   textTransform: 'uppercase',
 }
 
-export default function AddCarModal({ isOpen, onClose, onSuccess }: Props) {
+export default function AddCarModal({ isOpen, onClose, onSuccess, editingCar }: Props) {
   const { user } = useAuth()
-  const [brand, setBrand]     = useState('')
-  const [model, setModel]     = useState('')
-  const [year, setYear]       = useState('')
-  const [plate, setPlate]     = useState('')
-  const [mileage, setMileage] = useState('')
+  const [brand, setBrand]       = useState('')
+  const [model, setModel]       = useState('')
+  const [year, setYear]         = useState('')
+  const [plate, setPlate]       = useState('')
+  const [mileage, setMileage]   = useState('')
   const [fuelType, setFuelType] = useState('Diesel')
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
+
+  // Pre-fill when editing, reset when adding
+  useEffect(() => {
+    if (editingCar) {
+      setBrand(editingCar.brand)
+      setModel(editingCar.model)
+      setYear(editingCar.year?.toString() || '')
+      setPlate(editingCar.license_plate || '')
+      setMileage(editingCar.mileage?.toString() || '')
+      setFuelType(editingCar.fuel_type || 'Diesel')
+    } else {
+      setBrand(''); setModel(''); setYear('')
+      setPlate(''); setMileage(''); setFuelType('Diesel')
+    }
+    setError('')
+  }, [editingCar, isOpen])
 
   if (!isOpen) return null
 
-  const reset = () => {
-    setBrand(''); setModel(''); setYear('')
-    setPlate(''); setMileage(''); setFuelType('Diesel')
-    setError('')
-  }
-
-  const handleClose = () => { reset(); onClose() }
+  const handleClose = () => { setError(''); onClose() }
 
   const handleSubmit = async () => {
     if (!user || !brand || !model) {
@@ -68,7 +79,7 @@ export default function AddCarModal({ isOpen, onClose, onSuccess }: Props) {
     setLoading(true)
     setError('')
 
-    const { error: insertError } = await supabase.from('cars').insert({
+    const payload = {
       user_id:       user.id,
       brand,
       model,
@@ -76,15 +87,17 @@ export default function AddCarModal({ isOpen, onClose, onSuccess }: Props) {
       license_plate: plate   || null,
       mileage:       mileage ? parseInt(mileage) : null,
       fuel_type:     fuelType,
-      is_primary:    false,
-    })
+    }
+
+    const result = editingCar
+      ? await supabase.from('cars').update(payload).eq('id', editingCar.id)
+      : await supabase.from('cars').insert({ ...payload, is_primary: false })
 
     setLoading(false)
-    if (insertError) {
-      setError('Erreur : ' + insertError.message)
+    if (result.error) {
+      setError('Erreur : ' + result.error.message)
       return
     }
-    reset()
     onSuccess()
     onClose()
   }
@@ -146,10 +159,12 @@ export default function AddCarModal({ isOpen, onClose, onSuccess }: Props) {
           fontSize: '22px', fontWeight: 600, color: 'white',
           letterSpacing: '-0.02em', marginBottom: '6px',
         }}>
-          Ajouter un véhicule
+          {editingCar ? 'Modifier le véhicule' : 'Ajouter un véhicule'}
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', marginBottom: '28px' }}>
-          Enregistrez votre voiture pour des réservations en un tap
+          {editingCar
+            ? 'Mettez à jour les informations de votre véhicule'
+            : 'Enregistrez votre voiture pour des réservations en un tap'}
         </p>
 
         <div style={{ display: 'grid', gap: '16px' }}>
@@ -240,7 +255,7 @@ export default function AddCarModal({ isOpen, onClose, onSuccess }: Props) {
             transition: 'background 0.15s, color 0.15s',
           }}
         >
-          {loading ? 'Ajout en cours...' : 'Ajouter le véhicule'}
+          {loading ? 'Enregistrement...' : editingCar ? 'Enregistrer' : 'Ajouter le véhicule'}
         </button>
       </div>
     </div>

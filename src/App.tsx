@@ -14,6 +14,7 @@ import CustomerDashboard from './pages/dashboard/CustomerDashboard'
 import BookingConfirmation from './pages/dashboard/BookingConfirmation'
 import FleetDashboard from './pages/fleet/FleetDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import MyCars from './pages/dashboard/MyCars'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
 
@@ -40,6 +41,9 @@ function AppShell() {
           <Route path="/booking/:id" element={<BookingConfirmation />} />
           <Route path="/dashboard" element={
             <ProtectedRoute requiredRole="customer"><CustomerDashboard /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/voitures" element={
+            <ProtectedRoute requiredRole="customer"><MyCars /></ProtectedRoute>
           } />
           <Route path="/fleet-dashboard" element={
             <ProtectedRoute><FleetDashboard /></ProtectedRoute>
