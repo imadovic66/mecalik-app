@@ -1,6 +1,8 @@
 import { ChevronRight, Target, Zap, Heart, TrendingUp } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function About() {
+  const { t } = useTranslation()
   return (
     <main>
 
@@ -93,9 +95,9 @@ export default function About() {
           >
             {[
               { value: '2 800+', label: 'Clients servis à Casablanca' },
-              { value: '< 90 min', label: "Délai d'arrivée moyen" },
-              { value: '4,9 / 5', label: 'Note client moyenne' },
-              { value: '100%', label: 'Paiement après service' },
+              { value: '< 90 min', label: t('landing.stat2Label') },
+              { value: '4,9 / 5', label: t('landing.stat3Label') },
+              { value: '100%', label: t('landing.heroBadge2') },
             ].map((stat, i, arr) => (
               <div
                 key={stat.label}
@@ -194,7 +196,7 @@ export default function About() {
           Prêt à essayer ?
         </h2>
         <p className="text-lg mb-8" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          Demandez un devis gratuit. Réponse en moins de 5 minutes.
+          Demandez un devis gratuit. {t('landing.step1Feature3')}.
         </p>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}

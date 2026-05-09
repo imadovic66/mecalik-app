@@ -3,6 +3,7 @@ import {
   ChevronRight, Shield, Clock, FileText,
   CheckCircle, Phone, Mail,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const WA_FLEET =
   'https://wa.me/212777348065?text=' +
@@ -26,6 +27,7 @@ const inputErr: React.CSSProperties = {
 }
 
 export default function Fleet() {
+  const { t } = useTranslation()
   const [formData, setFormData] = useState({ name: '', company: '', email: '', phone: '' })
   const [errors, setErrors] = useState({ name: false, company: false, email: false, phone: false })
   const [submitted, setSubmitted] = useState(false)
@@ -85,7 +87,7 @@ export default function Fleet() {
               >
                 <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#F0C040' }} />
                 <span className="text-sm font-medium" style={{ color: '#F0C040' }}>
-                  Flottes & Entreprises
+                  {t('landing.footerFleetsLink')}
                 </span>
               </div>
 
