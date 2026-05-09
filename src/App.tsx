@@ -20,7 +20,7 @@ import PublicRoute from './components/ui/PublicRoute'
 // AppShell lives inside <BrowserRouter> so it can call useLocation
 function AppShell() {
   const location    = useLocation()
-  const isDashboard = location.pathname.startsWith('/dashboard')
+  const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/booking')
 
   return (
     <>

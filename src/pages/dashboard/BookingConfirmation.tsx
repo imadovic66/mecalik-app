@@ -1,309 +1,461 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { CheckCircle, Car, MapPin, Calendar, MessageSquare, Clock, Star } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import {
+  ArrowLeft, MapPin, Phone, MessageCircle, Star,
+  Check, Clock, Wrench, Sparkles, AlertCircle, Calendar,
+} from 'lucide-react'
 import RatingModal from '../../components/ui/RatingModal'
 
 type Booking = {
   id: string
+  reference: string | null
+  user_id: string | null
   service_name: string
   address: string
+  address_notes: string | null
+  status: string
   preferred_date: string | null
-  notes_admin: string | null
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+  amount_ttc: number | null
+  technician_name: string | null
+  technician_phone: string | null
   rating: number | null
   rating_comment: string | null
+  notes_admin: string | null
   created_at: string
+  confirmed_at: string | null
+  completed_at: string | null
 }
 
-const STEPS = [
-  { key: 'pending', label: 'Demande reçue', desc: 'Votre demande a été enregistrée' },
-  { key: 'confirmed', label: 'Confirmé', desc: 'Un technicien est assigné' },
-  { key: 'in_progress', label: 'En cours', desc: 'Le technicien est en route' },
-  { key: 'completed', label: 'Terminé', desc: 'Service réalisé avec succès' },
+const STATUS_STEPS = [
+  { key: 'pending',     label: 'Demande reçue',       icon: Check    },
+  { key: 'confirmed',   label: 'Confirmée',           icon: Calendar },
+  { key: 'in_progress', label: 'Technicien en route', icon: Wrench   },
+  { key: 'completed',   label: 'Service terminé',     icon: Sparkles },
 ]
 
-const STATUS_ORDER = ['pending', 'confirmed', 'in_progress', 'completed']
+const STATUS_INDEX: Record<string, number> = {
+  pending: 0, confirmed: 1, in_progress: 2, completed: 3, cancelled: -1,
+}
 
 export default function BookingConfirmation() {
-  const { id } = useParams<{ id: string }>()
-  const [booking, setBooking] = useState<Booking | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+  const { id }     = useParams<{ id: string }>()
+  const navigate   = useNavigate()
+  const [booking, setBooking]     = useState<Booking | null>(null)
+  const [loading, setLoading]     = useState(true)
   const [showRating, setShowRating] = useState(false)
 
   useEffect(() => {
     if (!id) return
-
-    const fetchBooking = async () => {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('id', id)
-        .single()
-
-      if (error || !data) {
-        setNotFound(true)
-      } else {
-        setBooking(data as Booking)
-      }
-      setLoading(false)
-    }
-
     fetchBooking()
 
     const channel = supabase
-      .channel('booking-' + id)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'bookings', filter: `id=eq.${id}` },
-        (payload) => {
-          setBooking((prev) => prev ? { ...prev, ...(payload.new as Booking) } : prev)
-        }
-      )
+      .channel(`booking-${id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'bookings',
+        filter: `id=eq.${id}`,
+      }, payload => {
+        setBooking(payload.new as Booking)
+      })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
+  const fetchBooking = async () => {
+    if (!id) return
+    setLoading(true)
+    const { data } = await supabase.from('bookings').select('*').eq('id', id).single()
+    setBooking(data)
+    setLoading(false)
+  }
+
+  // ── Loading ──
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#080808' }}>
-        <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#43BCC9', borderTopColor: 'transparent' }} />
+      <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>Chargement...</div>
       </div>
     )
   }
 
-  if (notFound || !booking) {
+  // ── Not found ──
+  if (!booking) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4" style={{ background: '#080808' }}>
-        <p className="text-lg font-semibold" style={{ color: '#ffffff' }}>Réservation introuvable</p>
-        <Link to="/" className="text-sm font-medium" style={{ color: '#43BCC9' }}>← Retour au site</Link>
+      <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '320px' }}>
+          <AlertCircle size={32} color="rgba(255,255,255,0.3)" style={{ marginBottom: '14px' }} />
+          <div style={{ color: 'white', fontSize: '15px', marginBottom: '6px', fontWeight: 500 }}>
+            Réservation introuvable
+          </div>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '20px' }}>
+            Cette réservation n'existe pas ou a été supprimée.
+          </div>
+          <button onClick={() => navigate('/')} style={{
+            background: 'white', color: '#080808', border: 'none',
+            padding: '10px 18px', borderRadius: '10px',
+            fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+          }}>
+            Retour à l'accueil
+          </button>
+        </div>
       </div>
     )
   }
 
-  const currentStepIndex = STATUS_ORDER.indexOf(booking.status)
-
-  const waMsg = encodeURIComponent(
-    `Bonjour MecaLIK, je souhaite des informations sur ma réservation #${id?.slice(0, 8).toUpperCase()}`
-  )
-  const waUrl = `https://wa.me/212777348065?text=${waMsg}`
-
-  const dateLabel = booking.preferred_date
-    ? new Date(booking.preferred_date).toLocaleDateString('fr-FR', { dateStyle: 'medium' })
-    : "Dès que possible"
-
-  const SERVICE_LABELS: Record<string, string> = {
-    lavage: 'Lavage Auto', vidange: 'Vidange & Filtres', batterie: 'Batterie',
-    pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
-  }
-
-  const detailRows = [
-    { icon: <Car size={15} />, label: 'Service', value: SERVICE_LABELS[booking.service_name] ?? booking.service_name },
-    { icon: <MapPin size={15} />, label: 'Lieu', value: booking.address },
-    { icon: <Calendar size={15} />, label: 'Date', value: dateLabel },
-    ...(booking.notes_admin ? [{ icon: <MessageSquare size={15} />, label: 'Note', value: booking.notes_admin }] : []),
-  ]
+  const currentStep = STATUS_INDEX[booking.status] ?? 0
+  const isCancelled = booking.status === 'cancelled'
+  const isCompleted = booking.status === 'completed'
+  const refLabel    = booking.reference || booking.id.substring(0, 8).toUpperCase()
 
   return (
-    <div className="min-h-screen px-4 py-12" style={{ background: '#080808' }}>
-      <div className="max-w-lg mx-auto space-y-6">
+    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', justifyContent: 'center' }}>
+      <div style={{
+        width: '100%', maxWidth: '480px', background: '#0A0A0A',
+        minHeight: '100vh', position: 'relative',
+        boxShadow: '0 0 80px rgba(0,0,0,0.6)',
+      }}>
 
-        {/* Success header */}
-        <div className="text-center space-y-3">
-          <div className="flex justify-center">
-            <CheckCircle size={56} color="#00DD88" strokeWidth={1.5} />
-          </div>
-          <h1 className="font-heading font-bold text-2xl" style={{ color: '#ffffff' }}>
-            Demande envoyée !
-          </h1>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            Référence : <span className="font-mono font-semibold" style={{ color: '#43BCC9' }}>
-              #{id?.slice(0, 8).toUpperCase()}
-            </span>
-          </p>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Notre équipe vous contacte par WhatsApp sous 5 minutes.
-          </p>
-        </div>
-
-        {/* Timeline */}
-        <div
-          className="rounded-2xl p-6 space-y-1"
-          style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.08)' }}
-        >
-          <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            Suivi de votre demande
-          </p>
-          {STEPS.map((step, i) => {
-            const done = i < currentStepIndex
-            const current = i === currentStepIndex
-            const upcoming = i > currentStepIndex
-
-            return (
-              <div key={step.key} className="flex gap-4 items-start">
-                {/* Dot + connector */}
-                <div className="flex flex-col items-center pt-0.5">
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{
-                      background: done
-                        ? '#00DD88'
-                        : current
-                        ? '#43BCC9'
-                        : 'rgba(255,255,255,0.12)',
-                      boxShadow: current ? '0 0 0 4px rgba(67,188,201,0.15)' : 'none',
-                      animation: current ? 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite' : 'none',
-                    }}
-                  />
-                  {i < STEPS.length - 1 && (
-                    <div
-                      className="w-px flex-1 mt-1"
-                      style={{
-                        minHeight: '28px',
-                        background: done
-                          ? 'rgba(0,221,136,0.3)'
-                          : 'rgba(255,255,255,0.06)',
-                      }}
-                    />
-                  )}
-                </div>
-
-                {/* Label */}
-                <div className="pb-5">
-                  <p
-                    className="text-sm font-semibold"
-                    style={{
-                      color: done ? '#00DD88' : current ? '#ffffff' : 'rgba(255,255,255,0.3)',
-                    }}
-                  >
-                    {step.label}
-                    {current && (
-                      <span className="ml-2 text-xs font-normal" style={{ color: '#43BCC9' }}>
-                        — En cours
-                      </span>
-                    )}
-                  </p>
-                  {!upcoming && (
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                      {step.desc}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Booking details */}
-        <div
-          className="rounded-2xl p-6"
-          style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.08)' }}
-        >
-          <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            Détails de la réservation
-          </p>
-          <div className="space-y-3">
-            {detailRows.map((row) => (
-              <div key={row.label} className="flex items-start gap-3">
-                <span style={{ color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>{row.icon}</span>
-                <div className="flex-1 flex items-baseline justify-between gap-2">
-                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
-                    {row.label}
-                  </span>
-                  <span className="text-sm text-right" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                    {row.value}
-                  </span>
-                </div>
-              </div>
-            ))}
-            <div className="flex items-start gap-3">
-              <span style={{ color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}><Clock size={15} /></span>
-              <div className="flex-1 flex items-baseline justify-between gap-2">
-                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
-                  Créé le
-                </span>
-                <span className="text-sm text-right" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                  {new Date(booking.created_at).toLocaleDateString('fr-MA', {
-                    day: '2-digit', month: 'long', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit',
-                  })}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="space-y-3">
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2 font-bold py-4 rounded-full text-sm"
-            style={{ background: '#25D366', color: '#ffffff' }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.85L0 24l6.335-1.502A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.808 9.808 0 01-5.168-1.47l-.37-.22-3.76.891.934-3.662-.241-.376A9.818 9.818 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
-            </svg>
-            Contacter sur WhatsApp
-          </a>
-
-          <Link
-            to="/dashboard"
-            className="w-full flex items-center justify-center py-3.5 rounded-full text-sm font-medium"
+        {/* ═══ TOP BAR ═══ */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 50,
+          background: 'rgba(10,10,10,0.85)', backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(255,255,255,0.04)',
+          padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px',
+        }}>
+          <button
+            onClick={() => navigate('/dashboard')}
             style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.6)',
+              width: '36px', height: '36px',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
             }}
           >
-            Voir mon espace client
-          </Link>
-
-          <p className="text-center">
-            <Link to="/" className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-              ← Retour au site
-            </Link>
-          </p>
+            <ArrowLeft size={15} color="rgba(255,255,255,0.7)" />
+          </button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>
+              RÉSERVATION
+            </div>
+            <div style={{ fontSize: '13px', color: 'white', fontWeight: 500, fontFamily: 'monospace' }}>
+              {refLabel}
+            </div>
+          </div>
         </div>
 
-        {booking.status === 'completed' && !booking.rating && (
-          <div
-            className="p-5 rounded-2xl text-center"
-            style={{ background: 'rgba(240,192,64,0.05)', border: '1px solid rgba(240,192,64,0.15)' }}
-          >
-            <p className="text-sm font-medium mb-3" style={{ color: '#F0C040' }}>
-              Votre service est terminé. Comment s'est-il passé ?
-            </p>
+        {/* ═══ CONTENT ═══ */}
+        <div style={{ padding: '24px 18px 48px' }}>
+
+          {/* ── HERO STATUS CARD ── */}
+          {isCancelled ? (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(255,68,68,0.06) 0%, rgba(255,68,68,0.02) 100%)',
+              border: '1px solid rgba(255,68,68,0.2)', borderRadius: '20px',
+              padding: '24px', marginBottom: '24px', textAlign: 'center',
+            }}>
+              <div style={{
+                width: '56px', height: '56px', margin: '0 auto 14px', borderRadius: '50%',
+                background: 'rgba(255,68,68,0.1)', border: '1px solid rgba(255,68,68,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <AlertCircle size={24} color="#FF4444" />
+              </div>
+              <div style={{
+                fontFamily: 'Space Grotesk, sans-serif', fontSize: '20px',
+                fontWeight: 600, color: 'white', marginBottom: '6px', letterSpacing: '-0.015em',
+              }}>
+                Réservation annulée
+              </div>
+              <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
+                Cette réservation a été annulée
+              </div>
+            </div>
+          ) : (
+            <div style={{
+              background: 'linear-gradient(135deg, #0E2528 0%, #0F1518 100%)',
+              border: '1px solid rgba(67,188,201,0.25)', borderRadius: '20px',
+              padding: '22px', marginBottom: '24px',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              {/* Glow */}
+              <div style={{
+                position: 'absolute', top: '-80px', right: '-80px',
+                width: '240px', height: '240px',
+                background: 'radial-gradient(circle, rgba(67,188,201,0.15) 0%, transparent 70%)',
+                borderRadius: '50%', pointerEvents: 'none',
+              }} />
+              <div style={{ position: 'relative' }}>
+                {/* Status pill */}
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '5px 11px', borderRadius: '7px',
+                  background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.18)',
+                  marginBottom: '14px',
+                }}>
+                  <span style={{
+                    width: '7px', height: '7px', borderRadius: '50%', background: '#43BCC9',
+                    animation: !isCompleted ? 'bcPulse 2s infinite' : 'none',
+                    display: 'inline-block',
+                  }} />
+                  <span style={{
+                    fontSize: '10px', fontWeight: 600, color: '#43BCC9',
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                  }}>
+                    {STATUS_STEPS[currentStep]?.label || 'En cours'}
+                  </span>
+                </div>
+
+                <div style={{
+                  fontFamily: 'Space Grotesk, sans-serif', fontSize: '24px',
+                  fontWeight: 600, color: 'white', marginBottom: '4px',
+                  letterSpacing: '-0.015em', lineHeight: 1.15,
+                }}>
+                  {booking.service_name}
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  fontSize: '13px', color: 'rgba(255,255,255,0.55)', marginTop: '6px',
+                }}>
+                  <MapPin size={12} />
+                  <span>{booking.address}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── PROGRESS TIMELINE ── */}
+          {!isCancelled && (
+            <div style={{ marginBottom: '24px' }}>
+              <SectionLabel>Suivi de l'intervention</SectionLabel>
+              <div style={{
+                background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '16px', padding: '18px 18px 8px',
+              }}>
+                {STATUS_STEPS.map((step, i) => {
+                  const Icon      = step.icon
+                  const isPast    = i < currentStep
+                  const isCurrent = i === currentStep
+                  const isFuture  = i > currentStep
+                  const isLast    = i === STATUS_STEPS.length - 1
+
+                  return (
+                    <div key={step.key} style={{
+                      display: 'flex', alignItems: 'flex-start', gap: '14px',
+                      marginBottom: isLast ? 0 : '4px', position: 'relative',
+                    }}>
+                      {/* Connector */}
+                      {!isLast && (
+                        <div style={{
+                          position: 'absolute', left: '15px', top: '32px',
+                          width: '2px', height: 'calc(100% - 18px)',
+                          background: isPast ? '#43BCC9' : 'rgba(255,255,255,0.06)',
+                          borderRadius: '1px',
+                        }} />
+                      )}
+
+                      {/* Icon */}
+                      <div style={{
+                        width: '32px', height: '32px', borderRadius: '50%',
+                        background: isPast || isCurrent ? '#43BCC9' : 'rgba(255,255,255,0.04)',
+                        border: isCurrent ? '2px solid rgba(67,188,201,0.4)' : '1px solid rgba(255,255,255,0.07)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                        boxShadow: isCurrent ? '0 0 0 4px rgba(67,188,201,0.15)' : 'none',
+                        animation: isCurrent ? 'bcPulse 2s infinite' : 'none',
+                      }}>
+                        {isPast
+                          ? <Check size={14} color="#080808" />
+                          : <Icon size={13} color={isCurrent ? '#080808' : 'rgba(255,255,255,0.35)'} />
+                        }
+                      </div>
+
+                      {/* Text */}
+                      <div style={{ flex: 1, paddingTop: '4px', paddingBottom: isLast ? 0 : '20px' }}>
+                        <div style={{
+                          fontSize: '14px', fontWeight: isCurrent ? 600 : 500,
+                          color: isFuture ? 'rgba(255,255,255,0.35)' : 'white',
+                          marginBottom: '2px',
+                        }}>
+                          {step.label}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>
+                          {step.key === 'pending' && booking.created_at &&
+                            new Date(booking.created_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {step.key === 'confirmed' && (
+                            booking.confirmed_at
+                              ? new Date(booking.confirmed_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+                              : isFuture ? 'En attente' : ''
+                          )}
+                          {step.key === 'in_progress' && (isCurrent ? 'Arrive sous 30 min' : isPast ? 'Terminé' : 'En attente')}
+                          {step.key === 'completed' && booking.completed_at &&
+                            new Date(booking.completed_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {step.key === 'completed' && !booking.completed_at && isFuture && 'En attente'}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── TECHNICIAN CARD ── */}
+          {booking.technician_name && !isCancelled && (
+            <div style={{ marginBottom: '24px' }}>
+              <SectionLabel>Votre technicien</SectionLabel>
+              <div style={{
+                background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '16px', padding: '16px',
+                display: 'flex', alignItems: 'center', gap: '14px',
+              }}>
+                {/* Avatar */}
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '50%', flexShrink: 0,
+                  background: 'linear-gradient(135deg, #43BCC9 0%, #2A8B95 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '15px', fontWeight: 700, color: 'white',
+                }}>
+                  {booking.technician_name.split(' ').map(s => s[0]).slice(0, 2).join('')}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '15px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
+                    {booking.technician_name}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>
+                    Technicien certifié · 4.9
+                  </div>
+                </div>
+                {/* Actions */}
+                {booking.technician_phone && (
+                  <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                    <a href={`tel:${booking.technician_phone}`} style={{
+                      width: '40px', height: '40px', borderRadius: '12px',
+                      background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      textDecoration: 'none',
+                    }}>
+                      <Phone size={15} color="rgba(255,255,255,0.7)" />
+                    </a>
+                    <a
+                      href={`https://wa.me/${booking.technician_phone.replace(/\D/g, '')}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{
+                        width: '40px', height: '40px', borderRadius: '12px',
+                        background: '#00DD88',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <MessageCircle size={15} color="#0A0A0A" />
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── DETAILS CARD ── */}
+          <div style={{ marginBottom: '24px' }}>
+            <SectionLabel>Détails de la réservation</SectionLabel>
+            <div style={{
+              background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '16px', overflow: 'hidden',
+            }}>
+              <DetailRow label="Référence"  value={refLabel} mono />
+              <DetailRow label="Service"    value={booking.service_name} />
+              <DetailRow label="Adresse"    value={booking.address} />
+              {booking.address_notes && <DetailRow label="Précisions" value={booking.address_notes} />}
+              <DetailRow
+                label="Demandé le"
+                value={new Date(booking.created_at).toLocaleString('fr-FR', {
+                  day: '2-digit', month: 'long', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit',
+                })}
+              />
+              {booking.amount_ttc != null && (
+                <DetailRow label="Montant" value={`${booking.amount_ttc} MAD`} highlight />
+              )}
+            </div>
+          </div>
+
+          {/* ── RATING DISPLAY (already rated) ── */}
+          {isCompleted && booking.rating && (
+            <div style={{ marginBottom: '24px' }}>
+              <SectionLabel>Votre évaluation</SectionLabel>
+              <div style={{
+                background: '#0F0F0F', border: '1px solid rgba(240,192,64,0.15)',
+                borderRadius: '16px', padding: '16px',
+              }}>
+                <div style={{ display: 'flex', gap: '4px', marginBottom: booking.rating_comment ? '10px' : 0 }}>
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <Star
+                      key={n} size={18}
+                      fill={n <= booking.rating! ? '#F0C040' : 'transparent'}
+                      color={n <= booking.rating! ? '#F0C040' : 'rgba(255,255,255,0.2)'}
+                    />
+                  ))}
+                </div>
+                {booking.rating_comment && (
+                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+                    "{booking.rating_comment}"
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── RATE CTA (completed, not yet rated) ── */}
+          {isCompleted && !booking.rating && (
             <button
               onClick={() => setShowRating(true)}
-              className="px-8 py-3 rounded-full text-sm font-bold transition-colors"
-              style={{ background: '#F0C040', color: '#080808' }}
+              style={{
+                width: '100%', padding: '14px',
+                background: 'linear-gradient(135deg, rgba(240,192,64,0.1) 0%, rgba(240,192,64,0.05) 100%)',
+                border: '1px solid rgba(240,192,64,0.25)', borderRadius: '14px',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between', marginBottom: '16px',
+              }}
             >
-              Laisser un avis
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Star size={18} color="#F0C040" />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '14px', color: 'white', fontWeight: 500 }}>
+                    Évaluez votre intervention
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>
+                    Aidez-nous à améliorer le service
+                  </div>
+                </div>
+              </div>
+              <Clock size={15} color="rgba(255,255,255,0.4)" style={{ transform: 'rotate(180deg)' }} />
             </button>
-          </div>
-        )}
+          )}
 
-        {booking.rating && (
-          <div
-            className="p-5 rounded-2xl"
-            style={{ background: 'rgba(0,221,136,0.05)', border: '1px solid rgba(0,221,136,0.15)' }}
+          {/* ── SUPPORT LINK ── */}
+          <a
+            href="https://wa.me/212777348065"
+            target="_blank" rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '14px',
+              background: 'rgba(0,221,136,0.06)', border: '1px solid rgba(0,221,136,0.18)',
+              borderRadius: '14px', color: '#00DD88',
+              fontSize: '13px', fontWeight: 500, textDecoration: 'none',
+            }}
           >
-            <div className="flex items-center gap-2 mb-1">
-              {Array.from({ length: booking.rating }, (_, i) => (
-                <Star key={i} size={16} style={{ color: '#F0C040' }} fill="#F0C040" />
-              ))}
-            </div>
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              {booking.rating_comment || 'Avis soumis'}
-            </p>
-          </div>
-        )}
+            <MessageCircle size={15} />
+            Contacter le support sur WhatsApp
+          </a>
+        </div>
 
+        <style>{`
+          @keyframes bcPulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.45; }
+          }
+        `}</style>
       </div>
 
       <RatingModal
@@ -312,10 +464,51 @@ export default function BookingConfirmation() {
         isOpen={showRating}
         onClose={() => setShowRating(false)}
         onSubmitted={() => {
-          setBooking(prev => prev ? { ...prev, rating: 1 } : prev)
+          fetchBooking()
           setShowRating(false)
         }}
       />
+    </div>
+  )
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: '11px', fontWeight: 600,
+      color: 'rgba(255,255,255,0.45)',
+      textTransform: 'uppercase', letterSpacing: '0.06em',
+      marginBottom: '12px',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function DetailRow({ label, value, mono, highlight }: {
+  label: string; value: string; mono?: boolean; highlight?: boolean
+}) {
+  return (
+    <div style={{
+      padding: '13px 16px',
+      borderBottom: '1px solid rgba(255,255,255,0.04)',
+      display: 'flex', justifyContent: 'space-between',
+      alignItems: 'flex-start', gap: '14px',
+    }}>
+      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', flexShrink: 0 }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: '13px',
+        color: highlight ? '#43BCC9' : 'white',
+        fontFamily: mono ? 'monospace' : 'inherit',
+        fontWeight: highlight || mono ? 600 : 400,
+        textAlign: 'right', wordBreak: 'break-word',
+      }}>
+        {value}
+      </div>
     </div>
   )
 }

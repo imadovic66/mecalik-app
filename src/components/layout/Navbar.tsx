@@ -15,8 +15,8 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
 
-  // Dashboard has its own navigation chrome — hide global navbar there
-  if (location.pathname.startsWith('/dashboard')) return null
+  // Dashboard and booking confirmation have their own chrome — hide global navbar
+  if (location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/booking')) return null
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
