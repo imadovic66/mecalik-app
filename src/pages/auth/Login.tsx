@@ -33,8 +33,9 @@ export default function Login() {
       .eq('id', data.user.id)
       .single()
 
-    if (profile?.role === 'admin') navigate('/admin')
+    if (profile?.role === 'admin')          navigate('/admin')
     else if (profile?.role === 'fleet_manager') navigate('/fleet-dashboard')
+    else if (profile?.role === 'mechanic')  navigate('/mechanic')
     else navigate('/dashboard')
   }
 

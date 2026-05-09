@@ -17,13 +17,14 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import MyCars from './pages/dashboard/MyCars'
 import MyHistory from './pages/dashboard/MyHistory'
 import MyProfile from './pages/dashboard/MyProfile'
+import MechanicDashboard from './pages/mechanic/MechanicDashboard'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
 
 // AppShell lives inside <BrowserRouter> so it can call useLocation
 function AppShell() {
   const location    = useLocation()
-  const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/booking') || location.pathname.startsWith('/fleet-dashboard')
+  const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/booking') || location.pathname.startsWith('/fleet-dashboard') || location.pathname.startsWith('/mechanic')
 
   return (
     <>
@@ -55,6 +56,9 @@ function AppShell() {
           } />
           <Route path="/fleet-dashboard" element={
             <ProtectedRoute><FleetDashboard /></ProtectedRoute>
+          } />
+          <Route path="/mechanic" element={
+            <ProtectedRoute requiredRole="mechanic"><MechanicDashboard /></ProtectedRoute>
           } />
           <Route path="/admin" element={
             <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>

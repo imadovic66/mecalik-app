@@ -15,11 +15,12 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
 
-  // Dashboard, booking confirmation, and fleet dashboard have their own chrome
+  // Dashboard, booking confirmation, fleet dashboard, and mechanic portal have their own chrome
   if (
     location.pathname.startsWith('/dashboard') ||
     location.pathname.startsWith('/booking') ||
-    location.pathname.startsWith('/fleet-dashboard')
+    location.pathname.startsWith('/fleet-dashboard') ||
+    location.pathname.startsWith('/mechanic')
   ) return null
 
   useEffect(() => {

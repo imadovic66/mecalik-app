@@ -28,8 +28,9 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 
   // Role check — only after profile is loaded
   if (requiredRole && profile && profile.role !== requiredRole) {
-    if (profile.role === 'admin') return <Navigate to="/admin" replace />
+    if (profile.role === 'admin')         return <Navigate to="/admin" replace />
     if (profile.role === 'fleet_manager') return <Navigate to="/fleet-dashboard" replace />
+    if (profile.role === 'mechanic')      return <Navigate to="/mechanic" replace />
     return <Navigate to="/dashboard" replace />
   }
 
