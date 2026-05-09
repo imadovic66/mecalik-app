@@ -809,7 +809,7 @@ export default function AdminDashboard() {
                   overflow: 'hidden', marginBottom: '24px',
                 }}>
                   {[
-                    { label: 'Note moyenne', value: `${avgStr} / 5`, color: '#F0C040', note: 'sur 5 étoiles' },
+                    { label: t('landing.stat3Label'), value: `${avgStr} / 5`, color: '#F0C040', note: t('landing.reviewsRating') },
                     { label: 'Total avis',   value: String(totalReviews), color: 'white',    note: 'soumis' },
                     { label: '5 étoiles',    value: String(fiveStars),    color: '#00DD88',  note: totalReviews ? `${Math.round(fiveStars / totalReviews * 100)}%` : '0%' },
                     { label: 'Avis négatifs', value: String(negative),   color: '#FF4444',  note: '≤ 2 étoiles' },

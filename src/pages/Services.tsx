@@ -157,8 +157,7 @@ export default function Services() {
           className="text-lg max-w-xl mx-auto"
           style={{ color: 'rgba(255,255,255,0.45)' }}
         >
-          Tout ce dont votre voiture a besoin, directement à votre emplacement.
-          Devis gratuit, paiement après service.
+          {t('landing.servicesSectionTitle')}
         </p>
       </section>
 
