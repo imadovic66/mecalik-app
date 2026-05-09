@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 import { supabase, type Car } from '../../lib/supabase'
 import {
   ArrowLeft, Plus, Car as CarIcon, Edit3, Trash2,
@@ -22,6 +23,7 @@ type Booking = {
 
 export default function MyCars() {
   const { user }   = useAuth()
+  const { t }      = useTranslation()
   const navigate   = useNavigate()
 
   const [cars, setCars]                   = useState<Car[]>([])
@@ -129,7 +131,7 @@ export default function MyCars() {
           {/* Loading */}
           {loading && (
             <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
-              Chargement...
+              {t('common.loading')}
             </div>
           )}
 
@@ -371,11 +373,11 @@ export default function MyCars() {
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', zIndex: 50,
         }}>
           {([
-            { Icon: Home,      label: 'Accueil',      active: false, onClick: () => navigate('/dashboard') },
-            { Icon: ClockIcon, label: 'Historique',   active: false, onClick: () => navigate('/dashboard/historique') },
-            { Icon: CarIcon,   label: 'Mes voitures', active: true,  onClick: undefined },
-            { Icon: User,      label: 'Profil',       active: false, onClick: () => navigate('/dashboard/profil') },
-          ] as const).map(({ Icon, label, active, onClick }, i) => (
+            { Icon: Home,      labelKey: 'nav.home',        active: false, onClick: () => navigate('/dashboard') },
+            { Icon: ClockIcon, labelKey: 'customer.history', active: false, onClick: () => navigate('/dashboard/historique') },
+            { Icon: CarIcon,   labelKey: 'customer.myCars',  active: true,  onClick: undefined },
+            { Icon: User,      labelKey: 'customer.profile', active: false, onClick: () => navigate('/dashboard/profil') },
+          ] as const).map(({ Icon, labelKey, active, onClick }, i) => (
             <button
               key={i} onClick={onClick}
               style={{
@@ -396,7 +398,7 @@ export default function MyCars() {
                   fontSize: '10px', fontWeight: active ? 600 : 400,
                   color: active ? '#43BCC9' : 'rgba(255,255,255,0.4)',
                 }}>
-                  {label}
+                  {t(labelKey)}
                 </span>
               </div>
             </button>

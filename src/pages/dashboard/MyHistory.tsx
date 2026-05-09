@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
 import {
   ArrowLeft, ArrowRight, Star, Wrench, Droplet, Battery, Disc,
@@ -44,17 +45,20 @@ const FALLBACK_VISUAL: ServiceVisual = {
   color: 'rgba(255,255,255,0.5)',
 }
 
-const FILTERS = [
-  { id: 'all',        label: 'Tous'        },
-  { id: 'completed',  label: 'Terminées'   },
-  { id: 'cancelled',  label: 'Annulées'    },
-  { id: 'this_year',  label: 'Cette année' },
-  { id: 'this_month', label: 'Ce mois'     },
-]
+const FILTER_IDS = ['all', 'completed', 'cancelled', 'this_year', 'this_month'] as const
 
 export default function MyHistory() {
   const { user }   = useAuth()
+  const { t }      = useTranslation()
   const navigate   = useNavigate()
+
+  const FILTERS = [
+    { id: 'all',        label: t('customer.allFilter')       },
+    { id: 'completed',  label: t('customer.completedFilter') },
+    { id: 'cancelled',  label: t('customer.cancelledFilter') },
+    { id: 'this_year',  label: t('customer.thisYear')        },
+    { id: 'this_month', label: t('customer.thisMonth')       },
+  ]
 
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading]   = useState(true)
@@ -81,6 +85,8 @@ export default function MyHistory() {
 
   // ── Filter ──
   const now = new Date()
+  // silence unused warning from removed FILTERS constant
+  void FILTER_IDS
   const filtered = bookings.filter(b => {
     const d = new Date(b.created_at)
     if (filter === 'completed')  return b.status === 'completed'
@@ -134,10 +140,10 @@ export default function MyHistory() {
               fontFamily: 'Space Grotesk, sans-serif',
               fontSize: '17px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em',
             }}>
-              Historique
+              {t('customer.historyTitle')}
             </div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-              {bookings.length} {bookings.length === 1 ? 'intervention' : 'interventions'} au total
+              {bookings.length} {bookings.length === 1 ? t('customer.historyTotal') : t('customer.historyTotalPlural')}
             </div>
           </div>
         </div>
@@ -153,7 +159,7 @@ export default function MyHistory() {
                 borderRadius: '14px', padding: '14px 16px',
               }}>
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-                  Interventions
+                  {t('customer.interventions')}
                 </div>
                 <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '22px', fontWeight: 700, color: '#43BCC9', letterSpacing: '-0.02em' }}>
                   {completed.length}
@@ -164,7 +170,7 @@ export default function MyHistory() {
                 borderRadius: '14px', padding: '14px 16px',
               }}>
                 <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-                  Total dépensé
+                  {t('customer.totalSpent')}
                 </div>
                 <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '22px', fontWeight: 700, color: '#00DD88', letterSpacing: '-0.02em' }}>
                   {totalSpent}{' '}
@@ -203,7 +209,7 @@ export default function MyHistory() {
           {/* ── States ── */}
           {loading && (
             <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
-              Chargement...
+              {t('common.loading')}
             </div>
           )}
 
@@ -226,7 +232,7 @@ export default function MyHistory() {
                 fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '4px',
                 fontFamily: 'Space Grotesk, sans-serif',
               }}>
-                Aucune intervention pour le moment
+                {t('customer.noHistory')}
               </div>
               <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', maxWidth: '260px', margin: '0 auto 16px', lineHeight: 1.5 }}>
                 Vos interventions terminées apparaîtront ici
@@ -239,7 +245,7 @@ export default function MyHistory() {
                   fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                 }}
               >
-                Réserver un service
+                {t('customer.bookService')}
               </button>
             </div>
           )}
@@ -249,7 +255,7 @@ export default function MyHistory() {
               padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '13px',
               border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '14px',
             }}>
-              Aucun résultat pour ce filtre
+              {t('customer.noHistoryFilter')}
             </div>
           )}
 
@@ -362,11 +368,11 @@ export default function MyHistory() {
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', zIndex: 50,
         }}>
           {([
-            { Icon: Home,      label: 'Accueil',      active: false, onClick: () => navigate('/dashboard')           },
-            { Icon: ClockIcon, label: 'Historique',   active: true,  onClick: undefined                              },
-            { Icon: CarIcon,   label: 'Mes voitures', active: false, onClick: () => navigate('/dashboard/voitures')  },
-            { Icon: User,      label: 'Profil',       active: false, onClick: () => navigate('/dashboard/profil')    },
-          ] as const).map(({ Icon, label, active, onClick }, i) => (
+            { Icon: Home,      labelKey: 'nav.home',        active: false, onClick: () => navigate('/dashboard')          },
+            { Icon: ClockIcon, labelKey: 'customer.history', active: true,  onClick: undefined                             },
+            { Icon: CarIcon,   labelKey: 'customer.myCars',  active: false, onClick: () => navigate('/dashboard/voitures') },
+            { Icon: User,      labelKey: 'customer.profile', active: false, onClick: () => navigate('/dashboard/profil')   },
+          ] as const).map(({ Icon, labelKey, active, onClick }, i) => (
             <button key={i} onClick={onClick} style={{
               background: 'transparent', border: 'none',
               cursor: onClick ? 'pointer' : 'default',
@@ -381,7 +387,7 @@ export default function MyHistory() {
               }}>
                 <Icon size={20} color={active ? '#43BCC9' : 'rgba(255,255,255,0.4)'} />
                 <span style={{ fontSize: '10px', fontWeight: active ? 600 : 400, color: active ? '#43BCC9' : 'rgba(255,255,255,0.4)' }}>
-                  {label}
+                  {t(labelKey)}
                 </span>
               </div>
             </button>

@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, supabaseAdmin } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   LayoutDashboard, ShoppingBag, Users,
   LogOut,
@@ -101,6 +103,7 @@ function StatusPill({ status }: { status: keyof typeof STATUS_CONFIG }) {
 
 export default function AdminDashboard() {
   const { user, profile, signOut } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -270,12 +273,12 @@ export default function AdminDashboard() {
   ].filter(d => d.value > 0)
 
   const navItems: { tab: Tab; icon: React.ReactNode; label: string }[] = [
-    { tab: 'overview',       icon: <LayoutDashboard size={18} />, label: "Vue d'ensemble" },
-    { tab: 'bookings',       icon: <ShoppingBag size={18} />,     label: 'Réservations' },
-    { tab: 'customers',      icon: <Users size={18} />,           label: 'Clients' },
-    { tab: 'finances',       icon: <TrendingUp size={18} />,      label: 'Finances' },
-    { tab: 'reviews',        icon: <Star size={18} />,            label: 'Avis' },
-    { tab: 'notifications',  icon: <Bell size={18} />,            label: 'Notifications' },
+    { tab: 'overview',       icon: <LayoutDashboard size={18} />, label: t('admin.overview') },
+    { tab: 'bookings',       icon: <ShoppingBag size={18} />,     label: t('admin.reservations') },
+    { tab: 'customers',      icon: <Users size={18} />,           label: t('admin.clients') },
+    { tab: 'finances',       icon: <TrendingUp size={18} />,      label: t('admin.finances') },
+    { tab: 'reviews',        icon: <Star size={18} />,            label: t('admin.reviews') },
+    { tab: 'notifications',  icon: <Bell size={18} />,            label: t('admin.notifications') },
   ]
 
   return (
@@ -296,12 +299,12 @@ export default function AdminDashboard() {
         {/* Nav items */}
         <nav style={{ padding: '8px 12px', flex: 1 }}>
           {([
-            { tab: 'overview'       as Tab, label: "Vue d'ensemble", icon: LayoutDashboard },
-            { tab: 'bookings'       as Tab, label: 'Réservations',   icon: ShoppingBag },
-            { tab: 'customers'      as Tab, label: 'Clients',        icon: Users },
-            { tab: 'finances'       as Tab, label: 'Finances',       icon: TrendingUp },
-            { tab: 'reviews'        as Tab, label: 'Avis',           icon: Star },
-            { tab: 'notifications'  as Tab, label: 'Notifications',  icon: Bell },
+            { tab: 'overview'       as Tab, labelKey: 'admin.overview',      icon: LayoutDashboard },
+            { tab: 'bookings'       as Tab, labelKey: 'admin.reservations',  icon: ShoppingBag },
+            { tab: 'customers'      as Tab, labelKey: 'admin.clients',       icon: Users },
+            { tab: 'finances'       as Tab, labelKey: 'admin.finances',      icon: TrendingUp },
+            { tab: 'reviews'        as Tab, labelKey: 'admin.reviews',       icon: Star },
+            { tab: 'notifications'  as Tab, labelKey: 'admin.notifications', icon: Bell },
           ] as const).map(item => {
             const Icon = item.icon
             const isActive = activeTab === item.tab
@@ -332,7 +335,7 @@ export default function AdminDashboard() {
                   <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: '2px', background: '#43BCC9', borderRadius: '0 2px 2px 0' }} />
                 )}
                 <Icon size={15} style={{ opacity: isActive ? 1 : 0.5, flexShrink: 0 }} />
-                {item.label}
+                {t(item.labelKey)}
               </button>
             )
           })}
@@ -348,7 +351,7 @@ export default function AdminDashboard() {
             style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', fontSize: '12px', padding: '0' }}
           >
             <LogOut size={13} />
-            Déconnexion
+            {t('common.logout')}
           </button>
         </div>
       </aside>
@@ -370,18 +373,14 @@ export default function AdminDashboard() {
         }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
-              {activeTab === 'overview'       && "Vue d'ensemble"}
-              {activeTab === 'bookings'       && 'Réservations'}
-              {activeTab === 'customers'      && 'Clients'}
-              {activeTab === 'finances'       && 'Finances'}
-              {activeTab === 'reviews'        && 'Avis clients'}
-              {activeTab === 'notifications'  && 'Notifications'}
+              {navItems.find(n => n.tab === activeTab)?.label}
             </div>
             <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
-              MecaLIK — Tableau de bord
+              MecaLIK — {t('admin.dashboard')}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <LanguageSwitcher />
             <button onClick={fetchData} style={{
               background: 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.08)',
@@ -395,7 +394,7 @@ export default function AdminDashboard() {
               fontSize: '12px',
             }}>
               <RefreshCw size={12} />
-              Actualiser
+              {t('common.refresh')}
             </button>
             <div style={{
               padding: '4px 10px',
@@ -430,10 +429,10 @@ export default function AdminDashboard() {
                 marginBottom: '24px',
               }}>
                 {[
-                  { label: 'Total',             value: String(stats.total),            color: 'white',   note: 'réservations'  },
-                  { label: 'En attente',         value: String(stats.pending),          color: '#F0C040', note: 'à traiter'     },
-                  { label: 'En cours',           value: String(stats.inProgress),       color: '#43BCC9', note: 'interventions' },
-                  { label: "Chiffre d'affaires", value: `${stats.revenue} MAD`,         color: '#00DD88', note: 'complétées'    },
+                  { label: t('admin.total'),    value: String(stats.total),            color: 'white',   note: 'réservations'  },
+                  { label: t('admin.pending'),  value: String(stats.pending),          color: '#F0C040', note: 'à traiter'     },
+                  { label: t('admin.inProgress'), value: String(stats.inProgress),     color: '#43BCC9', note: 'interventions' },
+                  { label: t('admin.revenue'),  value: `${stats.revenue} MAD`,         color: '#00DD88', note: 'complétées'    },
                 ].map((stat, i) => (
                   <div key={i} style={{ background: '#0D0D0D', padding: '20px 24px' }}>
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', fontWeight: 500 }}>
@@ -591,7 +590,7 @@ export default function AdminDashboard() {
                   <input
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Rechercher par service, adresse..."
+                    placeholder={t('admin.search')}
                     className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none"
                     style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.08)', color: '#ffffff' }}
                     onFocus={e => (e.target.style.borderColor = '#43BCC9')}
@@ -628,7 +627,7 @@ export default function AdminDashboard() {
                 <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
                   {/* Table header */}
                   <div style={{ display: 'grid', gridTemplateColumns: '110px 1.2fr 1fr 150px 130px 76px 80px', padding: '10px 16px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.06)', gap: '8px' }}>
-                    {['Référence', 'Service', 'Client', 'Technicien', 'Statut', 'Montant', 'Date'].map(h => (
+                    {[t('admin.reference'), t('admin.service'), t('admin.client'), t('admin.technician'), t('common.status'), t('admin.amount'), t('admin.date')].map(h => (
                       <div key={h} style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</div>
                     ))}
                   </div>
@@ -680,7 +679,7 @@ export default function AdminDashboard() {
                           cursor: 'pointer', fontFamily: 'inherit', outline: 'none', width: '100%',
                         }}
                       >
-                        <option value="">— Assigner</option>
+                        <option value="">{t('admin.assign')}</option>
                         {mechanics.map(m => (
                           <option key={m.id} value={m.full_name || ''}>{m.full_name}</option>
                         ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
 import {
   ArrowLeft, Edit3, Check, X, Phone, Mail, User,
@@ -11,6 +12,7 @@ import {
 
 export default function MyProfile() {
   const { user, profile, signOut } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [editing, setEditing]           = useState(false)
@@ -128,7 +130,7 @@ export default function MyProfile() {
               padding: '7px 12px', borderRadius: '10px',
               fontSize: '12px', fontWeight: 500, cursor: 'pointer',
             }}>
-              <Edit3 size={12} /> Modifier
+              <Edit3 size={12} /> {t('customer.profile_page.editProfile')}
             </button>
           ) : (
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -151,7 +153,7 @@ export default function MyProfile() {
                 fontSize: '12px', fontWeight: 600,
                 cursor: saving ? 'not-allowed' : 'pointer',
               }}>
-                <Check size={12} /> {saving ? 'Enregistrement...' : 'Enregistrer'}
+                <Check size={12} /> {saving ? t('common.loading') : t('common.save')}
               </button>
             </div>
           )}
@@ -331,7 +333,7 @@ export default function MyProfile() {
             color: '#FF4444', fontSize: '14px', fontWeight: 600, cursor: 'pointer',
           }}>
             <LogOut size={16} />
-            Se déconnecter
+            {t('common.logout')}
           </button>
         </div>
 
@@ -345,11 +347,11 @@ export default function MyProfile() {
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', zIndex: 50,
         }}>
           {([
-            { Icon: Home,      label: 'Accueil',      active: false, onClick: () => navigate('/dashboard')           },
-            { Icon: ClockIcon, label: 'Historique',   active: false, onClick: () => navigate('/dashboard/historique') },
-            { Icon: CarIcon,   label: 'Mes voitures', active: false, onClick: () => navigate('/dashboard/voitures')  },
-            { Icon: User,      label: 'Profil',       active: true,  onClick: undefined                              },
-          ] as const).map(({ Icon, label, active, onClick }, i) => (
+            { Icon: Home,      labelKey: 'nav.home',        active: false, onClick: () => navigate('/dashboard')           },
+            { Icon: ClockIcon, labelKey: 'customer.history', active: false, onClick: () => navigate('/dashboard/historique') },
+            { Icon: CarIcon,   labelKey: 'customer.myCars',  active: false, onClick: () => navigate('/dashboard/voitures')  },
+            { Icon: User,      labelKey: 'customer.profile', active: true,  onClick: undefined                              },
+          ] as const).map(({ Icon, labelKey, active, onClick }, i) => (
             <button key={i} onClick={onClick} style={{
               background: 'transparent', border: 'none',
               cursor: onClick ? 'pointer' : 'default',
@@ -367,7 +369,7 @@ export default function MyProfile() {
                   fontSize: '10px', fontWeight: active ? 600 : 400,
                   color: active ? '#43BCC9' : 'rgba(255,255,255,0.4)',
                 }}>
-                  {label}
+                  {t(labelKey)}
                 </span>
               </div>
             </button>

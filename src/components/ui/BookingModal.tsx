@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, ArrowLeft, Phone, MapPin, User, Car as CarIcon, MessageCircle, Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { supabase, type Car } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { SERVICES, getPrice } from '../../data/pricing'
@@ -25,6 +26,7 @@ const SERVICE_LABEL_MAP: Record<string, string> = {
 
 export default function BookingModal() {
   const { user, profile } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [isOpen, setIsOpen]                 = useState(false)
@@ -217,7 +219,7 @@ export default function BookingModal() {
                 }}
               >
                 <ArrowLeft size={13} />
-                Changer de service
+                {t('booking.changeService')}
               </button>
             )}
             <h2 style={{
@@ -225,10 +227,10 @@ export default function BookingModal() {
               fontSize: '20px', fontWeight: 600, color: 'white',
               letterSpacing: '-0.015em', marginBottom: '2px',
             }}>
-              {step === 1 ? 'Choisir un service' : 'Vos informations'}
+              {step === 1 ? t('booking.chooseService') : t('booking.title')}
             </h2>
             <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-              {step === 1 ? 'Que souhaitez-vous réserver ?' : 'Réponse WhatsApp en moins de 5 min'}
+              {step === 1 ? t('booking.chooseService') : t('booking.whatsappResponse')}
             </div>
           </div>
           <button
@@ -352,19 +354,19 @@ export default function BookingModal() {
               )}
 
               {/* Name */}
-              <FieldLabel>Nom complet *</FieldLabel>
+              <FieldLabel>{t('booking.fullName')} *</FieldLabel>
               <FieldWrapper icon={<User size={14} color="rgba(255,255,255,0.4)" />}>
                 <input
                   type="text"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  placeholder="Votre nom"
+                  placeholder={t('booking.fullNamePlaceholder')}
                   style={inputStyle}
                 />
               </FieldWrapper>
 
               {/* Phone */}
-              <FieldLabel>Téléphone *</FieldLabel>
+              <FieldLabel>{t('common.phone')} *</FieldLabel>
               <FieldWrapper icon={<Phone size={14} color="rgba(255,255,255,0.4)" />}>
                 <input
                   type="tel"
@@ -378,7 +380,7 @@ export default function BookingModal() {
               {/* Vehicle */}
               {cars.length > 0 && (
                 <>
-                  <FieldLabel>Véhicule</FieldLabel>
+                  <FieldLabel>{t('booking.vehicle')}</FieldLabel>
                   <FieldWrapper icon={<CarIcon size={14} color="rgba(255,255,255,0.4)" />}>
                     <select
                       value={selectedCarId}
@@ -396,23 +398,23 @@ export default function BookingModal() {
               )}
 
               {/* Address */}
-              <FieldLabel>Adresse / Lieu *</FieldLabel>
+              <FieldLabel>{t('booking.address')} *</FieldLabel>
               <FieldWrapper icon={<MapPin size={14} color="rgba(255,255,255,0.4)" />}>
                 <input
                   type="text"
                   value={address}
                   onChange={e => setAddress(e.target.value)}
-                  placeholder="Domicile, bureau, parking..."
+                  placeholder={t('booking.addressPlaceholder')}
                   style={inputStyle}
                 />
               </FieldWrapper>
 
               {/* Address notes */}
-              <FieldLabel>Précisions (facultatif)</FieldLabel>
+              <FieldLabel>{t('booking.addressNotes')}</FieldLabel>
               <textarea
                 value={addressNotes}
                 onChange={e => setAddressNotes(e.target.value)}
-                placeholder="Étage, code, points de repère..."
+                placeholder={t('booking.addressNotesPlaceholder')}
                 rows={2}
                 style={{
                   ...inputStyle,
@@ -482,10 +484,10 @@ export default function BookingModal() {
                 transition: 'all 0.15s',
               }}
             >
-              {submitting ? 'Envoi...' : (
+              {submitting ? t('common.loading') : (
                 <>
                   <MessageCircle size={16} />
-                  Envoyer sur WhatsApp
+                  {t('booking.submitWhatsapp')}
                 </>
               )}
             </button>

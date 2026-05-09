@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 import { supabase, type Car } from '../../lib/supabase'
+import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   ChevronRight, MapPin, Plus, Phone, Bell,
   Droplet, Battery, Disc, Search, AlertTriangle, Sparkles,
@@ -58,6 +60,7 @@ function getFirstName(fullName: string | null | undefined, email: string | null 
 
 export default function CustomerDashboard() {
   const { user, profile } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [bookings, setBookings]     = useState<Booking[]>([])
@@ -144,22 +147,25 @@ export default function CustomerDashboard() {
             </div>
           </button>
 
-          <button style={{
-            width: '40px', height: '40px',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: '12px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', position: 'relative',
-          }}>
-            <Bell size={16} color="rgba(255,255,255,0.7)" />
-            <span style={{
-              position: 'absolute', top: 8, right: 8,
-              width: '7px', height: '7px',
-              background: '#FF4444', borderRadius: '50%',
-              border: '2px solid #0A0A0A',
-            }} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <LanguageSwitcher />
+            <button style={{
+              width: '40px', height: '40px',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '12px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', position: 'relative',
+            }}>
+              <Bell size={16} color="rgba(255,255,255,0.7)" />
+              <span style={{
+                position: 'absolute', top: 8, right: 8,
+                width: '7px', height: '7px',
+                background: '#FF4444', borderRadius: '50%',
+                border: '2px solid #0A0A0A',
+              }} />
+            </button>
+          </div>
         </div>
 
         {/* ═══ SCROLLABLE CONTENT ════════════════════════════════════ */}
@@ -175,7 +181,7 @@ export default function CustomerDashboard() {
               fontSize: '26px', fontWeight: 600, color: 'white',
               letterSpacing: '-0.02em', lineHeight: 1.1,
             }}>
-              {firstName ? `Salut ${firstName}` : 'Bonjour'}
+              {firstName ? `${t('customer.greeting')} ${firstName}` : t('customer.greeting')}
             </h1>
           </div>
 
@@ -216,7 +222,7 @@ export default function CustomerDashboard() {
                       fontSize: '10px', fontWeight: 700, color: st.color,
                       letterSpacing: '0.1em', textTransform: 'uppercase',
                     }}>
-                      {st.label}
+                      {t(`status.${activeBooking.status}`, st.label)}
                     </span>
                   </div>
 
@@ -262,7 +268,7 @@ export default function CustomerDashboard() {
                           {activeBooking.technician_name}
                         </div>
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                          4.9 · Technicien certifié
+                          4.9 · {t('customer.certifiedTech')}
                         </div>
                       </div>
                       {activeBooking.technician_phone && (
@@ -287,7 +293,7 @@ export default function CustomerDashboard() {
                     marginTop: '12px', gap: '4px',
                     fontSize: '12px', color: 'rgba(67,188,201,0.6)',
                   }}>
-                    Voir le détail <ChevronRight size={13} />
+                    {t('customer.viewDetail')} <ChevronRight size={13} />
                   </div>
                 </div>
               </div>
@@ -305,10 +311,10 @@ export default function CustomerDashboard() {
                   fontFamily: 'Space Grotesk, sans-serif',
                   fontSize: '17px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em',
                 }}>
-                  Mon garage
+                  {t('customer.garage')}
                 </h2>
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
-                  {cars.length > 0 ? `${cars.length} véhicule${cars.length > 1 ? 's' : ''} enregistré${cars.length > 1 ? 's' : ''}` : 'Ajoutez votre voiture'}
+                  {cars.length > 0 ? `${cars.length} véhicule${cars.length > 1 ? 's' : ''} enregistré${cars.length > 1 ? 's' : ''}` : t('customer.garageSubtitle')}
                 </div>
               </div>
               {cars.length > 0 && (
@@ -322,7 +328,7 @@ export default function CustomerDashboard() {
                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
                   }}
                 >
-                  <Plus size={11} /> Ajouter
+                  <Plus size={11} /> {t('common.add')}
                 </button>
               )}
             </div>
@@ -347,10 +353,10 @@ export default function CustomerDashboard() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '14px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
-                    Ajoutez votre voiture
+                    {t('customer.addCar')}
                   </div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                    Réservation en un tap
+                    {t('customer.addCarSub')}
                   </div>
                 </div>
                 <Plus size={18} color="#43BCC9" />
@@ -479,10 +485,10 @@ export default function CustomerDashboard() {
                 fontSize: '17px', fontWeight: 600, color: 'white',
                 letterSpacing: '-0.01em',
               }}>
-                Services
+                {t('customer.services')}
               </h2>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
-                Tap pour réserver instantanément
+                {t('customer.servicesSubtitle')}
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
@@ -523,7 +529,7 @@ export default function CustomerDashboard() {
                       {label}
                     </div>
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.65)' }}>
-                      Dès {price} MAD
+                      {t('customer.from')} {price} MAD
                     </div>
                   </div>
                   {/* Arrow chevron */}
@@ -548,7 +554,7 @@ export default function CustomerDashboard() {
                 fontSize: '17px', fontWeight: 600, color: 'white',
                 letterSpacing: '-0.01em', marginBottom: '14px',
               }}>
-                Réserver à nouveau
+                {t('customer.bookAgain')}
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {recentCompleted.map(b => (
@@ -579,7 +585,7 @@ export default function CustomerDashboard() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#43BCC9', fontSize: '12px', fontWeight: 600, flexShrink: 0 }}>
-                      Réserver <ArrowRight size={12} />
+                      {t('customer.bookAgain')} <ArrowRight size={12} />
                     </div>
                   </div>
                 ))}
@@ -672,11 +678,11 @@ export default function CustomerDashboard() {
           zIndex: 50,
         }}>
           {([
-            { Icon: Home,      label: 'Accueil',      active: true,  onClick: undefined },
-            { Icon: ClockIcon, label: 'Historique',   active: false, onClick: () => navigate('/dashboard/historique') },
-            { Icon: CarIcon,   label: 'Mes voitures', active: false, onClick: () => navigate('/dashboard/voitures') },
-            { Icon: User,      label: 'Profil',       active: false, onClick: () => navigate('/dashboard/profil') },
-          ] as const).map(({ Icon, label, active, onClick }, i) => (
+            { Icon: Home,      labelKey: 'nav.home',        active: true,  onClick: undefined },
+            { Icon: ClockIcon, labelKey: 'customer.history', active: false, onClick: () => navigate('/dashboard/historique') },
+            { Icon: CarIcon,   labelKey: 'customer.myCars',  active: false, onClick: () => navigate('/dashboard/voitures') },
+            { Icon: User,      labelKey: 'customer.profile', active: false, onClick: () => navigate('/dashboard/profil') },
+          ] as const).map(({ Icon, labelKey, active, onClick }, i) => (
             <button
               key={i}
               onClick={onClick}
@@ -695,7 +701,7 @@ export default function CustomerDashboard() {
               }}>
                 <Icon size={20} color={active ? '#43BCC9' : 'rgba(255,255,255,0.35)'} />
                 <span style={{ fontSize: '10px', color: active ? '#43BCC9' : 'rgba(255,255,255,0.35)', fontWeight: active ? 600 : 400 }}>
-                  {label}
+                  {t(labelKey)}
                 </span>
               </div>
             </button>

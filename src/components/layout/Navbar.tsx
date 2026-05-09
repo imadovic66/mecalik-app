@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from '../ui/LanguageSwitcher'
 import {
   Menu, X, ChevronDown, LogOut, User, Car,
   LayoutDashboard, ShoppingBag, Users, BarChart3,
@@ -9,6 +11,7 @@ import {
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
@@ -61,11 +64,11 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center gap-8">
             {[
-              { to: '/',         label: 'Accueil' },
-              { to: '/services', label: 'Services' },
-              { to: '/devis',    label: 'Tarifs & Devis' },
-              { to: '/fleet',    label: 'Flottes' },
-              { to: '/about',    label: 'À propos' },
+              { to: '/',         label: t('nav.home') },
+              { to: '/services', label: t('nav.services') },
+              { to: '/devis',    label: t('nav.pricing') },
+              { to: '/fleet',    label: t('nav.fleet') },
+              { to: '/about',    label: t('nav.about') },
             ].map(item => (
               <Link key={item.to} to={item.to}
                 className="text-sm transition-colors"
@@ -81,28 +84,17 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <div className="flex gap-1">
-              {['FR', 'EN', 'AR'].map(lang => (
-                <button key={lang}
-                  className="text-xs px-2 py-1 rounded font-medium transition-colors"
-                  style={{
-                    background: lang === 'FR' ? '#43BCC9' : 'transparent',
-                    color: lang === 'FR' ? '#080808' : 'rgba(255,255,255,0.4)',
-                  }}>
-                  {lang}
-                </button>
-              ))}
-            </div>
+            <LanguageSwitcher />
             <Link to="/login"
               className="text-sm font-medium transition-colors"
               style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Connexion
+              {t('nav.login')}
             </Link>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
               className="flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition-colors"
               style={{ background: '#43BCC9', color: '#080808' }}>
-              Devis Gratuit
+              {t('nav.quickQuote')}
             </button>
           </div>
 
@@ -116,11 +108,11 @@ export default function Navbar() {
           <div className="md:hidden border-t px-6 py-4 space-y-3"
             style={{ background: 'rgba(8,8,8,0.98)', borderColor: 'rgba(255,255,255,0.06)' }}>
             {[
-              { to: '/',         label: 'Accueil' },
-              { to: '/services', label: 'Services' },
-              { to: '/devis',    label: 'Tarifs & Devis' },
-              { to: '/fleet',    label: 'Flottes' },
-              { to: '/about',    label: 'À propos' },
+              { to: '/',         label: t('nav.home') },
+              { to: '/services', label: t('nav.services') },
+              { to: '/devis',    label: t('nav.pricing') },
+              { to: '/fleet',    label: t('nav.fleet') },
+              { to: '/about',    label: t('nav.about') },
             ].map(item => (
               <Link key={item.to} to={item.to} className="block text-sm py-2"
                 style={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -129,7 +121,7 @@ export default function Navbar() {
             ))}
             <div className="pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
               <Link to="/login" className="block text-sm py-2" style={{ color: '#43BCC9' }}>
-                Connexion
+                {t('nav.login')}
               </Link>
             </div>
           </div>
@@ -269,7 +261,7 @@ export default function Navbar() {
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     <LogOut size={15} />
-                    Déconnexion
+                    {t('common.logout')}
                   </button>
                 </div>
               </div>

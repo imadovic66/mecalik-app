@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
+import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   RefreshCw, Plus, Search, Download,
   LayoutDashboard, Car, Wrench, CreditCard, FileText,
@@ -76,6 +78,7 @@ const NAV: { id: TabId; label: string; Icon: React.ElementType }[] = [
 
 export default function FleetDashboard() {
   const { user, signOut } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [tab, setTab]                   = useState<TabId>('overview')
@@ -225,7 +228,7 @@ export default function FleetDashboard() {
                 background: 'rgba(0,221,136,0.08)',
                 fontSize: '9px', fontWeight: 600, color: '#00DD88',
               }}>
-                Actif
+                {t('fleet.active')}
               </span>
             )}
           </div>
@@ -233,7 +236,9 @@ export default function FleetDashboard() {
 
         {/* Nav */}
         <nav style={{ padding: '8px', flex: 1 }}>
-          {NAV.map(({ id, label, Icon }) => {
+          {NAV.map(({ id, Icon }) => {
+            const label = t(`fleet.tabs.${id === 'rapports' ? 'reports' : id}`)
+
             const active = tab === id
             return (
               <button key={id} onClick={() => setTab(id)} style={{
@@ -268,7 +273,7 @@ export default function FleetDashboard() {
             background: 'transparent', border: 'none', cursor: 'pointer',
             color: 'rgba(255,255,255,0.25)', fontSize: '11px', padding: 0,
           }}>
-            <LogOut size={11} /> Déconnexion
+            <LogOut size={11} /> {t('common.logout')}
           </button>
         </div>
       </aside>
@@ -292,19 +297,20 @@ export default function FleetDashboard() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <LanguageSwitcher />
             <button onClick={fetchAll} style={{
               background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: '7px', padding: '6px 10px', cursor: 'pointer',
               color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px',
             }}>
-              <RefreshCw size={11} /> Actualiser
+              <RefreshCw size={11} /> {t('common.refresh')}
             </button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))} style={{
               background: '#F0C040', color: '#080808', border: 'none',
               padding: '7px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: 700,
               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
             }}>
-              <Plus size={13} /> Demander une intervention
+              <Plus size={13} /> {t('fleet.actions.requestIntervention')}
             </button>
           </div>
         </div>

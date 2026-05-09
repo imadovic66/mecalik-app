@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
+import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   ArrowLeft, MapPin, Phone, MessageCircle, Star,
   Check, Clock, Wrench, Sparkles, AlertCircle, Calendar,
@@ -41,6 +43,7 @@ const STATUS_INDEX: Record<string, number> = {
 export default function BookingConfirmation() {
   const { id }     = useParams<{ id: string }>()
   const navigate   = useNavigate()
+  const { t }      = useTranslation()
   const [booking, setBooking]     = useState<Booking | null>(null)
   const [loading, setLoading]     = useState(true)
   const [showRating, setShowRating] = useState(false)
@@ -97,7 +100,7 @@ export default function BookingConfirmation() {
             padding: '10px 18px', borderRadius: '10px',
             fontSize: '13px', fontWeight: 600, cursor: 'pointer',
           }}>
-            Retour à l'accueil
+            {t('common.back')}
           </button>
         </div>
       </div>
@@ -137,12 +140,13 @@ export default function BookingConfirmation() {
           </button>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>
-              RÉSERVATION
+              {t('booking.title').toUpperCase()}
             </div>
             <div style={{ fontSize: '13px', color: 'white', fontWeight: 500, fontFamily: 'monospace' }}>
               {refLabel}
             </div>
           </div>
+          <LanguageSwitcher />
         </div>
 
         {/* ═══ CONTENT ═══ */}
@@ -228,7 +232,7 @@ export default function BookingConfirmation() {
           {/* ── PROGRESS TIMELINE ── */}
           {!isCancelled && (
             <div style={{ marginBottom: '24px' }}>
-              <SectionLabel>Suivi de l'intervention</SectionLabel>
+              <SectionLabel>{t('booking.confirmTitle')}</SectionLabel>
               <div style={{
                 background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: '16px', padding: '18px 18px 8px',
@@ -304,7 +308,7 @@ export default function BookingConfirmation() {
           {/* ── TECHNICIAN CARD ── */}
           {booking.technician_name && !isCancelled && (
             <div style={{ marginBottom: '24px' }}>
-              <SectionLabel>Votre technicien</SectionLabel>
+              <SectionLabel>{t('booking.yourTechnician')}</SectionLabel>
               <div style={{
                 background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: '16px', padding: '16px',
@@ -324,7 +328,7 @@ export default function BookingConfirmation() {
                     {booking.technician_name}
                   </div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>
-                    Technicien certifié · 4.9
+                    {t('booking.certifiedTech')} · 4.9
                   </div>
                 </div>
                 {/* Actions */}
@@ -358,7 +362,7 @@ export default function BookingConfirmation() {
 
           {/* ── DETAILS CARD ── */}
           <div style={{ marginBottom: '24px' }}>
-            <SectionLabel>Détails de la réservation</SectionLabel>
+            <SectionLabel>{t('booking.bookingDetails')}</SectionLabel>
             <div style={{
               background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)',
               borderRadius: '16px', overflow: 'hidden',
@@ -383,7 +387,7 @@ export default function BookingConfirmation() {
           {/* ── RATING DISPLAY (already rated) ── */}
           {isCompleted && booking.rating && (
             <div style={{ marginBottom: '24px' }}>
-              <SectionLabel>Votre évaluation</SectionLabel>
+              <SectionLabel>{t('booking.rateService')}</SectionLabel>
               <div style={{
                 background: '#0F0F0F', border: '1px solid rgba(240,192,64,0.15)',
                 borderRadius: '16px', padding: '16px',

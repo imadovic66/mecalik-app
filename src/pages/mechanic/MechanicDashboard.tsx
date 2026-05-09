@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
+import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   MapPin, MessageCircle, Navigation,
   CheckCircle, Wrench, Star,
@@ -45,6 +47,7 @@ type TabId = 'jobs' | 'history' | 'gains' | 'profil'
 
 export default function MechanicDashboard() {
   const { user, profile, loading: authLoading, signOut } = useAuth()
+  const { t: i18nT } = useTranslation()
   const navigate = useNavigate()
 
   const [tab, setTab]               = useState<TabId>('jobs')
@@ -164,26 +167,29 @@ export default function MechanicDashboard() {
               {firstName}
             </div>
             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '1px' }}>
-              Technicien · MecaLIK
+              {i18nT('mechanic.title')}
             </div>
           </div>
 
-          {/* Online/Offline toggle */}
-          <button onClick={() => setIsOnline(v => !v)} style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '8px 14px', borderRadius: '20px', border: 'none',
-            background: isOnline ? 'rgba(0,221,136,0.12)' : 'rgba(255,255,255,0.06)',
-            cursor: 'pointer', transition: 'all 0.2s',
-          }}>
-            <div style={{
-              width: '8px', height: '8px', borderRadius: '50%',
-              background: isOnline ? '#00DD88' : 'rgba(255,255,255,0.3)',
-              animation: isOnline ? 'mechPulse 2s infinite' : 'none',
-            }} />
-            <span style={{ fontSize: '12px', fontWeight: 600, color: isOnline ? '#00DD88' : 'rgba(255,255,255,0.4)' }}>
-              {isOnline ? 'En ligne' : 'Hors ligne'}
-            </span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <LanguageSwitcher />
+            {/* Online/Offline toggle */}
+            <button onClick={() => setIsOnline(v => !v)} style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 14px', borderRadius: '20px', border: 'none',
+              background: isOnline ? 'rgba(0,221,136,0.12)' : 'rgba(255,255,255,0.06)',
+              cursor: 'pointer', transition: 'all 0.2s',
+            }}>
+              <div style={{
+                width: '8px', height: '8px', borderRadius: '50%',
+                background: isOnline ? '#00DD88' : 'rgba(255,255,255,0.3)',
+                animation: isOnline ? 'mechPulse 2s infinite' : 'none',
+              }} />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: isOnline ? '#00DD88' : 'rgba(255,255,255,0.4)' }}>
+                {isOnline ? i18nT('status.online') : i18nT('status.offline')}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* ═══ CONTENT ═══ */}
@@ -547,7 +553,7 @@ export default function MechanicDashboard() {
                 textDecoration: 'none', marginBottom: '16px',
               }}>
                 <MessageCircle size={15} />
-                Contacter l'équipe MecaLIK
+                {i18nT('mechanic.contactTeam')}
               </a>
 
               <button onClick={async () => { await signOut(); navigate('/') }} style={{
@@ -557,7 +563,7 @@ export default function MechanicDashboard() {
                 fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               }}>
-                Se déconnecter
+                {i18nT('mechanic.signOut')}
               </button>
             </div>
           )}
@@ -574,22 +580,22 @@ export default function MechanicDashboard() {
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', zIndex: 50,
         }}>
           {([
-            { id: 'jobs'    as TabId, Icon: Wrench,  label: 'Mes jobs'   },
-            { id: 'history' as TabId, Icon: History,  label: 'Historique' },
-            { id: 'gains'   as TabId, Icon: Wallet,   label: 'Gains'      },
-            { id: 'profil'  as TabId, Icon: User,     label: 'Profil'     },
-          ] as const).map(t => {
-            const active = tab === t.id
+            { id: 'jobs'    as TabId, Icon: Wrench,  labelKey: 'mechanic.tabs.jobs'     },
+            { id: 'history' as TabId, Icon: History,  labelKey: 'mechanic.tabs.history'  },
+            { id: 'gains'   as TabId, Icon: Wallet,   labelKey: 'mechanic.tabs.earnings' },
+            { id: 'profil'  as TabId, Icon: User,     labelKey: 'mechanic.tabs.profile'  },
+          ] as const).map(tabItem => {
+            const active = tab === tabItem.id
             return (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center' }}>
+              <button key={tabItem.id} onClick={() => setTab(tabItem.id)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'center' }}>
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
                   padding: active ? '6px 14px' : '4px', borderRadius: '10px',
                   background: active ? 'rgba(67,188,201,0.1)' : 'transparent', transition: 'all 0.2s',
                 }}>
-                  <t.Icon size={20} color={active ? '#43BCC9' : 'rgba(255,255,255,0.4)'} />
+                  <tabItem.Icon size={20} color={active ? '#43BCC9' : 'rgba(255,255,255,0.4)'} />
                   <span style={{ fontSize: '10px', color: active ? '#43BCC9' : 'rgba(255,255,255,0.4)', fontWeight: active ? 600 : 400 }}>
-                    {t.label}
+                    {i18nT(tabItem.labelKey)}
                   </span>
                 </div>
               </button>
