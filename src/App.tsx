@@ -15,6 +15,7 @@ import BookingConfirmation from './pages/dashboard/BookingConfirmation'
 import FleetDashboard from './pages/fleet/FleetDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import MyCars from './pages/dashboard/MyCars'
+import MyHistory from './pages/dashboard/MyHistory'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
 
@@ -44,6 +45,9 @@ function AppShell() {
           } />
           <Route path="/dashboard/voitures" element={
             <ProtectedRoute requiredRole="customer"><MyCars /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/historique" element={
+            <ProtectedRoute requiredRole="customer"><MyHistory /></ProtectedRoute>
           } />
           <Route path="/fleet-dashboard" element={
             <ProtectedRoute><FleetDashboard /></ProtectedRoute>
