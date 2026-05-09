@@ -494,8 +494,7 @@ export default function Home() {
                 </h3>
                 <p className="text-sm leading-relaxed mb-8"
                   style={{ color: 'rgba(255,255,255,0.5)', maxWidth: '280px' }}>
-                  Lavage extérieur et intérieur complet à votre emplacement.
-                  Produits professionnels, résultat showroom.
+                  {t('landing.lavageDesc')}
                 </p>
                 <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#43BCC9' }}>
                   {t('landing.servicesBook')}
@@ -544,7 +543,7 @@ export default function Home() {
                 Vidange &amp; Filtres
               </h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Vidange moteur avec filtre d&apos;origine. Vérification des niveaux incluse.
+                {t('landing.vidangeDesc')}
               </p>
               <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#43BCC9' }}>
                 {t('landing.servicesBook')}
@@ -588,7 +587,7 @@ export default function Home() {
                 Batterie
               </h3>
               <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Diagnostic, remplacement et installation. Toutes marques.
+                {t('landing.batterieDesc')}
               </p>
               <div className="text-xs font-medium" style={{ color: '#43BCC9' }}>~30 min</div>
             </div>
@@ -629,7 +628,7 @@ export default function Home() {
                 Pneus
               </h3>
               <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Changement, équilibrage et contrôle de pression sur place.
+                {t('landing.pneusDesc')}
               </p>
               <div className="text-xs font-medium" style={{ color: '#43BCC9' }}>~45 min</div>
             </div>
@@ -672,7 +671,7 @@ export default function Home() {
                 Diagnostic
               </h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Lecture des codes erreur, bilan complet de l&apos;état du véhicule. Rapport détaillé fourni.
+                {t('landing.diagnosticDesc')}
               </p>
               <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#43BCC9' }}>
                 {t('landing.servicesBook')}
@@ -718,7 +717,7 @@ export default function Home() {
                     </span>
                     <span className="text-xs font-semibold uppercase tracking-wider"
                       style={{ color: '#FF4444' }}>
-                      Disponible 24h/7j
+                      {t('landing.serviceAvailable')}
                     </span>
                   </div>
                   <span className="text-xs font-medium px-3 py-1 rounded-full"
@@ -735,11 +734,10 @@ export default function Home() {
                 </h3>
                 <p className="text-sm leading-relaxed mb-8"
                   style={{ color: 'rgba(255,255,255,0.55)', maxWidth: '280px' }}>
-                  Panne, batterie à plat, crevaison — notre technicien
-                  intervient en moins de 90 minutes, jour et nuit.
+                  {t('landing.urgenceDesc')}
                 </p>
                 <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#FF4444' }}>
-                  Appeler maintenant
+                  {t('landing.serviceCallNow')}
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
@@ -788,23 +786,21 @@ export default function Home() {
                 color: 'white',
                 fontWeight: 700,
               }}>
-                Trois étapes.<br />
+                {t('landing.howHeadline1')}<br />
                 <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 300 }}>
-                  Pas une de plus.
+                  {t('landing.howHeadline2')}
                 </span>
               </h2>
             </div>
             <div className="lg:col-span-6 lg:col-start-7 lg:pt-6">
               <p className="text-base lg:text-lg leading-relaxed"
                 style={{ color: 'rgba(255,255,255,0.55)' }}>
-                De la demande à l'intervention terminée, tout se passe en moins de 90 minutes.
-                Pas de paperasse, pas de devis surprise, pas de déplacement de votre côté.
-                Vous restez où vous êtes — on s'occupe du reste.
+                {t('landing.howDesc')}
               </p>
               <div className="mt-6 flex items-center gap-2 text-sm"
                 style={{ color: 'rgba(255,255,255,0.4)' }}>
                 <ArrowDownRight size={16} style={{ color: '#43BCC9' }} />
-                Faites défiler pour voir le processus
+                {t('landing.howScroll')}
               </div>
             </div>
           </div>

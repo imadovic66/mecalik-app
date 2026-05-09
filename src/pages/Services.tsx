@@ -1,5 +1,6 @@
 import { Droplets, Battery, Wrench, Search, AlertTriangle, Clock, CheckCircle, ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 type Service = {
   id: string
@@ -133,6 +134,7 @@ const iconMap: Record<string, ReactNode> = {
 }
 
 export default function Services() {
+  const { t } = useTranslation()
   return (
     <main>
 
@@ -142,7 +144,7 @@ export default function Services() {
           className="text-sm font-semibold uppercase tracking-widest mb-4"
           style={{ color: '#43BCC9' }}
         >
-          Nos Services
+          {t('landing.servicesTitle')}
         </p>
         <h1
           className="font-heading font-bold text-5xl mb-4"
@@ -312,7 +314,7 @@ export default function Services() {
                         color: '#080808',
                       }}
                     >
-                      Demander un devis
+                      {t('landing.servicesBook')}
                       <ChevronRight size={16} />
                     </button>
                   </div>
