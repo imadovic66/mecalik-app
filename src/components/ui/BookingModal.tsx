@@ -99,26 +99,27 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
     // Fetch cars for logged-in users
     if (!user) return
 
-    supabase
-      .from('cars')
-      .select('id, brand, model, year, license_plate, is_default')
-      .eq('user_id', user.id)
-      .order('is_default', { ascending: false }) // default car first
-      .order('created_at',  { ascending: false })
-      .then(({ data }) => {
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('cars')
+          .select('id, brand, model, year, license_plate, is_default')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false })
+          .order('created_at',  { ascending: false })
+
         const cars: CarType[] = data ?? []
         setUserCars(cars)
         setCarsLoaded(true)
 
         if (cars.length === 0) return // Case C — leave form.car empty
 
-        // Case A or B — auto-select best car
         const best = cars.find(c => c.is_default) ?? cars[0]
         setForm(prev => ({ ...prev, car: carLabel(best) }))
-      })
-      .catch(() => {
-        setCarsLoaded(true) // graceful fallback — show text input
-      })
+      } catch {
+        setCarsLoaded(true) // graceful fallback — show plain text input
+      }
+    })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
