@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import WhatsAppFAB from './components/ui/WhatsAppFAB'
@@ -18,8 +18,12 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
 
-function App() {
-  const [bookingOpen, setBookingOpen]         = useState(false)
+// AppShell lives inside <BrowserRouter> so it can call useLocation
+function AppShell() {
+  const location   = useLocation()
+  const isDashboard = location.pathname.startsWith('/dashboard')
+
+  const [bookingOpen, setBookingOpen]               = useState(false)
   const [preselectedService, setPreselectedService] = useState<string | undefined>(undefined)
 
   useEffect(() => {
@@ -33,17 +37,20 @@ function App() {
   }, [])
 
   return (
-    <BrowserRouter>
-      <Navbar />
-      <div className="pt-16">
+    <>
+      {/* Public navbar + its 64 px top-padding are hidden on /dashboard —
+          the dashboard has its own sticky top bar and bottom tab bar */}
+      {!isDashboard && <Navbar />}
+
+      <div className={isDashboard ? '' : 'pt-16'}>
         <Routes>
-          <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
+          <Route path="/"        element={<PublicRoute><Home /></PublicRoute>} />
           <Route path="/services" element={<PublicRoute><Services /></PublicRoute>} />
-          <Route path="/fleet" element={<PublicRoute><Fleet /></PublicRoute>} />
-          <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
-          <Route path="/devis" element={<QuoteCalculator />} />
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+          <Route path="/fleet"   element={<PublicRoute><Fleet /></PublicRoute>} />
+          <Route path="/about"   element={<PublicRoute><About /></PublicRoute>} />
+          <Route path="/devis"   element={<QuoteCalculator />} />
+          <Route path="/login"   element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/signup"  element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/booking/:id" element={<BookingConfirmation />} />
           <Route path="/dashboard" element={
             <ProtectedRoute requiredRole="customer"><CustomerDashboard /></ProtectedRoute>
@@ -55,16 +62,24 @@ function App() {
             <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>
           } />
         </Routes>
-        <Footer />
-        <WhatsAppFAB />
+
+        {!isDashboard && <Footer />}
+        {!isDashboard && <WhatsAppFAB />}
+
         <BookingModal
           isOpen={bookingOpen}
           onClose={() => { setBookingOpen(false); setPreselectedService(undefined) }}
           preselectedService={preselectedService}
         />
       </div>
-    </BrowserRouter>
+    </>
   )
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
+  )
+}
