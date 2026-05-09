@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase, supabaseAdmin } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -128,17 +128,17 @@ export default function AdminDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     const [{ data: bookingData }, { data: customerData }, { data: reviewData }] = await Promise.all([
-      supabase
+      supabaseAdmin
         .from('bookings')
         .select('*, profiles(full_name, phone)')
         .order('created_at', { ascending: false })
         .limit(100),
-      supabase
+      supabaseAdmin
         .from('profiles')
         .select('*')
         .eq('role', 'customer')
         .order('created_at', { ascending: false }),
-      supabase
+      supabaseAdmin
         .from('reviews')
         .select('*, profiles!customer_id(full_name)')
         .order('created_at', { ascending: false }),
@@ -150,7 +150,7 @@ export default function AdminDashboard() {
   }, [])
 
   const fetchBookings = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await supabaseAdmin
       .from('bookings')
       .select('*, profiles(full_name, phone)')
       .order('created_at', { ascending: false })
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
 
   // ── Fetch mechanics list ──
   useEffect(() => {
-    supabase.from('profiles').select('id, full_name').eq('role', 'mechanic')
+    supabaseAdmin.from('profiles').select('id, full_name').eq('role', 'mechanic')
       .then(({ data }) => setMechanics(data || []))
   }, [])
 
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     setUpdatingStatus(true)
 
-    await supabase.from('bookings').update({ status: newStatus }).eq('id', bookingId)
+    await supabaseAdmin.from('bookings').update({ status: newStatus }).eq('id', bookingId)
 
     setBookings(prev =>
       prev.map(b => b.id === bookingId ? { ...b, status: newStatus as Booking['status'] } : b)
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
   const handleSignOut = async () => { await signOut(); navigate('/') }
 
   const toggleReviewVisibility = async (reviewId: string, isVisible: boolean) => {
-    await supabase.from('reviews').update({ is_visible: !isVisible }).eq('id', reviewId)
+    await supabaseAdmin.from('reviews').update({ is_visible: !isVisible }).eq('id', reviewId)
     setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_visible: !r.is_visible } : r))
   }
 
@@ -666,7 +666,7 @@ export default function AdminDashboard() {
                         onClick={e => e.stopPropagation()}
                         onChange={async e => {
                           const name = e.target.value
-                          await supabase.from('bookings').update({
+                          await supabaseAdmin.from('bookings').update({
                             technician_name: name || null,
                             status: booking.status === 'pending' && name ? 'confirmed' : booking.status,
                           }).eq('id', booking.id)
@@ -694,7 +694,7 @@ export default function AdminDashboard() {
                           const updates: Record<string, string> = { status: newStatus }
                           if (newStatus === 'completed')   updates.completed_at = new Date().toISOString()
                           if (newStatus === 'in_progress') updates.confirmed_at = new Date().toISOString()
-                          await supabase.from('bookings').update(updates).eq('id', booking.id)
+                          await supabaseAdmin.from('bookings').update(updates).eq('id', booking.id)
                           fetchBookings()
                         }}
                         style={{
@@ -720,7 +720,7 @@ export default function AdminDashboard() {
                         onBlur={async e => {
                           const val = parseFloat(e.target.value)
                           if (!isNaN(val) && val > 0) {
-                            await supabase.from('bookings').update({ amount_ttc: val }).eq('id', booking.id)
+                            await supabaseAdmin.from('bookings').update({ amount_ttc: val }).eq('id', booking.id)
                             fetchBookings()
                           }
                         }}
