@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import {
-  Menu, X, ChevronDown, LogOut, User, Car, History,
+  Menu, X, ChevronDown, LogOut, User, Car,
   LayoutDashboard, ShoppingBag, Users, BarChart3,
   Calendar, FileText, Wrench,
 } from 'lucide-react'
@@ -140,11 +140,7 @@ export default function Navbar() {
     { to: '/fleet-dashboard?tab=fleet',        icon: <Car size={16} />,       label: 'Ma flotte' },
     { to: '/fleet-dashboard?tab=calendar',     icon: <Calendar size={16} />,  label: 'Planning' },
     { to: '/fleet-dashboard?tab=reports',      icon: <FileText size={16} />,  label: 'Rapports' },
-  ] : [
-    { to: '/dashboard',               icon: <Wrench size={16} />,  label: 'Mes services' },
-    { to: '/dashboard?tab=bookings',  icon: <History size={16} />, label: 'Historique' },
-    { to: '/dashboard?tab=vehicles',  icon: <Car size={16} />,     label: 'Véhicules' },
-  ]
+  ] : []
 
   const roleBadge = profile?.role === 'admin'
     ? { label: 'Admin', color: '#43BCC9', bg: 'rgba(67,188,201,0.1)', border: 'rgba(67,188,201,0.2)' }
