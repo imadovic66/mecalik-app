@@ -641,7 +641,7 @@ export default function FleetDashboard() {
                       <Tooltip
                         contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
                         itemStyle={{ color: 'white' }}
-                        formatter={(val: number) => [`${val} MAD`]}
+                        formatter={(val: unknown) => [`${val} MAD`]}
                       />
                       <Bar dataKey="total" fill="#F0C040" radius={[4, 4, 0, 0]} />
                     </BarChart>

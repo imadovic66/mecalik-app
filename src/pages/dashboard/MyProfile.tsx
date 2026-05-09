@@ -28,7 +28,7 @@ export default function MyProfile() {
 
   useEffect(() => {
     if (profile) {
-      setName(profile.full_name || profile.first_name || '')
+      setName(profile.full_name || '')
       setPhone(profile.phone || '')
     }
   }, [profile])
@@ -47,7 +47,7 @@ export default function MyProfile() {
   }
 
   const cancelEdit = () => {
-    setName(profile?.full_name || profile?.first_name || '')
+    setName(profile?.full_name || '')
     setPhone(profile?.phone || '')
     setEditing(false)
   }
