@@ -67,22 +67,26 @@ export default function MechanicDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user, profile])
 
-  // ── Data fetch + realtime ──
+  // ── Initial data fetch (fires when auth is confirmed) ──
   useEffect(() => {
     if (!user || !profile) return
     fetchBookings()
-
-    const channel = supabase
-      .channel('mechanic-bookings')
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'bookings',
-        filter: `technician_name=eq.${profile.full_name || ''}`,
-      }, () => fetchBookings())
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, profile])
+
+  // ── Real-time subscription (keyed on technician name, stable after load) ──
+  useEffect(() => {
+    if (!profile?.full_name) return
+    const channel = supabase
+      .channel(`mechanic-${profile.full_name}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'bookings',
+        filter: `technician_name=eq.${profile.full_name}`,
+      }, () => fetchBookings())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.full_name])
 
   const fetchBookings = async () => {
     if (!user || !profile) return

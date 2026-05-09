@@ -95,6 +95,25 @@ export default function FleetDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
+  // ── Real-time: refresh when any booking for this company changes ──
+  useEffect(() => {
+    if (!company?.id) return
+    const channel = supabase
+      .channel(`fleet-${company.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'bookings',
+      }, (payload) => {
+        if ((payload.new as { company_id?: string }).company_id === company.id) {
+          fetchAll()
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [company?.id])
+
   const fetchAll = async () => {
     if (!user) return
     setLoading(true)

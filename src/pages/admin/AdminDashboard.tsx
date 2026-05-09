@@ -30,6 +30,7 @@ type Booking = {
   notes_admin: string | null
   rating: number | null
   rating_comment: string | null
+  technician_name: string | null
   created_at: string
   profiles?: { full_name: string | null; phone: string | null }
 }
@@ -60,6 +61,14 @@ const STATUS_CONFIG = {
   in_progress: { label: 'En cours',    color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
   completed:   { label: 'Terminé',     color: '#00DD88', bg: 'rgba(0,221,136,0.1)',   border: 'rgba(0,221,136,0.25)'   },
   cancelled:   { label: 'Annulé',      color: '#FF4444', bg: 'rgba(255,68,68,0.1)',   border: 'rgba(255,68,68,0.25)'   },
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  pending:     '#F0C040',
+  confirmed:   '#43BCC9',
+  in_progress: '#43BCC9',
+  completed:   '#00DD88',
+  cancelled:   '#FF4444',
 }
 
 const SERVICE_LABELS: Record<string, string> = {
@@ -109,6 +118,7 @@ export default function AdminDashboard() {
   const [notifBody, setNotifBody]                   = useState('')
   const [notifSending, setNotifSending]             = useState(false)
   const [notifResult, setNotifResult]               = useState<string | null>(null)
+  const [mechanics, setMechanics]                   = useState<{ id: string; full_name: string | null }[]>([])
 
   const { permission, subscribed, supported, subscribe, unsubscribe, notify } = usePushNotifications()
 
@@ -139,7 +149,33 @@ export default function AdminDashboard() {
     setLoading(false)
   }, [])
 
+  const fetchBookings = useCallback(async () => {
+    const { data } = await supabase
+      .from('bookings')
+      .select('*, profiles(full_name, phone)')
+      .order('created_at', { ascending: false })
+      .limit(100)
+    if (data) setBookings(data)
+  }, [])
+
   useEffect(() => { if (user) fetchData() }, [user, fetchData])
+
+  // ── Fetch mechanics list ──
+  useEffect(() => {
+    supabase.from('profiles').select('id, full_name').eq('role', 'mechanic')
+      .then(({ data }) => setMechanics(data || []))
+  }, [])
+
+  // ── Real-time: auto-refresh bookings on any change ──
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-bookings-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+        fetchBookings()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [fetchBookings])
 
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     setUpdatingStatus(true)
@@ -591,58 +627,112 @@ export default function AdminDashboard() {
               ) : (
                 <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
                   {/* Table header */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 110px 80px', padding: '10px 20px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    {['Référence', 'Service', 'Client', 'Statut', 'Date'].map(h => (
-                      <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '110px 1.2fr 1fr 150px 130px 76px 80px', padding: '10px 16px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.06)', gap: '8px' }}>
+                    {['Référence', 'Service', 'Client', 'Technicien', 'Statut', 'Montant', 'Date'].map(h => (
+                      <div key={h} style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</div>
                     ))}
                   </div>
                   {/* Table rows */}
                   {filteredBookings.map((booking, i) => (
                     <div
                       key={booking.id}
-                      onClick={() => setSelectedBooking(booking)}
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: '120px 1fr 1fr 110px 80px',
-                        padding: '13px 20px',
+                        gridTemplateColumns: '110px 1.2fr 1fr 150px 130px 76px 80px',
+                        padding: '9px 16px',
                         borderBottom: i < filteredBookings.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                        cursor: 'pointer',
-                        background: selectedBooking?.id === booking.id ? 'rgba(255,255,255,0.04)' : 'transparent',
-                        transition: 'background 0.1s',
                         alignItems: 'center',
+                        gap: '8px',
                       }}
-                      onMouseEnter={e => { if (selectedBooking?.id !== booking.id) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = selectedBooking?.id === booking.id ? 'rgba(255,255,255,0.04)' : 'transparent' }}
                     >
-                      <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                      {/* Ref — click opens detail modal */}
+                      <div
+                        style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace', cursor: 'pointer' }}
+                        onClick={() => setSelectedBooking(booking)}
+                      >
                         {booking.id.slice(0, 8).toUpperCase()}
                       </div>
-                      <div style={{ fontSize: '13px', color: 'white' }}>
+                      {/* Service */}
+                      <div style={{ fontSize: '12px', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {SERVICE_LABELS[booking.service_name] ?? booking.service_name}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
+                      {/* Client */}
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {booking.profiles?.full_name || 'Anonyme'}
                       </div>
-                      <div>
-                        <span style={{
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          fontWeight: 500,
-                          background: booking.status === 'completed'  ? 'rgba(0,221,136,0.1)' :
-                                      booking.status === 'pending'    ? 'rgba(240,192,64,0.1)' :
-                                      booking.status === 'in_progress'? 'rgba(67,188,201,0.1)' :
-                                      booking.status === 'confirmed'  ? 'rgba(67,188,201,0.08)' :
-                                      'rgba(255,68,68,0.1)',
-                          color: booking.status === 'completed'  ? '#00DD88' :
-                                 booking.status === 'pending'    ? '#F0C040' :
-                                 booking.status === 'in_progress'? '#43BCC9' :
-                                 booking.status === 'confirmed'  ? '#43BCC9' :
-                                 '#FF4444',
-                        }}>
-                          {STATUS_CONFIG[booking.status]?.label ?? booking.status}
-                        </span>
-                      </div>
+                      {/* Technicien — inline assignment select */}
+                      <select
+                        value={booking.technician_name || ''}
+                        onClick={e => e.stopPropagation()}
+                        onChange={async e => {
+                          const name = e.target.value
+                          await supabase.from('bookings').update({
+                            technician_name: name || null,
+                            status: booking.status === 'pending' && name ? 'confirmed' : booking.status,
+                          }).eq('id', booking.id)
+                          fetchBookings()
+                        }}
+                        style={{
+                          background: booking.technician_name ? 'rgba(67,188,201,0.08)' : 'rgba(240,192,64,0.08)',
+                          border: booking.technician_name ? '1px solid rgba(67,188,201,0.2)' : '1px solid rgba(240,192,64,0.2)',
+                          color: booking.technician_name ? '#43BCC9' : '#F0C040',
+                          borderRadius: '6px', padding: '4px 6px', fontSize: '11px',
+                          cursor: 'pointer', fontFamily: 'inherit', outline: 'none', width: '100%',
+                        }}
+                      >
+                        <option value="">— Assigner</option>
+                        {mechanics.map(m => (
+                          <option key={m.id} value={m.full_name || ''}>{m.full_name}</option>
+                        ))}
+                      </select>
+                      {/* Statut — inline status select */}
+                      <select
+                        value={booking.status}
+                        onClick={e => e.stopPropagation()}
+                        onChange={async e => {
+                          const newStatus = e.target.value
+                          const updates: Record<string, string> = { status: newStatus }
+                          if (newStatus === 'completed')   updates.completed_at = new Date().toISOString()
+                          if (newStatus === 'in_progress') updates.confirmed_at = new Date().toISOString()
+                          await supabase.from('bookings').update(updates).eq('id', booking.id)
+                          fetchBookings()
+                        }}
+                        style={{
+                          background: 'rgba(255,255,255,0.04)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          color: STATUS_COLORS[booking.status] || 'white',
+                          borderRadius: '6px', padding: '4px 6px', fontSize: '11px',
+                          cursor: 'pointer', fontFamily: 'inherit', outline: 'none', width: '100%',
+                        }}
+                      >
+                        <option value="pending">En attente</option>
+                        <option value="confirmed">Confirmée</option>
+                        <option value="in_progress">En cours</option>
+                        <option value="completed">Terminée</option>
+                        <option value="cancelled">Annulée</option>
+                      </select>
+                      {/* Montant — inline editable input */}
+                      <input
+                        type="number"
+                        defaultValue={booking.amount_ttc ?? ''}
+                        placeholder="MAD"
+                        onClick={e => e.stopPropagation()}
+                        onBlur={async e => {
+                          const val = parseFloat(e.target.value)
+                          if (!isNaN(val) && val > 0) {
+                            await supabase.from('bookings').update({ amount_ttc: val }).eq('id', booking.id)
+                            fetchBookings()
+                          }
+                        }}
+                        style={{
+                          background: 'transparent', border: 'none',
+                          borderBottom: '1px solid rgba(255,255,255,0.1)',
+                          color: booking.amount_ttc ? '#00DD88' : 'rgba(255,255,255,0.35)',
+                          fontSize: '12px', fontWeight: 600, width: '64px',
+                          outline: 'none', fontFamily: 'inherit', padding: '2px 0',
+                        }}
+                      />
+                      {/* Date */}
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
                         {new Date(booking.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                       </div>

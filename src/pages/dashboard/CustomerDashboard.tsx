@@ -68,6 +68,19 @@ export default function CustomerDashboard() {
   useEffect(() => {
     if (!user) { navigate('/login'); return }
     fetchAll()
+
+    // ── Real-time: refresh active booking card when admin updates status ──
+    const channel = supabase
+      .channel(`customer-${user.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'bookings',
+        filter: `user_id=eq.${user.id}`,
+      }, () => { fetchAll() })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
