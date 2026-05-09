@@ -662,7 +662,7 @@ export default function CustomerDashboard() {
             { Icon: Home,      label: 'Accueil',      active: true,  onClick: undefined },
             { Icon: ClockIcon, label: 'Historique',   active: false, onClick: () => navigate('/dashboard/historique') },
             { Icon: CarIcon,   label: 'Mes voitures', active: false, onClick: () => navigate('/dashboard/voitures') },
-            { Icon: User,      label: 'Profil',       active: false, onClick: () => navigate('/dashboard?tab=profile') },
+            { Icon: User,      label: 'Profil',       active: false, onClick: () => navigate('/dashboard/profil') },
           ] as const).map(({ Icon, label, active, onClick }, i) => (
             <button
               key={i}
