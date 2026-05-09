@@ -54,11 +54,13 @@ export default function MechanicDashboard() {
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
-  // ── Auth guard ──
+  // ── Auth guard (imperative) ──
   useEffect(() => {
     if (authLoading) return
     if (!user) { navigate('/login'); return }
-    if (profile && profile.role !== 'mechanic' && profile.role !== 'admin') {
+    // profile loads shortly after user — wait for it
+    if (!profile) return
+    if (profile.role !== 'mechanic' && profile.role !== 'admin') {
       if (profile.role === 'fleet_manager') navigate('/fleet-dashboard')
       else navigate('/dashboard')
     }
@@ -122,6 +124,20 @@ export default function MechanicDashboard() {
   const avgRating = ratedJobs.length > 0
     ? (ratedJobs.reduce((s, b) => s + (b.rating || 0), 0) / ratedJobs.length).toFixed(1)
     : null
+
+  // ── Synchronous render guard — blocks UI until auth is confirmed ──
+  const spinnerScreen = (
+    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <style>{`@keyframes mechSpin { to { transform: rotate(360deg) } }`}</style>
+      <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #43BCC9', borderTopColor: 'transparent', animation: 'mechSpin 0.8s linear infinite' }} />
+    </div>
+  )
+
+  if (authLoading) return spinnerScreen                               // still loading
+  if (!user)       return spinnerScreen                               // will redirect → /login
+  if (!profile)    return spinnerScreen                               // profile fetch in flight
+  if (profile.role !== 'mechanic' && profile.role !== 'admin')
+    return spinnerScreen                                              // will redirect away
 
   return (
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', justifyContent: 'center' }}>
