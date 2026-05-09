@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Clock, ShieldCheck,
   Wrench, MessageSquare, MapPin,
@@ -65,6 +66,7 @@ function LiveActivityTicker() {
 }
 
 export default function Home() {
+  const { t } = useTranslation()
   const [techCount, setTechCount]   = useState(7)
   const [avgRating, setAvgRating]   = useState('4.9')
   const [reviewCount, setReviewCount] = useState(0)
@@ -159,7 +161,7 @@ export default function Home() {
                 </span>
                 <span className="text-[11px] font-medium tracking-wide"
                   style={{ color: 'rgba(255,255,255,0.85)' }}>
-                  {techCount} techniciens disponibles à Casablanca
+                  {techCount} {t('landing.heroAvailable')}
                 </span>
               </div>
 
@@ -174,10 +176,10 @@ export default function Home() {
                 marginBottom: '24px',
               }}>
                 <span style={{ fontWeight: 300, color: 'rgba(255,255,255,0.55)', display: 'block' }}>
-                  Votre voiture,
+                  {t('landing.heroTitle1')}
                 </span>
                 <span style={{ fontWeight: 300, color: 'rgba(255,255,255,0.55)', display: 'block' }}>
-                  votre lieu.
+                  {t('landing.heroTitle2')}
                 </span>
                 <span style={{
                   fontWeight: 700,
@@ -187,15 +189,14 @@ export default function Home() {
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
                 }}>
-                  Notre problème.
+                  {t('landing.heroTitle3')}
                 </span>
               </h1>
 
               {/* Subhead */}
               <p className="max-w-xl text-base lg:text-lg leading-relaxed mb-10"
                 style={{ color: 'rgba(255,255,255,0.55)', fontWeight: 400 }}>
-                Un mécanicien certifié se déplace là où vous êtes — domicile, bureau, parking.
-                Devis transparent envoyé en moins de 5 minutes. Paiement après service.
+                {t('landing.heroSubtitle')}
               </p>
 
               {/* CTAs */}
@@ -217,7 +218,7 @@ export default function Home() {
                     e.currentTarget.style.boxShadow = '0 8px 32px rgba(67,188,201,0.25)'
                   }}
                 >
-                  Demander un devis gratuit
+                  {t('landing.heroCta')}
                   <ArrowRight size={16} className="group-hover:translate-x-0.5" style={{ transition: 'transform 0.2s' }} />
                 </button>
 
@@ -281,7 +282,7 @@ export default function Home() {
                       <MapPin size={12} style={{ color: '#43BCC9' }} />
                       <span className="text-xs font-medium uppercase tracking-wider"
                         style={{ color: 'rgba(255,255,255,0.6)' }}>
-                        En intervention
+                        {t('landing.heroInService')}
                       </span>
                     </div>
                     <div className="text-sm font-semibold" style={{ color: 'white' }}>
@@ -295,7 +296,7 @@ export default function Home() {
                     <span className="w-1.5 h-1.5 rounded-full animate-pulse"
                       style={{ background: '#00DD88' }} />
                     <span className="text-[10px] font-semibold" style={{ color: '#00DD88' }}>
-                      EN DIRECT
+                      {t('landing.heroLive')}
                     </span>
                   </div>
                 </div>
@@ -320,7 +321,7 @@ export default function Home() {
                   <span className="ml-1 text-sm font-bold" style={{ color: 'white' }}>{avgRating}</span>
                 </div>
                 <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  {reviewCount > 0 ? `${reviewCount.toLocaleString('fr-FR')} avis` : '2 800+ avis clients'}
+                  {reviewCount > 0 ? `${reviewCount.toLocaleString('fr-FR')} avis` : `2 800+ ${t('landing.heroRating')}`}
                 </div>
               </div>
 
@@ -336,12 +337,12 @@ export default function Home() {
               >
                 <div className="text-[10px] font-medium uppercase tracking-wider mb-0.5"
                   style={{ color: 'rgba(255,255,255,0.4)' }}>
-                  Prochain créneau
+                  {t('landing.heroNextSlot')}
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock size={14} style={{ color: '#43BCC9' }} />
                   <span className="text-sm font-bold" style={{ color: 'white' }}>
-                    Aujourd'hui · 14h30
+                    {t('landing.heroToday')} · 14h30
                   </span>
                 </div>
               </div>
@@ -414,7 +415,7 @@ export default function Home() {
             <div className="lg:col-span-5">
               <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium"
                 style={{ color: '#43BCC9' }}>
-                Nos services
+                {t('landing.servicesTitle')}
               </div>
               <h2 style={{
                 fontFamily: 'Space Grotesk, sans-serif',
@@ -497,7 +498,7 @@ export default function Home() {
                   Produits professionnels, résultat showroom.
                 </p>
                 <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#43BCC9' }}>
-                  Demander un devis
+                  {t('landing.servicesBook')}
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
@@ -546,7 +547,7 @@ export default function Home() {
                 Vidange moteur avec filtre d&apos;origine. Vérification des niveaux incluse.
               </p>
               <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#43BCC9' }}>
-                Demander un devis
+                {t('landing.servicesBook')}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -674,7 +675,7 @@ export default function Home() {
                 Lecture des codes erreur, bilan complet de l&apos;état du véhicule. Rapport détaillé fourni.
               </p>
               <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#43BCC9' }}>
-                Demander un devis
+                {t('landing.servicesBook')}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
@@ -777,7 +778,7 @@ export default function Home() {
             <div className="lg:col-span-5">
               <div className="text-xs uppercase tracking-[0.2em] mb-5 font-medium"
                 style={{ color: '#43BCC9' }}>
-                Comment ça marche
+                {t('landing.howTitle')}
               </div>
               <h2 style={{
                 fontFamily: 'Space Grotesk, sans-serif',
@@ -831,7 +832,7 @@ export default function Home() {
                   marginBottom: '20px',
                   letterSpacing: '-0.02em',
                 }}>
-                  Décrivez votre besoin
+                  {t('landing.howStep1Title')}
                 </h3>
                 <p className="text-base lg:text-lg leading-relaxed mb-8"
                   style={{ color: 'rgba(255,255,255,0.55)' }}>
@@ -944,7 +945,7 @@ export default function Home() {
                   marginBottom: '20px',
                   letterSpacing: '-0.02em',
                 }}>
-                  Recevez votre devis exact
+                  {t('landing.howStep2Title')}
                 </h3>
                 <p className="text-base lg:text-lg leading-relaxed mb-8"
                   style={{ color: 'rgba(255,255,255,0.55)' }}>
@@ -987,7 +988,7 @@ export default function Home() {
                   marginBottom: '20px',
                   letterSpacing: '-0.02em',
                 }}>
-                  Le technicien vient à vous
+                  {t('landing.howStep3Title')}
                 </h3>
                 <p className="text-base lg:text-lg leading-relaxed mb-8"
                   style={{ color: 'rgba(255,255,255,0.55)' }}>
@@ -1104,7 +1105,7 @@ export default function Home() {
                 color: 'white',
                 fontWeight: 700,
               }}>
-                Ce que disent nos clients.
+                {t('landing.reviewsTitle')}
               </h2>
             </div>
             <div className="flex items-center gap-4 lg:pb-2">
