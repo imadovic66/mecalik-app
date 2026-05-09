@@ -1,5 +1,5 @@
 import { X, ChevronRight, Car, MapPin, Calendar, User, Phone, MessageSquare } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { SERVICES as PRICING_SERVICES, getPrice } from '../../data/pricing'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -11,14 +11,27 @@ type Service = {
   duration: string
 }
 
+type CarType = {
+  id: string
+  brand: string
+  model: string
+  year: number
+  license_plate: string | null
+  is_default: boolean | null
+}
+
 const SERVICES: Service[] = [
-  { id: 'lavage', name: 'Lavage Auto', duration: '~45 min' },
-  { id: 'vidange', name: 'Vidange & Filtres', duration: '~60 min' },
-  { id: 'batterie', name: 'Batterie', duration: '~30 min' },
-  { id: 'pneus', name: 'Pneus', duration: '~45 min' },
-  { id: 'diagnostic', name: 'Diagnostic', duration: '~30 min' },
-  { id: 'urgence', name: 'Urgence 24/7', duration: 'ASAP' },
+  { id: 'lavage',     name: 'Lavage Auto',       duration: '~45 min' },
+  { id: 'vidange',    name: 'Vidange & Filtres',  duration: '~60 min' },
+  { id: 'batterie',   name: 'Batterie',           duration: '~30 min' },
+  { id: 'pneus',      name: 'Pneus',              duration: '~45 min' },
+  { id: 'diagnostic', name: 'Diagnostic',         duration: '~30 min' },
+  { id: 'urgence',    name: 'Urgence 24/7',       duration: 'ASAP'    },
 ]
+
+function carLabel(car: CarType): string {
+  return `${car.brand} ${car.model} ${car.year}${car.license_plate ? ' · ' + car.license_plate : ''}`
+}
 
 type BookingModalProps = {
   isOpen: boolean
@@ -44,51 +57,97 @@ type ErrorState = {
 
 export default function BookingModal({ isOpen, onClose, preselectedService }: BookingModalProps) {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [step, setStep] = useState(1)
-  const [submitting, setSubmitting] = useState(false)
+  const { user, profile } = useAuth()
+
+  const [step, setStep]               = useState(1)
+  const [submitting, setSubmitting]   = useState(false)
   const [selectedService, setSelectedService] = useState(preselectedService || '')
+
   const [form, setForm] = useState<FormState>({
-    name: '',
-    phone: '',
-    car: '',
-    address: '',
-    date: 'today',
-    note: '',
+    name: '', phone: '', car: '', address: '', date: 'today', note: '',
   })
   const [errors, setErrors] = useState<ErrorState>({
-    name: false,
-    phone: false,
-    car: false,
-    address: false,
+    name: false, phone: false, car: false, address: false,
   })
+
+  // ── vehicle state ─────────────────────────────────────────────────────────
+  const [userCars, setUserCars]               = useState<CarType[]>([])
+  const [carsLoaded, setCarsLoaded]           = useState(false)
+  const [showCarSelector, setShowCarSelector] = useState(false) // Case A → expand
+
+  // ── pre-fill on open ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isOpen) {
+      // reset navigation state when modal closes
+      setStep(1)
+      setShowCarSelector(false)
+      return
+    }
+
+    // Pre-fill name + phone from profile (already in memory — no extra fetch)
+    setForm(prev => ({
+      ...prev,
+      name:  profile?.full_name ?? prev.name,
+      phone: profile?.phone     ?? prev.phone,
+    }))
+
+    // Fetch cars for logged-in users
+    if (!user) return
+
+    supabase
+      .from('cars')
+      .select('id, brand, model, year, license_plate, is_default')
+      .eq('user_id', user.id)
+      .order('is_default', { ascending: false }) // default car first
+      .order('created_at',  { ascending: false })
+      .then(({ data }) => {
+        const cars: CarType[] = data ?? []
+        setUserCars(cars)
+        setCarsLoaded(true)
+
+        if (cars.length === 0) return // Case C — leave form.car empty
+
+        // Case A or B — auto-select best car
+        const best = cars.find(c => c.is_default) ?? cars[0]
+        setForm(prev => ({ ...prev, car: carLabel(best) }))
+      })
+      .catch(() => {
+        setCarsLoaded(true) // graceful fallback — show text input
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   if (!isOpen) return null
 
   const updateField = (field: keyof FormState, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }))
-    if (field in errors) {
-      setErrors((prev) => ({ ...prev, [field]: false }))
+    setForm(prev => ({ ...prev, [field]: value }))
+    if (field in errors) setErrors(prev => ({ ...prev, [field]: false }))
+  }
+
+  const handleCarSelect = (carId: string) => {
+    const car = userCars.find(c => c.id === carId)
+    if (car) {
+      setForm(prev => ({ ...prev, car: carLabel(car) }))
+      setErrors(prev => ({ ...prev, car: false }))
     }
   }
 
+  // Car is required only for non-logged-in users or logged-in with 0 cars
+  // (but we still accept an empty car for Case C to allow booking anyway)
+  const carRequired = !user
+
   const handleSubmit = async () => {
     const newErrors: ErrorState = {
-      name: !form.name.trim(),
-      phone: !form.phone.trim(),
-      car: !form.car.trim(),
+      name:    !form.name.trim(),
+      phone:   !form.phone.trim(),
+      car:     carRequired ? !form.car.trim() : false,
       address: !form.address.trim(),
     }
     setErrors(newErrors)
     if (Object.values(newErrors).some(Boolean)) return
 
-    const service = SERVICES.find((s) => s.id === selectedService)
-    const dateLabel =
-      form.date === 'today'
-        ? "Aujourd'hui"
-        : form.date === 'tomorrow'
-        ? 'Demain'
-        : form.date
+    const service   = SERVICES.find(s => s.id === selectedService)
+    const dateLabel = form.date === 'today' ? "Aujourd'hui" : form.date === 'tomorrow' ? 'Demain' : form.date
 
     const msg =
       `Bonjour MecaLIK\n\n` +
@@ -96,7 +155,7 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
       `Service: ${service?.name}\n` +
       `Nom: ${form.name}\n` +
       `Telephone: ${form.phone}\n` +
-      `Voiture: ${form.car}\n` +
+      (form.car ? `Voiture: ${form.car}\n` : '') +
       `Lieu: ${form.address}\n` +
       `Date: ${dateLabel}` +
       (form.note ? `\nNote: ${form.note}` : '') +
@@ -108,10 +167,10 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
     const { data: newBooking, error: insertError } = await supabase
       .from('bookings')
       .insert({
-        user_id: user?.id || null,
-        service_name: selectedService,
-        address: form.address,
-        notes_admin: form.note || null,
+        user_id:        user?.id || null,
+        service_name:   selectedService,
+        address:        form.address,
+        notes_admin:    form.note || null,
         preferred_date: form.date === 'tomorrow'
           ? new Date(Date.now() + 86400000).toISOString().split('T')[0]
           : null,
@@ -126,15 +185,14 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
     setSubmitting(false)
 
     if (newBooking) {
-      // Notify admin via push (fire-and-forget)
       fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          role: 'admin',
+          role:  'admin',
           title: 'Nouvelle réservation',
-          body: `${service?.name} — ${form.address}`,
-          url: '/admin',
+          body:  `${service?.name} — ${form.address}`,
+          url:   '/admin',
         }),
       }).catch(() => {})
     }
@@ -142,16 +200,14 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
     if (newBooking && user) {
       window.open(url, '_blank')
       onClose()
-      setTimeout(() => {
-        navigate('/booking/' + newBooking.id)
-      }, 500)
+      setTimeout(() => navigate('/booking/' + newBooking.id), 500)
     } else {
       window.open(url, '_blank')
       onClose()
     }
   }
 
-  const selectedServiceData = SERVICES.find((s) => s.id === selectedService)
+  const selectedServiceData = SERVICES.find(s => s.id === selectedService)
 
   const inputBase: React.CSSProperties = {
     background: '#141414',
@@ -163,10 +219,14 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
     padding: '14px 16px 14px 40px',
     outline: 'none',
   }
-  const inputError: React.CSSProperties = {
-    ...inputBase,
-    border: '1px solid #FF4444',
-  }
+  const inputError: React.CSSProperties = { ...inputBase, border: '1px solid #FF4444' }
+
+  // ── vehicle section helpers ───────────────────────────────────────────────
+  const loggedIn      = !!user
+  const caseA         = loggedIn && carsLoaded && userCars.length === 1 && !showCarSelector
+  const caseB         = loggedIn && carsLoaded && (userCars.length > 1 || (userCars.length === 1 && showCarSelector))
+  const caseC         = loggedIn && carsLoaded && userCars.length === 0
+  const noAuthOrLoad  = !loggedIn || !carsLoaded // show plain input while loading or if guest
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
@@ -212,7 +272,6 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
 
         {/* Step indicator */}
         <div className="px-6 pt-4 pb-2 flex items-center gap-2">
-          {/* Step 1 */}
           <div className="flex items-center gap-2">
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
@@ -220,17 +279,12 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                 background: step >= 1 ? '#43BCC9' : 'rgba(255,255,255,0.08)',
                 color: step >= 1 ? '#080808' : 'rgba(255,255,255,0.4)',
               }}
-            >
-              1
-            </div>
+            >1</div>
             <span className="text-xs" style={{ color: step === 1 ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>
               Service
             </span>
           </div>
-
           <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
-
-          {/* Step 2 */}
           <div className="flex items-center gap-2">
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
@@ -238,9 +292,7 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                 background: step === 2 ? '#43BCC9' : 'rgba(255,255,255,0.08)',
                 color: step === 2 ? '#080808' : 'rgba(255,255,255,0.4)',
               }}
-            >
-              2
-            </div>
+            >2</div>
             <span className="text-xs" style={{ color: step === 2 ? '#ffffff' : 'rgba(255,255,255,0.4)' }}>
               Vos infos
             </span>
@@ -255,10 +307,10 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                 Quel service souhaitez-vous ?
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {SERVICES.map((s) => {
-                  const active = selectedService === s.id
+                {SERVICES.map(s => {
+                  const active         = selectedService === s.id
                   const pricingService = PRICING_SERVICES.find(p => p.id === s.id)
-                  const priceLabel = pricingService
+                  const priceLabel     = pricingService
                     ? (pricingService.contactOnly ? 'Sur devis' : `À partir de ${getPrice(pricingService, 'zone1')}`)
                     : null
                   return (
@@ -267,25 +319,18 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                       onClick={() => setSelectedService(s.id)}
                       className="w-full text-left p-4 rounded-xl transition-all duration-200"
                       style={{
-                        border: active ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                        border:     active ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.07)',
                         background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
                       }}
                     >
-                      <div
-                        className="text-sm font-semibold"
-                        style={{ color: active ? 'white' : 'rgba(255,255,255,0.6)' }}
-                      >
+                      <div className="text-sm font-semibold" style={{ color: active ? 'white' : 'rgba(255,255,255,0.6)' }}>
                         {s.name}
                       </div>
-                      <div
-                        className="text-xs mt-1"
-                        style={{ color: 'rgba(255,255,255,0.35)' }}
-                      >
+                      <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
                         {s.duration}
                       </div>
                       {priceLabel && (
-                        <div className="text-xs mt-1"
-                          style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
+                        <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
                           {priceLabel}
                         </div>
                       )}
@@ -302,8 +347,8 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                 className="w-full rounded-full py-4 text-sm font-semibold transition-all"
                 style={{
                   background: selectedService ? 'white' : 'rgba(255,255,255,0.06)',
-                  color: selectedService ? '#080808' : 'rgba(255,255,255,0.3)',
-                  cursor: selectedService ? 'pointer' : 'not-allowed',
+                  color:      selectedService ? '#080808' : 'rgba(255,255,255,0.3)',
+                  cursor:     selectedService ? 'pointer' : 'not-allowed',
                 }}
               >
                 Continuer
@@ -316,7 +361,7 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
         {step === 2 && (
           <>
             <div className="px-6 py-4 space-y-4">
-              {/* Back + service pill */}
+              {/* Back */}
               <button
                 onClick={() => setStep(1)}
                 className="flex items-center gap-1 text-sm"
@@ -327,17 +372,14 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
 
               <div
                 className="inline-flex items-center gap-2 rounded-full px-3 py-1.5"
-                style={{
-                  background: 'rgba(67,188,201,0.08)',
-                  border: '1px solid rgba(67,188,201,0.2)',
-                }}
+                style={{ background: 'rgba(67,188,201,0.08)', border: '1px solid rgba(67,188,201,0.2)' }}
               >
                 <span className="text-xs font-medium" style={{ color: '#43BCC9' }}>
                   {selectedServiceData?.name} · {selectedServiceData?.duration}
                 </span>
               </div>
 
-              {/* Name */}
+              {/* ── Name ── */}
               <div className="space-y-1">
                 <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   Nom complet *
@@ -348,14 +390,14 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                     type="text"
                     placeholder="Votre nom complet"
                     value={form.name}
-                    onChange={(e) => updateField('name', e.target.value)}
+                    onChange={e => updateField('name', e.target.value)}
                     style={errors.name ? inputError : inputBase}
                   />
                 </div>
                 {errors.name && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
               </div>
 
-              {/* Phone */}
+              {/* ── Phone ── */}
               <div className="space-y-1">
                 <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   Téléphone *
@@ -366,32 +408,134 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                     type="tel"
                     placeholder="06 XX XX XX XX"
                     value={form.phone}
-                    onChange={(e) => updateField('phone', e.target.value)}
+                    onChange={e => updateField('phone', e.target.value)}
                     style={errors.phone ? inputError : inputBase}
                   />
                 </div>
                 {errors.phone && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
               </div>
 
-              {/* Car */}
+              {/* ── Vehicle — smart selection ── */}
               <div className="space-y-1">
                 <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Voiture *
+                  Véhicule{carRequired ? ' *' : ''}
                 </label>
-                <div className="relative">
-                  <Car size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Ex: Dacia Logan 2019"
-                    value={form.car}
-                    onChange={(e) => updateField('car', e.target.value)}
-                    style={errors.car ? inputError : inputBase}
-                  />
-                </div>
-                {errors.car && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
+
+                {/* CASE A — 1 car, auto-selected, read-only display */}
+                {caseA && (
+                  <div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      background: '#141414',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '12px',
+                      padding: '13px 16px',
+                    }}>
+                      <Car size={15} color="rgba(255,255,255,0.3)" style={{ flexShrink: 0 }} />
+                      <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)' }}>
+                        {form.car}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setShowCarSelector(true)}
+                      style={{
+                        marginTop: '6px',
+                        fontSize: '12px',
+                        color: '#43BCC9',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                      }}
+                    >
+                      Changer de véhicule
+                    </button>
+                  </div>
+                )}
+
+                {/* CASE B — 2+ cars or "Changer" clicked — dropdown */}
+                {caseB && (
+                  <div>
+                    <div className="relative">
+                      <Car size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <select
+                        value={userCars.find(c => carLabel(c) === form.car)?.id ?? ''}
+                        onChange={e => handleCarSelect(e.target.value)}
+                        style={{ ...inputBase, appearance: 'none' as const }}
+                      >
+                        <option value="" disabled>Sélectionnez votre véhicule</option>
+                        {userCars.map(car => (
+                          <option key={car.id} value={car.id}>
+                            {carLabel(car)}{car.is_default ? ' (par défaut)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {errors.car && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
+                  </div>
+                )}
+
+                {/* CASE C — 0 cars — prompt + optional free-text */}
+                {caseC && (
+                  <div>
+                    <div style={{
+                      background: 'rgba(67,188,201,0.04)',
+                      border: '1px solid rgba(67,188,201,0.12)',
+                      borderRadius: '10px',
+                      padding: '12px 14px',
+                      marginBottom: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                    }}>
+                      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.4' }}>
+                        Ajoutez votre véhicule pour accélérer vos réservations
+                      </span>
+                      <button
+                        onClick={() => { onClose(); navigate('/dashboard?tab=vehicles') }}
+                        style={{
+                          fontSize: '12px', fontWeight: 600,
+                          color: '#43BCC9', background: 'none',
+                          border: '1px solid rgba(67,188,201,0.25)',
+                          borderRadius: '100px', padding: '5px 12px',
+                          cursor: 'pointer', flexShrink: 0,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Ajouter
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Car size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Ex: Dacia Logan 2019 (facultatif)"
+                        value={form.car}
+                        onChange={e => updateField('car', e.target.value)}
+                        style={inputBase}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Guest or loading — plain text input */}
+                {noAuthOrLoad && (
+                  <div className="relative">
+                    <Car size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Ex: Dacia Logan 2019"
+                      value={form.car}
+                      onChange={e => updateField('car', e.target.value)}
+                      style={errors.car ? inputError : inputBase}
+                    />
+                    {errors.car && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
+                  </div>
+                )}
               </div>
 
-              {/* Address */}
+              {/* ── Address ── */}
               <div className="space-y-1">
                 <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   Adresse / Lieu *
@@ -402,14 +546,14 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                     type="text"
                     placeholder="Domicile, bureau, parking..."
                     value={form.address}
-                    onChange={(e) => updateField('address', e.target.value)}
+                    onChange={e => updateField('address', e.target.value)}
                     style={errors.address ? inputError : inputBase}
                   />
                 </div>
                 {errors.address && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
               </div>
 
-              {/* Date */}
+              {/* ── Date ── */}
               <div className="space-y-1">
                 <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   Date souhaitée
@@ -418,7 +562,7 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                   <Calendar size={16} color="rgba(255,255,255,0.25)" className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <select
                     value={form.date}
-                    onChange={(e) => updateField('date', e.target.value)}
+                    onChange={e => updateField('date', e.target.value)}
                     style={{ ...inputBase, appearance: 'none' as const }}
                   >
                     <option value="today">{"Aujourd'hui — dès que possible"}</option>
@@ -428,7 +572,7 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                 </div>
               </div>
 
-              {/* Note */}
+              {/* ── Note ── */}
               <div className="space-y-1">
                 <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   Note optionnelle
@@ -439,12 +583,8 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                     rows={2}
                     placeholder="Précisions sur le problème, accès, etc."
                     value={form.note}
-                    onChange={(e) => updateField('note', e.target.value)}
-                    style={{
-                      ...inputBase,
-                      padding: '14px 16px 14px 40px',
-                      resize: 'none',
-                    }}
+                    onChange={e => updateField('note', e.target.value)}
+                    style={{ ...inputBase, padding: '14px 16px 14px 40px', resize: 'none' }}
                   />
                 </div>
               </div>
@@ -458,11 +598,13 @@ export default function BookingModal({ isOpen, onClose, preselectedService }: Bo
                 className="w-full flex items-center justify-center gap-2 font-bold py-4 rounded-full transition-colors duration-200 text-sm"
                 style={{
                   background: submitting ? 'rgba(67,188,201,0.5)' : '#43BCC9',
-                  color: '#080808',
+                  color:  '#080808',
                   cursor: submitting ? 'not-allowed' : 'pointer',
                 }}
               >
-                {submitting ? 'Envoi...' : <><span>Envoyer sur WhatsApp</span><ChevronRight size={18} /></>}
+                {submitting
+                  ? 'Envoi...'
+                  : <><span>Envoyer sur WhatsApp</span><ChevronRight size={18} /></>}
               </button>
               <p className="text-center text-xs mt-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
                 Vous recevrez une réponse en moins de 5 minutes
