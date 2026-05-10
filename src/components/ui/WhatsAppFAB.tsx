@@ -1,6 +1,9 @@
 import { MessageCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function WhatsAppFAB() {
+  const { t } = useTranslation()
+
   const handleClick = () => {
     window.dispatchEvent(new CustomEvent('openBooking'))
   }
@@ -15,7 +18,7 @@ export default function WhatsAppFAB() {
       }}
     >
       <MessageCircle size={20} className="flex-shrink-0" />
-      <span className="text-sm">Devis rapide</span>
+      <span className="text-sm">{t('nav.quickQuoteFab')}</span>
     </button>
   )
 }

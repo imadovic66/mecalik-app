@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
 import { Eye, EyeOff, ChevronRight } from 'lucide-react'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -22,7 +24,7 @@ export default function Login() {
     })
 
     if (error) {
-      setError('Email ou mot de passe incorrect.')
+      setError(t('auth.invalidCredentials'))
       setLoading(false)
       return
     }
@@ -58,9 +60,9 @@ export default function Login() {
                        objectPosition: 'center', borderRadius: '8px', margin: '0 auto' }} />
           </Link>
           <h1 className="font-heading font-bold text-2xl mt-6 mb-2"
-              style={{ color: '#ffffff' }}>Connexion</h1>
+              style={{ color: '#ffffff' }}>{t('auth.login')}</h1>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Accédez à votre espace MecaLIK
+            {t('auth.loginSubtitle')}
           </p>
         </div>
 
@@ -75,14 +77,14 @@ export default function Login() {
             <div>
               <label className="block text-xs font-medium uppercase tracking-wide mb-2"
                      style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Email
+                {t('auth.email')}
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                placeholder="vous@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 className="w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none transition-colors"
                 style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)', color: '#ffffff' }}
                 onFocus={e => (e.target.style.borderColor = '#43BCC9')}
@@ -93,7 +95,7 @@ export default function Login() {
             <div>
               <label className="block text-xs font-medium uppercase tracking-wide mb-2"
                      style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Mot de passe
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <input
@@ -128,15 +130,15 @@ export default function Login() {
                 cursor: loading ? 'not-allowed' : 'pointer',
               }}
             >
-              {loading ? 'Connexion...' : <><span>Se connecter</span><ChevronRight size={16} /></>}
+              {loading ? `${t('auth.loginButton')}...` : <><span>{t('auth.loginButton')}</span><ChevronRight size={16} /></>}
             </button>
           </form>
 
           <div className="mt-6 pt-6 border-t border-[rgba(255,255,255,0.06)] text-center">
             <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Pas encore de compte ?{' '}
+              {t('auth.noAccount')}{' '}
               <Link to="/signup" className="font-medium hover:underline" style={{ color: '#43BCC9' }}>
-                Créer un compte
+                {t('auth.createAccount')}
               </Link>
             </p>
           </div>
