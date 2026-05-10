@@ -139,13 +139,7 @@ export default function Services() {
                         className="font-heading font-bold text-2xl mb-1"
                         style={{ color: '#ffffff' }}
                       >
-                        {/* Service name stays as-is (proper nouns) */}
-                        {def.id === 'lavage'     && 'Lavage Auto'}
-                        {def.id === 'vidange'    && 'Vidange & Filtres'}
-                        {def.id === 'batterie'   && 'Batterie'}
-                        {def.id === 'pneus'      && 'Pneus'}
-                        {def.id === 'diagnostic' && 'Diagnostic'}
-                        {def.id === 'urgence'    && 'Urgence 24/7'}
+                        {t(`services.${def.id}`)}
                       </h2>
                       <p className="text-sm mb-4" style={{ color: def.color }}>
                         {t(titleKey)}

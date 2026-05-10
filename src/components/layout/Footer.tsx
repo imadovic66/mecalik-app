@@ -1,14 +1,7 @@
 import { MapPin, Phone, Mail, AtSign } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-const serviceLinks = [
-  'Lavage Auto',
-  'Vidange & Filtres',
-  'Batterie',
-  'Pneus',
-  'Diagnostic',
-  'Urgence 24/7',
-]
+const SERVICE_IDS = ['lavage', 'vidange', 'batterie', 'pneus', 'diagnostic', 'urgence'] as const
 
 const companyLinksBase = [
   { labelKey: 'landing.footerAbout',  href: '/about' },
@@ -19,6 +12,7 @@ const companyLinksBase = [
 
 export default function Footer() {
   const { t } = useTranslation()
+  const serviceLinks = SERVICE_IDS.map(id => t(`services.${id}`))
   const companyLinks = companyLinksBase.map(item =>
     item.labelKey ? { label: t(item.labelKey), href: item.href } : { label: item.label, href: item.href }
   )
