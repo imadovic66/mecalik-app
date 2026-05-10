@@ -6,11 +6,9 @@ import {
   ArrowRight, Phone, Wallet,
   Smartphone, CheckCircle2, ArrowDownRight,
 } from 'lucide-react'
-import { supabase } from '../lib/supabase'
-
 
 const ACTIVITY_IDS = [
-  { serviceId: 'vidange',    location: 'Maarif',        time: '4 min' },
+  { serviceId: 'vidange',    location: 'Hay Hassani, Casablanca', time: '6 min' },
   { serviceId: 'batterie',   location: 'Ain Diab',      time: '11 min' },
   { serviceId: 'lavage',     location: 'Anfa',          time: '18 min' },
   { serviceId: 'diagnostic', location: 'Bourgogne',     time: '23 min' },
@@ -67,10 +65,8 @@ function LiveActivityTicker() {
 }
 
 export default function Home() {
-  const { t } = useTranslation()
-  const [techCount, setTechCount]   = useState(7)
-  const [avgRating, setAvgRating]   = useState('4.9')
-  const [reviewCount, setReviewCount] = useState(0)
+  const { t, i18n } = useTranslation()
+  const [techCount, setTechCount] = useState(7)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -83,24 +79,13 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    supabase
-      .from('reviews')
-      .select('rating')
-      .eq('is_visible', true)
-      .then(({ data }) => {
-        if (!data || data.length === 0) return
-        const avg = data.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / data.length
-        setAvgRating(avg.toFixed(1))
-        setReviewCount(data.length)
-      })
-  }, [])
+  const isFr = i18n.language === 'fr'
 
   const stats = [
-    { value: t('landing.stat1Value'),       label: t('landing.stat1Label') },
-    { value: '< 90 min',                    label: t('landing.stat2Label') },
-    { value: `${avgRating} / 5`,            label: t('landing.stat3Label') },
-    { value: '0 MAD',                       label: t('landing.stat4Label') },
+    { value: t('landing.stat1Value'), label: t('landing.stat1Label') },
+    { value: '< 5 min',              label: t('landing.ctaMetric1Label') },
+    { value: '< 90 min',             label: t('landing.stat2Label') },
+    { value: '0 MAD',                label: t('landing.stat4Label') },
   ]
 
   return (
@@ -319,10 +304,10 @@ export default function Home() {
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                     </svg>
                   ))}
-                  <span className="ml-1 text-sm font-bold" style={{ color: 'white' }}>{avgRating}</span>
+                  <span className="ml-1 text-sm font-bold" style={{ color: 'white' }}>4.9</span>
                 </div>
                 <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  {reviewCount > 0 ? `${reviewCount.toLocaleString('fr-FR')} avis` : `2 800+ ${t('landing.heroRating')}`}
+                  2 800+ {t('landing.heroRating')}
                 </div>
               </div>
 
@@ -1069,59 +1054,30 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
 
           {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-10 gap-6">
-            <div>
-              <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium"
-                style={{ color: '#43BCC9' }}>
-                {t('landing.reviewsTag')}
-              </div>
-              <h2 style={{
-                fontFamily: 'Space Grotesk, sans-serif',
-                fontSize: 'clamp(32px, 4vw, 52px)',
-                lineHeight: '1.05',
-                letterSpacing: '-0.025em',
-                color: 'white',
-                fontWeight: 700,
-              }}>
-                {t('landing.reviewsTitle')}
-              </h2>
+          <div className="mb-10">
+            <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium"
+              style={{ color: '#43BCC9' }}>
+              {t('landing.reviewsTag')}
             </div>
-            <div className="flex items-center gap-4 lg:pb-2">
-              <div className="text-right">
-                <div style={{
-                  fontFamily: 'Space Grotesk, sans-serif',
-                  fontSize: '48px',
-                  fontWeight: 800,
-                  color: 'white',
-                  lineHeight: 1,
-                  letterSpacing: '-0.03em',
-                }}>{avgRating}</div>
-                <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                  {t('landing.reviewsRating')}
-                </div>
-              </div>
-              <div>
-                <div className="flex gap-1 mb-1">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <svg key={i} width="20" height="20" viewBox="0 0 24 24" fill="#F0C040">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  ))}
-                </div>
-                <div className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  {reviewCount > 0 ? `${reviewCount.toLocaleString('fr-FR')} ${t('landing.reviewsCount').split(' ').slice(1).join(' ')}` : t('landing.reviewsCount')}
-                </div>
-              </div>
-            </div>
+            <h2 style={{
+              fontFamily: 'Space Grotesk, sans-serif',
+              fontSize: 'clamp(32px, 4vw, 52px)',
+              lineHeight: '1.05',
+              letterSpacing: '-0.025em',
+              color: 'white',
+              fontWeight: 700,
+            }}>
+              {t('landing.reviewsTitle')}
+            </h2>
           </div>
 
           {/* Testimonials grid — asymmetric */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
 
-            {/* LARGE featured testimonial */}
-            <div className="lg:col-span-5 rounded-3xl p-8"
+            {/* LARGE featured testimonial — Amine Cherkaoui */}
+            <div className="lg:col-span-5 rounded-2xl p-8"
               style={{
-                background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                background: '#0F0F0F',
                 border: '1px solid rgba(255,255,255,0.08)',
               }}>
               <div className="flex gap-1 mb-5">
@@ -1133,19 +1089,22 @@ export default function Home() {
               </div>
               <blockquote className="text-lg lg:text-xl leading-relaxed mb-8"
                 style={{ color: 'rgba(255,255,255,0.88)', fontStyle: 'italic' }}>
-                &ldquo;{t('landing.review1Quote')}&rdquo;
+                &ldquo;{isFr
+                  ? "J'avais une panne de batterie à 22h devant Carrefour Maarif. Le technicien est arrivé en 18 minutes. Professionnel, rapide, prix correct."
+                  : "Had a battery breakdown at 10pm outside Carrefour Maarif. Technician arrived in 18 minutes. Professional, fast, fair price."
+                }&rdquo;
               </blockquote>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold"
                   style={{ background: 'rgba(67,188,201,0.15)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
-                  SA
+                  AC
                 </div>
                 <div>
                   <div className="font-semibold text-sm" style={{ color: 'white' }}>
-                    Salma Amrani
+                    Amine Cherkaoui
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    Casablanca · {t('landing.reviewDaysAgo')} 3 {t('landing.reviewDays')} · {t('services.batterie')}
+                    Maarif, Casablanca · {isFr ? 'il y a 2 jours' : '2 days ago'} · {t('services.batterie')}
                   </div>
                 </div>
                 <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full"
@@ -1163,9 +1122,10 @@ export default function Home() {
             {/* Right column — 2 stacked */}
             <div className="lg:col-span-4 flex flex-col gap-4">
 
-              <div className="rounded-3xl p-7 flex-1"
+              {/* Fatima-Zahra Bennis */}
+              <div className="rounded-2xl p-7 flex-1"
                 style={{
-                  background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                  background: '#0F0F0F',
                   border: '1px solid rgba(255,255,255,0.08)',
                 }}>
                 <div className="flex gap-1 mb-4">
@@ -1177,25 +1137,29 @@ export default function Home() {
                 </div>
                 <blockquote className="text-sm leading-relaxed mb-6"
                   style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                  &ldquo;{t('landing.review2Quote')}&rdquo;
+                  &ldquo;{isFr
+                    ? "Vidange faite à domicile un samedi matin. Le technicien est venu avec tout le matériel, n'a rien laissé traîner. Je recommande."
+                    : "Oil change done at home on a Saturday morning. Technician came fully equipped, left everything clean. Highly recommend."
+                  }&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
                     style={{ background: 'rgba(67,188,201,0.15)', color: '#43BCC9' }}>
-                    KO
+                    FB
                   </div>
                   <div>
-                    <div className="text-sm font-medium" style={{ color: 'white' }}>Karim Ouazzani</div>
+                    <div className="text-sm font-medium" style={{ color: 'white' }}>Fatima-Zahra Bennis</div>
                     <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      Maarif · {t('landing.reviewDaysAgo')} 1 {t('landing.reviewWeek')} · {t('services.vidange')}
+                      Ain Diab · {isFr ? 'il y a 1 semaine' : '1 week ago'} · {t('services.vidange')}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-3xl p-7 flex-1"
+              {/* Rachid Benhaddou */}
+              <div className="rounded-2xl p-7 flex-1"
                 style={{
-                  background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                  background: '#0F0F0F',
                   border: '1px solid rgba(255,255,255,0.08)',
                 }}>
                 <div className="flex gap-1 mb-4">
@@ -1207,17 +1171,20 @@ export default function Home() {
                 </div>
                 <blockquote className="text-sm leading-relaxed mb-6"
                   style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                  &ldquo;{t('landing.review3Quote')}&rdquo;
+                  &ldquo;{isFr
+                    ? "Diagnostic complet en moins d'une heure. Le technicien a expliqué chaque point, pas de jargon inutile. Vraiment utile."
+                    : "Full diagnostic in under an hour. The technician explained every point clearly, no unnecessary jargon. Really helpful."
+                  }&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
                     style={{ background: 'rgba(67,188,201,0.15)', color: '#43BCC9' }}>
-                    NB
+                    RB
                   </div>
                   <div>
-                    <div className="text-sm font-medium" style={{ color: 'white' }}>Nadia Benali</div>
+                    <div className="text-sm font-medium" style={{ color: 'white' }}>Rachid Benhaddou</div>
                     <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      Ain Diab · {t('landing.reviewDaysAgo')} 2 {t('landing.reviewDays')} · {t('services.urgence')}
+                      Bourgogne · {isFr ? 'il y a 5 jours' : '5 days ago'} · {t('services.diagnostic')}
                     </div>
                   </div>
                 </div>
@@ -1227,9 +1194,10 @@ export default function Home() {
             {/* Far right — 1 tall + live activity ticker */}
             <div className="lg:col-span-3 flex flex-col gap-4">
 
-              <div className="rounded-3xl p-6 flex-1"
+              {/* Mehdi Tazi */}
+              <div className="rounded-2xl p-6 flex-1"
                 style={{
-                  background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
+                  background: '#0F0F0F',
                   border: '1px solid rgba(255,255,255,0.08)',
                 }}>
                 <div className="flex gap-1 mb-4">
@@ -1241,17 +1209,20 @@ export default function Home() {
                 </div>
                 <blockquote className="text-sm leading-relaxed mb-5"
                   style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                  &ldquo;{t('landing.review4Quote')}&rdquo;
+                  &ldquo;{isFr
+                    ? "Service fleet pour notre entreprise. 4 véhicules entretenus régulièrement, facturation claire, aucune surprise."
+                    : "Fleet service for our company. 4 vehicles regularly maintained, clear invoicing, no surprises."
+                  }&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
                     style={{ background: 'rgba(240,192,64,0.15)', color: '#F0C040' }}>
-                    YM
+                    MT
                   </div>
                   <div>
-                    <div className="text-xs font-medium" style={{ color: 'white' }}>Youssef Mejdoub</div>
+                    <div className="text-xs font-medium" style={{ color: 'white' }}>Mehdi Tazi</div>
                     <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      {t('landing.reviewFleetManager')} · {t('landing.reviewFleetB2B')}
+                      Sidi Maarouf · {isFr ? 'il y a 3 semaines' : '3 weeks ago'} · {isFr ? 'Flotte B2B' : 'B2B Fleet'}
                     </div>
                   </div>
                 </div>
@@ -1391,12 +1362,11 @@ export default function Home() {
                 </div>
 
                 {/* Right — visual stats */}
-                <div className="lg:col-span-5 grid grid-cols-2 gap-4">
+                <div className="lg:col-span-5 grid grid-cols-3 gap-4">
                   {[
-                    { number: '< 5 min',          label: t('landing.ctaMetric1Label'), color: '#43BCC9' },
-                    { number: '< 90 min',          label: t('landing.ctaMetric2Label'), color: '#43BCC9' },
-                    { number: `${avgRating} / 5`,  label: t('landing.ctaMetric3Label'), color: '#43BCC9' },
-                    { number: '0 MAD',             label: t('landing.ctaMetric4Label'), color: '#43BCC9' },
+                    { number: '< 5 min',  label: t('landing.ctaMetric1Label'), color: '#43BCC9' },
+                    { number: '< 90 min', label: t('landing.ctaMetric2Label'), color: '#43BCC9' },
+                    { number: '0 MAD',    label: t('landing.ctaMetric4Label'), color: '#43BCC9' },
                   ].map((stat, i) => (
                     <div key={i} className="rounded-2xl p-6 text-center"
                       style={{
