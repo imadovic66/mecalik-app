@@ -3,6 +3,30 @@ import { useTranslation } from 'react-i18next'
 
 export default function About() {
   const { t } = useTranslation()
+
+  const values = [
+    {
+      icon: <Target size={20} color="#43BCC9" />,
+      titleKey: 'about.value1Title',
+      descKey:  'about.value1Desc',
+    },
+    {
+      icon: <Zap size={20} color="#43BCC9" />,
+      titleKey: 'about.value2Title',
+      descKey:  'about.value2Desc',
+    },
+    {
+      icon: <Heart size={20} color="#43BCC9" />,
+      titleKey: 'about.value3Title',
+      descKey:  'about.value3Desc',
+    },
+    {
+      icon: <TrendingUp size={20} color="#43BCC9" />,
+      titleKey: 'about.value4Title',
+      descKey:  'about.value4Desc',
+    },
+  ]
+
   return (
     <main>
 
@@ -28,22 +52,21 @@ export default function About() {
             className="text-sm font-semibold uppercase tracking-widest mb-4"
             style={{ color: '#43BCC9' }}
           >
-            Notre histoire
+            {t('about.historyTag')}
           </p>
           <h1
             className="font-heading font-bold text-5xl lg:text-6xl mb-6 leading-tight"
             style={{ color: '#ffffff', letterSpacing: '-0.02em' }}
           >
-            Casablanca a 1,1 million de voitures.
+            {t('about.headline1')}
             <br />
-            <span style={{ color: '#43BCC9' }}>Le garage, c&apos;est fini.</span>
+            <span style={{ color: '#43BCC9' }}>{t('about.headline2')}</span>
           </h1>
           <p
             className="text-xl max-w-2xl mx-auto leading-relaxed"
             style={{ color: 'rgba(255,255,255,0.5)' }}
           >
-            MecaLIK est né d&apos;une conviction simple : le service doit venir au client,
-            pas l&apos;inverse. Un technicien certifié, un prix transparent, un paiement après le service.
+            {t('about.intro')}
           </p>
         </div>
       </section>
@@ -58,21 +81,16 @@ export default function About() {
               className="font-heading font-bold text-3xl mb-6"
               style={{ color: '#ffffff', letterSpacing: '-0.02em' }}
             >
-              Pourquoi MecaLIK ?
+              {t('about.whyTitle')}
             </h2>
             <p className="text-base leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Nous avons tous vécu ça. La panne le matin, le taxi pour aller au garage,
-              les heures d&apos;attente, le devis qu&apos;on n&apos;avait pas prévu. Dans une ville comme
-              Casablanca, perdre une demi-journée pour une vidange n&apos;a aucun sens.
+              {t('about.whyDesc')}
             </p>
             <p className="text-base leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              MecaLIK résout ce problème à la racine. Notre technicien certifié se déplace
-              jusqu&apos;à votre voiture, où qu&apos;elle soit. Vous recevez un devis exact avant toute
-              intervention. Vous payez uniquement après que le travail est terminé.
+              {t('about.solution')}
             </p>
             <p className="text-base leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Notre ambition : devenir la référence de la maintenance automobile à domicile
-              au Maroc, comme les meilleures plateformes mondiales l&apos;ont fait. Casablanca d&apos;abord. Tout le Maroc ensuite.
+              {t('about.ambition')}
             </p>
 
             <div
@@ -83,7 +101,7 @@ export default function About() {
                 className="font-heading font-semibold text-xl leading-relaxed"
                 style={{ color: '#ffffff' }}
               >
-                &ldquo;Votre voiture, votre lieu. Notre problème.&rdquo;
+                {t('about.tagline')}
               </p>
             </div>
           </div>
@@ -94,13 +112,13 @@ export default function About() {
             style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.08)' }}
           >
             {[
-              { value: '2 800+', label: 'Clients servis à Casablanca' },
-              { value: '< 90 min', label: t('landing.stat2Label') },
-              { value: '4,9 / 5', label: t('landing.stat3Label') },
-              { value: '100%', label: t('landing.heroBadge2') },
+              { value: '2 800+', labelKey: 'about.stat1Label' },
+              { value: '< 90 min', labelKey: 'about.stat2Label' },
+              { value: '4,9 / 5',  labelKey: 'about.stat3Label' },
+              { value: '100%',     labelKey: 'about.stat4Label' },
             ].map((stat, i, arr) => (
               <div
-                key={stat.label}
+                key={stat.labelKey}
                 className="py-5"
                 style={{
                   borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
@@ -110,7 +128,7 @@ export default function About() {
                   {stat.value}
                 </div>
                 <div className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  {stat.label}
+                  {t(stat.labelKey)}
                 </div>
               </div>
             ))}
@@ -126,40 +144,19 @@ export default function About() {
             className="text-sm font-semibold uppercase tracking-widest mb-4 text-center"
             style={{ color: '#43BCC9' }}
           >
-            Nos valeurs
+            {t('about.valuesTitle')}
           </p>
           <h2
             className="font-heading font-bold text-4xl text-center mb-16"
             style={{ color: '#ffffff', letterSpacing: '-0.02em' }}
           >
-            Ce en quoi nous croyons.
+            {t('about.valuesSubtitle')}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: <Target size={20} color="#43BCC9" />,
-                title: 'Transparence',
-                desc: 'Prix confirmé avant intervention. Aucune surprise à la facturation.',
-              },
-              {
-                icon: <Zap size={20} color="#43BCC9" />,
-                title: 'Rapidité',
-                desc: "Intervention en moins de 90 minutes partout à Casablanca.",
-              },
-              {
-                icon: <Heart size={20} color="#43BCC9" />,
-                title: 'Confiance',
-                desc: "Paiement après service. Toujours. Sans exception.",
-              },
-              {
-                icon: <TrendingUp size={20} color="#43BCC9" />,
-                title: 'Ambition',
-                desc: "Casablanca aujourd'hui. Tout le Maroc demain.",
-              },
-            ].map((val) => (
+            {values.map((val) => (
               <div
-                key={val.title}
+                key={val.titleKey}
                 className="rounded-2xl p-7 transition-all duration-300"
                 style={{
                   background: '#0F0F0F',
@@ -176,10 +173,10 @@ export default function About() {
                   {val.icon}
                 </div>
                 <h3 className="font-heading font-semibold text-base mb-2" style={{ color: '#ffffff' }}>
-                  {val.title}
+                  {t(val.titleKey)}
                 </h3>
                 <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  {val.desc}
+                  {t(val.descKey)}
                 </p>
               </div>
             ))}
@@ -193,17 +190,17 @@ export default function About() {
           className="font-heading font-bold text-4xl mb-4"
           style={{ color: '#ffffff', letterSpacing: '-0.02em' }}
         >
-          Prêt à essayer ?
+          {t('about.ctaTitle')}
         </h2>
         <p className="text-lg mb-8" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          Demandez un devis gratuit. {t('landing.step1Feature3')}.
+          {t('about.ctaDesc')}
         </p>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
           className="inline-flex items-center gap-2 font-bold px-10 py-4 rounded-full transition-colors duration-200"
           style={{ background: '#43BCC9', color: '#080808' }}
         >
-          Demander un devis
+          {t('about.ctaButton')}
           <ChevronRight size={18} />
         </button>
       </section>
