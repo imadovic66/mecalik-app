@@ -108,7 +108,7 @@ export default function Home() {
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section
-        className="relative overflow-hidden lg:min-h-screen"
+        className="relative overflow-hidden"
         style={{ background: '#080808', overflowX: 'hidden' }}
       >
         {/* AMBIENT BACKGROUND LAYERS */}
@@ -139,7 +139,7 @@ export default function Home() {
         </div>
 
         {/* MAIN CONTENT */}
-        <div className="relative max-w-7xl mx-auto px-6 pt-4 pb-12 lg:pt-40 lg:pb-20">
+        <div className="relative max-w-7xl mx-auto px-6 pt-4 pb-12 lg:pt-24 lg:pb-10">
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-12 items-start">
 
@@ -351,7 +351,7 @@ export default function Home() {
           </div>
 
           {/* BOTTOM STRIP — proof bar */}
-          <div className="mt-16 lg:mt-20 pt-8 border-t flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+          <div className="mt-8 lg:mt-10 pt-8 border-t flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
             style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
             <div className="text-xs uppercase tracking-widest flex-shrink-0"
               style={{ color: 'rgba(255,255,255,0.5)' }}>
@@ -412,7 +412,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
 
           {/* Header — same split pattern as How It Works */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
             <div className="lg:col-span-5">
               <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium"
                 style={{ color: '#43BCC9' }}>
@@ -769,7 +769,7 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-6">
 
           {/* Section header */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12 lg:mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8 lg:mb-12">
             <div className="lg:col-span-5">
               <div className="text-xs uppercase tracking-[0.2em] mb-5 font-medium"
                 style={{ color: '#43BCC9' }}>
@@ -803,7 +803,7 @@ export default function Home() {
           </div>
 
           {/* Steps */}
-          <div className="space-y-16 lg:space-y-24">
+          <div className="space-y-10 lg:space-y-16">
 
             {/* ── STEP 01 ── */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
