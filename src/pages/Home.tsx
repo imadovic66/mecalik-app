@@ -445,11 +445,11 @@ export default function Home() {
 
             {/* SERVICE 1 — LARGE: Lavage Auto */}
             <div
-              className="lg:col-span-5 group relative rounded-3xl p-8 overflow-hidden cursor-pointer transition-all duration-300"
+              className="lg:col-span-5 group relative rounded-xl p-8 overflow-hidden cursor-pointer transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
                 border: '1px solid rgba(255,255,255,0.06)',
-                minHeight: 'auto',
+                minHeight: '220px',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.border = '1px solid rgba(67,188,201,0.25)'
@@ -461,16 +461,9 @@ export default function Home() {
               }}
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
             >
-              <div style={{
-                position: 'absolute', top: 0, right: 0,
-                width: '200px', height: '200px',
-                background: 'radial-gradient(circle, rgba(67,188,201,0.08) 0%, transparent 70%)',
-                borderRadius: '50%',
-                transform: 'translate(30%, -30%)',
-              }} />
               <div className="relative">
                 <div className="flex items-start justify-between mb-8">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center"
                     style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
@@ -504,10 +497,11 @@ export default function Home() {
 
             {/* SERVICE 2 — MEDIUM: Vidange */}
             <div
-              className="lg:col-span-4 group relative rounded-3xl p-7 overflow-hidden cursor-pointer transition-all duration-300"
+              className="lg:col-span-4 group relative rounded-xl p-7 overflow-hidden cursor-pointer transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
                 border: '1px solid rgba(255,255,255,0.06)',
+                minHeight: '220px',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.border = '1px solid rgba(67,188,201,0.25)'
@@ -520,7 +514,7 @@ export default function Home() {
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
             >
               <div className="flex items-start justify-between mb-6">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center"
                   style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
                     <ellipse cx="12" cy="12" rx="10" ry="10" />
@@ -552,10 +546,11 @@ export default function Home() {
 
             {/* SERVICE 3 — SMALL accent: Batterie */}
             <div
-              className="lg:col-span-3 group relative rounded-3xl p-6 overflow-hidden cursor-pointer transition-all duration-300"
+              className="lg:col-span-3 group relative rounded-xl p-6 overflow-hidden cursor-pointer transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, rgba(67,188,201,0.06) 0%, rgba(67,188,201,0.02) 100%)',
                 border: '1px solid rgba(67,188,201,0.15)',
+                minHeight: '220px',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.border = '1px solid rgba(67,188,201,0.35)'
@@ -567,7 +562,7 @@ export default function Home() {
               }}
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
             >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-6"
                 style={{ background: 'rgba(67,188,201,0.15)', border: '1px solid rgba(67,188,201,0.25)' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
                   <rect x="2" y="7" width="20" height="14" rx="2" />
@@ -595,10 +590,11 @@ export default function Home() {
 
             {/* SERVICE 4 — Pneus */}
             <div
-              className="lg:col-span-3 group relative rounded-3xl p-6 overflow-hidden cursor-pointer transition-all duration-300"
+              className="lg:col-span-3 group relative rounded-xl p-6 overflow-hidden cursor-pointer transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
                 border: '1px solid rgba(255,255,255,0.06)',
+                minHeight: '220px',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.border = '1px solid rgba(67,188,201,0.25)'
@@ -610,7 +606,7 @@ export default function Home() {
               }}
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
             >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-6"
                 style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
                   <circle cx="12" cy="12" r="10" />
@@ -632,10 +628,11 @@ export default function Home() {
 
             {/* SERVICE 5 — Diagnostic */}
             <div
-              className="lg:col-span-4 group relative rounded-3xl p-7 overflow-hidden cursor-pointer transition-all duration-300"
+              className="lg:col-span-4 group relative rounded-xl p-7 overflow-hidden cursor-pointer transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, #0F0F0F 0%, #141414 100%)',
                 border: '1px solid rgba(255,255,255,0.06)',
+                minHeight: '220px',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.border = '1px solid rgba(67,188,201,0.25)'
@@ -648,7 +645,7 @@ export default function Home() {
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
             >
               <div className="flex items-start justify-between mb-6">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center"
                   style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="1.5">
                     <circle cx="11" cy="11" r="8" />
@@ -680,11 +677,11 @@ export default function Home() {
 
             {/* SERVICE 6 — URGENCE: red accent card */}
             <div
-              className="lg:col-span-5 group relative rounded-3xl p-8 overflow-hidden cursor-pointer transition-all duration-300"
+              className="lg:col-span-5 group relative rounded-xl p-8 overflow-hidden cursor-pointer transition-all duration-300"
               style={{
                 background: 'linear-gradient(135deg, rgba(255,68,68,0.06) 0%, rgba(255,68,68,0.02) 100%)',
                 border: '1px solid rgba(255,68,68,0.18)',
-                minHeight: '240px',
+                minHeight: '220px',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.border = '1px solid rgba(255,68,68,0.4)'
@@ -696,13 +693,6 @@ export default function Home() {
               }}
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
             >
-              <div style={{
-                position: 'absolute', bottom: 0, right: 0,
-                width: '250px', height: '250px',
-                background: 'radial-gradient(circle, rgba(255,68,68,0.08) 0%, transparent 70%)',
-                borderRadius: '50%',
-                transform: 'translate(20%, 30%)',
-              }} />
               <div className="relative">
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-2">
@@ -1405,8 +1395,8 @@ export default function Home() {
                   {[
                     { number: '< 5 min',          label: t('landing.ctaMetric1Label'), color: '#43BCC9' },
                     { number: '< 90 min',          label: t('landing.ctaMetric2Label'), color: '#43BCC9' },
-                    { number: `${avgRating} / 5`,  label: t('landing.ctaMetric3Label'), color: '#F0C040' },
-                    { number: '0 MAD',             label: t('landing.ctaMetric4Label'), color: '#00DD88' },
+                    { number: `${avgRating} / 5`,  label: t('landing.ctaMetric3Label'), color: '#43BCC9' },
+                    { number: '0 MAD',             label: t('landing.ctaMetric4Label'), color: '#43BCC9' },
                   ].map((stat, i) => (
                     <div key={i} className="rounded-2xl p-6 text-center"
                       style={{
