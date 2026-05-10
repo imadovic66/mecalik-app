@@ -115,7 +115,7 @@ export default function Footer() {
             <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
                 <MapPin size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
-                <span className="text-[rgba(255,255,255,0.45)] text-sm">Casablanca, Maroc</span>
+                <span className="text-[rgba(255,255,255,0.45)] text-sm">{t('landing.footerLocation')}</span>
               </div>
               <div className="flex items-start gap-3">
                 <Phone size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
@@ -149,7 +149,7 @@ export default function Footer() {
             © 2026 MecaLIK. {t('landing.footerRights')}
           </span>
           <span className="text-[rgba(255,255,255,0.3)] text-xs">
-            Casablanca, Maroc
+            {t('landing.footerLocation')}
           </span>
         </div>
 

@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import WhatsAppFAB from './components/ui/WhatsAppFAB'
@@ -24,6 +26,13 @@ import PublicRoute from './components/ui/PublicRoute'
 // AppShell lives inside <BrowserRouter> so it can call useLocation
 function AppShell() {
   const location    = useLocation()
+  const { i18n }    = useTranslation()
+
+  useEffect(() => {
+    document.title = i18n.language === 'en'
+      ? 'MecaLIK — Mobile Mechanic Casablanca | Your car, your location.'
+      : 'MecaLIK — Mécanicien à Domicile Casablanca | Votre voiture, votre lieu.'
+  }, [i18n.language])
   const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/booking') || location.pathname.startsWith('/fleet-dashboard') || location.pathname.startsWith('/mechanic')
 
   return (

@@ -1143,10 +1143,7 @@ export default function Home() {
               </div>
               <blockquote className="text-lg lg:text-xl leading-relaxed mb-8"
                 style={{ color: 'rgba(255,255,255,0.88)', fontStyle: 'italic' }}>
-                &ldquo;Ma batterie a lâché dans le parking de Morocco Mall. En 40 minutes,
-                le technicien était là. Professionnel, rapide, et le prix annoncé
-                sur WhatsApp était exactement ce que j&apos;ai payé. Je ne vais plus
-                jamais chercher un garage.&rdquo;
+                &ldquo;{t('landing.review1Quote')}&rdquo;
               </blockquote>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold"
@@ -1190,8 +1187,7 @@ export default function Home() {
                 </div>
                 <blockquote className="text-sm leading-relaxed mb-6"
                   style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                  &ldquo;Vidange faite dans mon bureau à Maarif. J&apos;ai continué à travailler
-                  pendant ce temps. Le rapport envoyé par WhatsApp était très détaillé.&rdquo;
+                  &ldquo;{t('landing.review2Quote')}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
@@ -1221,8 +1217,7 @@ export default function Home() {
                 </div>
                 <blockquote className="text-sm leading-relaxed mb-6"
                   style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                  &ldquo;J&apos;ai contacté MecaLIK à 23h après une crevaison. Le technicien
-                  est arrivé en 35 minutes. Service exceptionnel.&rdquo;
+                  &ldquo;{t('landing.review3Quote')}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
@@ -1256,8 +1251,7 @@ export default function Home() {
                 </div>
                 <blockquote className="text-sm leading-relaxed mb-5"
                   style={{ color: 'rgba(255,255,255,0.75)', fontStyle: 'italic' }}>
-                  &ldquo;Pour notre flotte de 12 véhicules, MecaLIK a complètement changé
-                  notre gestion. Plus besoin d&apos;immobiliser les véhicules.&rdquo;
+                  &ldquo;{t('landing.review4Quote')}&rdquo;
                 </blockquote>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
