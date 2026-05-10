@@ -52,7 +52,8 @@
     "noAccount": "Pas encore de compte ?",
     "createAccount": "Créer un compte",
     "invalidCredentials": "Email ou mot de passe incorrect.",
-    "emailPlaceholder": "vous@example.com"
+    "emailPlaceholder": "vous@example.com",
+    "backToSite": "← Retour au site"
   },
   "status": {
     "pending": "En attente",
@@ -145,6 +146,8 @@
     "thisMonth": "Ce mois",
     "from": "Dès",
     "certifiedTech": "Technicien certifié",
+    "vehiclesRegistered": "véhicule enregistré",
+    "vehiclesRegisteredPlural": "véhicules enregistrés",
     "cars": {
       "addTitle": "Ajouter un véhicule",
       "brand": "Marque",
@@ -518,7 +521,13 @@
     "revenueChart": "Revenus (6 derniers mois)",
     "distributionChart": "Répartition des réservations",
     "recentActivity": "Activité récente",
-    "noReservationsPeriod": "Aucune réservation pour le moment"
+    "noReservationsPeriod": "Aucune réservation pour le moment",
+    "kpiReservations": "réservations",
+    "kpiToProcess": "à traiter",
+    "kpiInterventions": "interventions",
+    "kpiCompleted": "complétées",
+    "sidebarTitle": "Administration",
+    "notifPlaceholder": "Ex: Profitez de -20% sur le lavage auto ce week-end."
   },
   "services": {
     "pageTitle": "Nos services",

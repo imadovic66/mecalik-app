@@ -49,7 +49,7 @@ const FILTER_IDS = ['all', 'completed', 'cancelled', 'this_year', 'this_month'] 
 
 export default function MyHistory() {
   const { user }   = useAuth()
-  const { t }      = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate   = useNavigate()
 
   const FILTERS = [
@@ -322,14 +322,14 @@ export default function MyHistory() {
                             background: isCompleted ? 'rgba(0,221,136,0.08)' : 'rgba(255,68,68,0.08)',
                             color: isCompleted ? '#00DD88' : '#FF4444',
                           }}>
-                            {isCompleted ? 'Terminée' : 'Annulée'}
+                            {t(`status.${b.status}`)}
                           </span>
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', flexWrap: 'wrap' }}>
                           <Calendar size={10} />
                           <span>
-                            {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {new Date(b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </span>
                           {b.amount_ttc != null && (
                             <>

@@ -61,11 +61,11 @@ const VEHICLE_STATUS: Record<string, { label: string; color: string; bg: string 
 }
 
 const BOOKING_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  pending:     { label: 'En attente', color: '#F0C040', bg: 'rgba(240,192,64,0.08)' },
-  confirmed:   { label: 'Confirmée',  color: '#43BCC9', bg: 'rgba(67,188,201,0.08)' },
-  in_progress: { label: 'En cours',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)' },
-  completed:   { label: 'Terminée',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)'  },
-  cancelled:   { label: 'Annulée',    color: '#FF4444', bg: 'rgba(255,68,68,0.08)'  },
+  pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)' },
+  confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)' },
+  in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)' },
+  completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)'  },
+  cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)'  },
 }
 
 const NAV: { id: TabId; label: string; Icon: React.ElementType }[] = [

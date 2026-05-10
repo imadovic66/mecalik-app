@@ -31,11 +31,11 @@ type Booking = {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  pending:     { label: 'En attente', color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
-  confirmed:   { label: 'Confirmée',  color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
-  in_progress: { label: 'En cours',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
-  completed:   { label: 'Terminée',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88' },
-  cancelled:   { label: 'Annulée',    color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444' },
+  pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
+  confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
+  in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
+  completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88' },
+  cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444' },
 }
 
 const NEXT_STATUS: Record<string, { label: string; next: string; color: string }> = {

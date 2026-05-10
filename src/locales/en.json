@@ -52,7 +52,8 @@
     "noAccount": "Don't have an account?",
     "createAccount": "Create an account",
     "invalidCredentials": "Incorrect email or password.",
-    "emailPlaceholder": "you@example.com"
+    "emailPlaceholder": "you@example.com",
+    "backToSite": "← Back to site"
   },
   "status": {
     "pending": "Pending",
@@ -145,6 +146,8 @@
     "thisMonth": "This month",
     "from": "From",
     "certifiedTech": "Certified technician",
+    "vehiclesRegistered": "vehicle registered",
+    "vehiclesRegisteredPlural": "vehicles registered",
     "cars": {
       "addTitle": "Add a vehicle",
       "brand": "Brand",
@@ -518,7 +521,13 @@
     "revenueChart": "Revenue (last 6 months)",
     "distributionChart": "Booking distribution",
     "recentActivity": "Recent activity",
-    "noReservationsPeriod": "No reservations yet"
+    "noReservationsPeriod": "No reservations yet",
+    "kpiReservations": "bookings",
+    "kpiToProcess": "to process",
+    "kpiInterventions": "interventions",
+    "kpiCompleted": "completed",
+    "sidebarTitle": "Administration",
+    "notifPlaceholder": "Ex: Get -20% off car wash this weekend."
   },
   "services": {
     "pageTitle": "Our services",

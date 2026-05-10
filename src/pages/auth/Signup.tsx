@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
 import { Eye, EyeOff, ChevronRight } from 'lucide-react'
 
 export default function Signup() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', password: '', confirmPassword: '',
   })
@@ -171,7 +173,7 @@ export default function Signup() {
         </div>
 
         <p className="text-center text-xs mt-6">
-          <Link to="/" style={{ color: 'rgba(255,255,255,0.25)' }}>← Retour au site</Link>
+          <Link to="/" style={{ color: 'rgba(255,255,255,0.25)' }}>{t('auth.backToSite')}</Link>
         </p>
       </div>
     </div>

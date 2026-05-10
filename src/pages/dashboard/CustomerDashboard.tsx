@@ -25,11 +25,11 @@ type Booking = {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; eta: string }> = {
-  pending:     { label: 'En attente', color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Confirmation en cours'  },
-  confirmed:   { label: 'Confirmée',  color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Technicien assigné'      },
-  in_progress: { label: 'En route',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Arrive sous 30 min'      },
-  completed:   { label: 'Terminée',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88', eta: ''                        },
-  cancelled:   { label: 'Annulée',    color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444', eta: ''                        },
+  pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Confirmation en cours'  },
+  confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Technicien assigné'      },
+  in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Arrive sous 30 min'      },
+  completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88', eta: ''                        },
+  cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444', eta: ''                        },
 }
 
 const QUICK_SERVICES: {
@@ -60,7 +60,7 @@ function getFirstName(fullName: string | null | undefined, email: string | null 
 
 export default function CustomerDashboard() {
   const { user, profile } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
 
   const [bookings, setBookings]     = useState<Booking[]>([])
@@ -174,7 +174,7 @@ export default function CustomerDashboard() {
           {/* Greeting */}
           <div style={{ marginBottom: '20px' }}>
             <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginBottom: '3px', textTransform: 'capitalize' }}>
-              {new Date().toLocaleDateString('fr-FR', { weekday: 'long' })}
+              {(() => { const d = new Date().toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { weekday: 'long' }); return d.charAt(0).toUpperCase() + d.slice(1) })()}
             </div>
             <h1 style={{
               fontFamily: 'Space Grotesk, sans-serif',
@@ -314,7 +314,7 @@ export default function CustomerDashboard() {
                   {t('customer.garage')}
                 </h2>
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
-                  {cars.length > 0 ? `${cars.length} véhicule${cars.length > 1 ? 's' : ''} enregistré${cars.length > 1 ? 's' : ''}` : t('customer.garageSubtitle')}
+                  {cars.length > 0 ? `${cars.length} ${cars.length === 1 ? t('customer.vehiclesRegistered') : t('customer.vehiclesRegisteredPlural')}` : t('customer.garageSubtitle')}
                 </div>
               </div>
               {cars.length > 0 && (
@@ -581,7 +581,7 @@ export default function CustomerDashboard() {
                         {SERVICE_LABELS[b.service_name] ?? b.service_name}
                       </div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                        {new Date(b.completed_at ?? b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                        {new Date(b.completed_at ?? b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short' })}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#43BCC9', fontSize: '12px', fontWeight: 600, flexShrink: 0 }}>

@@ -145,7 +145,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-xs mt-6">
-          <Link to="/" style={{ color: 'rgba(255,255,255,0.25)' }}>← Retour au site</Link>
+          <Link to="/" style={{ color: 'rgba(255,255,255,0.25)' }}>{t('auth.backToSite')}</Link>
         </p>
       </div>
     </div>

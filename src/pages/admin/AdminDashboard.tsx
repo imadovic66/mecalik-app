@@ -293,7 +293,7 @@ export default function AdminDashboard() {
         {/* Logo area */}
         <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '8px' }}>
           <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase' }}>
-            Administration
+            {t('admin.sidebarTitle')}
           </div>
         </div>
 
@@ -430,10 +430,10 @@ export default function AdminDashboard() {
                 marginBottom: '24px',
               }}>
                 {[
-                  { label: t('admin.total'),    value: String(stats.total),            color: 'white',   note: 'réservations'  },
-                  { label: t('admin.pending'),  value: String(stats.pending),          color: '#F0C040', note: 'à traiter'     },
-                  { label: t('admin.inProgress'), value: String(stats.inProgress),     color: '#43BCC9', note: 'interventions' },
-                  { label: t('admin.revenue'),  value: `${stats.revenue} MAD`,         color: '#00DD88', note: 'complétées'    },
+                  { label: t('admin.total'),      value: String(stats.total),        color: 'white',   note: t('admin.kpiReservations') },
+                  { label: t('admin.pending'),    value: String(stats.pending),        color: '#F0C040', note: t('admin.kpiToProcess')     },
+                  { label: t('admin.inProgress'), value: String(stats.inProgress),     color: '#43BCC9', note: t('admin.kpiInterventions') },
+                  { label: t('admin.revenue'),    value: `${stats.revenue} MAD`,       color: '#00DD88', note: t('admin.kpiCompleted')     },
                 ].map((stat, i) => (
                   <div key={i} style={{ background: '#0D0D0D', padding: '20px 24px' }}>
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', fontWeight: 500 }}>
@@ -1059,7 +1059,7 @@ export default function AdminDashboard() {
                         rows={3}
                         value={notifBody}
                         onChange={e => setNotifBody(e.target.value)}
-                        placeholder="Ex: Profitez de -20% sur le lavage auto jusqu'à dimanche."
+                        placeholder={t('admin.notifPlaceholder')}
                         style={{
                           width: '100%', boxSizing: 'border-box',
                           background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
