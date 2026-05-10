@@ -132,14 +132,14 @@ export default function Navbar() {
 
   // ── LOGGED-IN NAVBAR ──
   const navItems = profile?.role === 'admin' ? [
-    { to: '/admin',              icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
-    { to: '/admin?tab=bookings', icon: <ShoppingBag size={16} />,    label: 'Réservations' },
-    { to: '/admin?tab=customers',icon: <Users size={16} />,          label: 'Clients' },
+    { to: '/admin',              icon: <LayoutDashboard size={16} />, label: t('admin.dashboard') },
+    { to: '/admin?tab=bookings', icon: <ShoppingBag size={16} />,    label: t('admin.reservations') },
+    { to: '/admin?tab=customers',icon: <Users size={16} />,          label: t('admin.clients') },
   ] : profile?.role === 'fleet_manager' ? [
-    { to: '/fleet-dashboard',                  icon: <BarChart3 size={16} />, label: "Vue d'ensemble" },
-    { to: '/fleet-dashboard?tab=fleet',        icon: <Car size={16} />,       label: 'Ma flotte' },
-    { to: '/fleet-dashboard?tab=calendar',     icon: <Calendar size={16} />,  label: 'Planning' },
-    { to: '/fleet-dashboard?tab=reports',      icon: <FileText size={16} />,  label: 'Rapports' },
+    { to: '/fleet-dashboard',                  icon: <BarChart3 size={16} />, label: t('fleet.tabs.overview') },
+    { to: '/fleet-dashboard?tab=fleet',        icon: <Car size={16} />,       label: t('fleet.vehiclesCount') },
+    { to: '/fleet-dashboard?tab=calendar',     icon: <Calendar size={16} />,  label: t('fleet.tabs.reports') },
+    { to: '/fleet-dashboard?tab=reports',      icon: <FileText size={16} />,  label: t('fleet.reports.fleetReport') },
   ] : []
 
   const roleBadge = profile?.role === 'admin'

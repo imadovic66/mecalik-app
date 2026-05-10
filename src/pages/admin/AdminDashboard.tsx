@@ -427,10 +427,10 @@ export default function AdminDashboard() {
                 marginBottom: '24px',
               }}>
                 {[
-                  { label: t('admin.total'),      value: String(stats.total),        color: 'white',   note: t('admin.kpiReservations') },
-                  { label: t('admin.pending'),    value: String(stats.pending),        color: '#F0C040', note: t('admin.kpiToProcess')     },
-                  { label: t('admin.inProgress'), value: String(stats.inProgress),     color: '#43BCC9', note: t('admin.kpiInterventions') },
-                  { label: t('admin.revenue'),    value: `${stats.revenue} MAD`,       color: '#00DD88', note: t('admin.kpiCompleted')     },
+                  { label: t('admin.total'),      value: String(stats.total),        color: 'white', note: t('admin.kpiReservations') },
+                  { label: t('admin.pending'),    value: String(stats.pending),        color: 'white', note: t('admin.kpiToProcess')     },
+                  { label: t('admin.inProgress'), value: String(stats.inProgress),     color: 'white', note: t('admin.kpiInterventions') },
+                  { label: t('admin.revenue'),    value: `${stats.revenue} MAD`,       color: 'white', note: t('admin.kpiCompleted')     },
                 ].map((stat, i) => (
                   <div key={i} style={{ background: '#0D0D0D', padding: '20px 24px' }}>
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', fontWeight: 500 }}>
@@ -527,7 +527,7 @@ export default function AdminDashboard() {
                     className="text-sm transition-colors"
                     style={{ color: '#43BCC9' }}
                   >
-                    {t('fleet.viewAll')} →
+                    {t('admin.viewAll')} →
                   </button>
                 </div>
 
