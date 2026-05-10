@@ -258,6 +258,10 @@ export default function AdminDashboard() {
     setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_visible: !r.is_visible } : r))
   }
 
+  // Guard: render nothing until auth is confirmed — prevents flash of admin content
+  if (!user) return null
+  if (profile && profile.role !== 'admin') { navigate('/'); return null }
+
   const filteredBookings = bookings.filter(b => {
     const matchSearch = !searchQuery ||
       b.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
