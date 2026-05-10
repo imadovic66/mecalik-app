@@ -33,17 +33,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444', eta: ''                        },
 }
 
-const QUICK_SERVICES: {
-  id: string; label: string; icon: React.ElementType
-  price: number; gradient: string; dot: string; urgent?: boolean
-}[] = [
-  { id: 'vidange',    label: 'Vidange',     icon: Droplet,       price: 250, gradient: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)', dot: '#3B82F6' },
-  { id: 'batterie',   label: 'Batterie',    icon: Battery,       price: 210, gradient: 'linear-gradient(135deg, #14532D 0%, #166534 100%)', dot: '#22C55E' },
-  { id: 'diagnostic', label: 'Diagnostic',  icon: Search,        price: 220, gradient: 'linear-gradient(135deg, #0E7490 0%, #155E75 100%)', dot: '#06B6D4' },
-  { id: 'pneus',      label: 'Pneus',       icon: Disc,          price: 200, gradient: 'linear-gradient(135deg, #422006 0%, #57340a 100%)', dot: '#D97706' },
-  { id: 'lavage',     label: 'Lavage',      icon: Sparkles,      price: 150, gradient: 'linear-gradient(135deg, #312E81 0%, #3730A3 100%)', dot: '#818CF8' },
-  { id: 'urgence',    label: 'Urgence',     icon: AlertTriangle, price: 239, gradient: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', dot: '#FF4444', urgent: true },
-]
 
 
 function getFirstName(fullName: string | null | undefined, email: string | null | undefined): string {
@@ -58,6 +47,18 @@ export default function CustomerDashboard() {
   const { user, profile } = useAuth()
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+
+  const QUICK_SERVICES: {
+    id: string; label: string; icon: React.ElementType
+    price: number; gradient: string; dot: string; urgent?: boolean
+  }[] = [
+    { id: 'vidange',    label: t('services.vidange'),    icon: Droplet,       price: 250, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
+    { id: 'batterie',   label: t('services.batterie'),   icon: Battery,       price: 210, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
+    { id: 'diagnostic', label: t('services.diagnostic'), icon: Search,        price: 220, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
+    { id: 'pneus',      label: t('services.pneus'),      icon: Disc,          price: 200, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
+    { id: 'lavage',     label: t('services.lavage'),     icon: Sparkles,      price: 150, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
+    { id: 'urgence',    label: t('services.urgence'),    icon: AlertTriangle, price: 239, gradient: 'linear-gradient(135deg, #1A0A0A 0%, #1F0D0D 100%)', dot: '#FF4444', urgent: true },
+  ]
 
   const [bookings, setBookings]     = useState<Booking[]>([])
   const [cars, setCars]             = useState<Car[]>([])
@@ -492,7 +493,7 @@ export default function CustomerDashboard() {
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-              {QUICK_SERVICES.map(({ id, label, icon: Icon, price, gradient, dot }) => (
+              {QUICK_SERVICES.map(({ id, label, icon: Icon, price, gradient, dot, urgent }) => (
                 <button
                   key={id}
                   onClick={() => openBookingWithService(id)}
@@ -510,14 +511,14 @@ export default function CustomerDashboard() {
                   <div style={{
                     position: 'absolute', top: '-30px', right: '-30px',
                     width: '120px', height: '120px',
-                    background: `radial-gradient(circle, ${dot}40 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, ${dot}${urgent ? '30' : '20'} 0%, transparent 70%)`,
                     borderRadius: '50%', pointerEvents: 'none',
                   }} />
                   <div style={{ position: 'relative' }}>
                     <div style={{
                       width: '36px', height: '36px', borderRadius: '10px',
-                      background: 'rgba(255,255,255,0.13)',
-                      border: '1px solid rgba(255,255,255,0.18)',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       marginBottom: '14px',
                     }}>
