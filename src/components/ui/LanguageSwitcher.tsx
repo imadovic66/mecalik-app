@@ -31,7 +31,7 @@ export default function LanguageSwitcher() {
       }}
       title={current === 'fr' ? 'Switch to English' : 'Passer en français'}
     >
-      {current === 'fr' ? 'FR → EN' : 'EN → FR'}
+      {current === 'fr' ? 'EN' : 'FR'}
     </button>
   )
 }
