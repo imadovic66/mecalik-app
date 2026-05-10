@@ -408,7 +408,7 @@ export default function Home() {
       </section>
 
       {/* ── SERVICES ─────────────────────────────────────────────────── */}
-      <section id="services" className="relative py-16 lg:py-32" style={{ background: '#080808' }}>
+      <section id="services" className="relative py-16 lg:py-20" style={{ background: '#080808' }}>
         <div className="max-w-7xl mx-auto px-6">
 
           {/* Header — same split pattern as How It Works */}
@@ -747,7 +747,7 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────────── */}
-      <section className="relative py-16 lg:py-40" style={{ background: '#080808' }}>
+      <section className="relative py-16 lg:py-20" style={{ background: '#080808' }}>
 
         {/* Large background number */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -769,7 +769,7 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-6">
 
           {/* Section header */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-20 lg:mb-32">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12 lg:mb-16">
             <div className="lg:col-span-5">
               <div className="text-xs uppercase tracking-[0.2em] mb-5 font-medium"
                 style={{ color: '#43BCC9' }}>
@@ -803,7 +803,7 @@ export default function Home() {
           </div>
 
           {/* Steps */}
-          <div className="space-y-32 lg:space-y-44">
+          <div className="space-y-16 lg:space-y-24">
 
             {/* ── STEP 01 ── */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
@@ -1070,7 +1070,7 @@ export default function Home() {
       </section>
 
       {/* ── REVIEWS ──────────────────────────────────────────────────── */}
-      <section className="relative py-16 lg:py-32 overflow-hidden"
+      <section className="relative py-16 lg:py-20 overflow-hidden"
         style={{ background: '#080808' }}>
 
         <div className="absolute top-0 left-0 right-0 h-px"
@@ -1079,7 +1079,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
 
           {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-16 gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-10 gap-6">
             <div>
               <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium"
                 style={{ color: '#43BCC9' }}>
@@ -1275,7 +1275,7 @@ export default function Home() {
       </section>
 
       {/* ── FINAL CTA ────────────────────────────────────────────────── */}
-      <section className="relative py-16 lg:py-32 overflow-hidden"
+      <section className="relative py-16 lg:py-20 overflow-hidden"
         style={{ background: '#080808' }}>
 
         <div className="absolute top-0 left-0 right-0 h-px"
