@@ -257,8 +257,11 @@
       "whatsapp": "WhatsApp · 5 min response",
       "refresh": "Refresh",
       "requestIntervention": "Request an intervention",
-      "quickActions": "Quick actions"
+      "quickActions": "Quick actions",
+      "vehiclesRegistered": "registered",
+      "spent": "MAD spent"
     },
+    "vehiclesCount": "vehicles",
     "vehicles": {
       "vehicle": "Vehicle",
       "plate": "Plate",

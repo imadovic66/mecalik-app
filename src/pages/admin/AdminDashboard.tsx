@@ -104,7 +104,7 @@ function StatusPill({ status }: { status: keyof typeof STATUS_CONFIG }) {
 
 export default function AdminDashboard() {
   const { user, profile, signOut } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -256,7 +256,7 @@ export default function AdminDashboard() {
   const now = new Date()
   const revenueData = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
-    const monthLabel = d.toLocaleDateString('fr-FR', { month: 'short' })
+    const monthLabel = d.toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { month: 'short' })
     const monthBookings = bookings.filter(b => {
       const bDate = new Date(b.created_at)
       return bDate.getMonth() === d.getMonth() && bDate.getFullYear() === d.getFullYear() && b.status === 'completed'
@@ -571,7 +571,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-3">
                         <StatusPill status={booking.status} />
                         <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                          {new Date(booking.created_at).toLocaleDateString('fr-FR')}
+                          {new Date(booking.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR')}
                         </div>
                       </div>
                     </div>
@@ -734,7 +734,7 @@ export default function AdminDashboard() {
                       />
                       {/* Date */}
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
-                        {new Date(booking.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                        {new Date(booking.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })}
                       </div>
                     </div>
                   ))}
@@ -771,7 +771,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                        Inscrit {new Date(customer.created_at).toLocaleDateString('fr-FR')}
+                        Inscrit {new Date(customer.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR')}
                       </div>
                       <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
                         {bookings.filter(b => b.user_id === customer.id).length} réservation(s)
@@ -884,7 +884,7 @@ export default function AdminDashboard() {
                         }}
                       >
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>
-                          {new Date(review.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                          {new Date(review.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })}
                         </div>
                         <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
                           {review.profiles?.full_name || 'Anonyme'}
@@ -1281,7 +1281,7 @@ export default function AdminDashboard() {
               { icon: <Wrench size={16} style={{ color: '#43BCC9' }} />,   label: 'Service',   value: SERVICE_LABELS[selectedBooking.service_name] ?? selectedBooking.service_name },
               { icon: <Users size={16} style={{ color: '#43BCC9' }} />,    label: 'Client',    value: selectedBooking.profiles?.full_name || 'Inconnu' },
               { icon: <MapPin size={16} style={{ color: '#43BCC9' }} />,   label: 'Adresse',   value: selectedBooking.address },
-              { icon: <Calendar size={16} style={{ color: '#43BCC9' }} />, label: 'Date',      value: selectedBooking.preferred_date ? new Date(selectedBooking.preferred_date).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Dès que possible' },
+              { icon: <Calendar size={16} style={{ color: '#43BCC9' }} />, label: 'Date',      value: selectedBooking.preferred_date ? new Date(selectedBooking.preferred_date).toLocaleString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Dès que possible' },
             ].map(row => (
               <div key={row.label} className="flex items-start gap-3 mb-4">
                 <div className="mt-0.5 flex-shrink-0">{row.icon}</div>

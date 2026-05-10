@@ -78,7 +78,7 @@ const NAV: { id: TabId; label: string; Icon: React.ElementType }[] = [
 
 export default function FleetDashboard() {
   const { user, signOut } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
 
   const [tab, setTab]                   = useState<TabId>('overview')
@@ -293,7 +293,7 @@ export default function FleetDashboard() {
               {t(`fleet.tabs.${tab === 'rapports' ? 'reports' : tab}`)}
             </div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
-              {company?.name || 'MecaLIK Fleet'} · {vehicles.length} véhicule{vehicles.length !== 1 ? 's' : ''}
+              {company?.name || 'MecaLIK Fleet'} · {vehicles.length} {t('fleet.vehiclesCount')}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -359,8 +359,8 @@ export default function FleetDashboard() {
 
                   {[
                     { label: t('fleet.actions.newIntervention'), sub: t('fleet.actions.bookService'),                   color: '#F0C040',              bg: 'rgba(240,192,64,0.06)',   border: 'rgba(240,192,64,0.2)',  Icon: Plus,          onClick: () => window.dispatchEvent(new CustomEvent('openBooking')) },
-                    { label: t('fleet.actions.viewVehicles'),    sub: `${vehicles.length} enregistrés`,                color: 'white',               bg: 'rgba(255,255,255,0.03)',  border: 'rgba(255,255,255,0.07)', Icon: Car,           onClick: () => setTab('vehicles') },
-                    { label: t('fleet.actions.monthReport'),     sub: `${monthSpend} MAD dépensés`,                   color: 'rgba(255,255,255,0.7)', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', Icon: FileText,      onClick: () => setTab('rapports') },
+                    { label: t('fleet.actions.viewVehicles'),    sub: `${vehicles.length} ${t('fleet.actions.vehiclesRegistered')}`,  color: 'white',               bg: 'rgba(255,255,255,0.03)',  border: 'rgba(255,255,255,0.07)', Icon: Car,           onClick: () => setTab('vehicles') },
+                    { label: t('fleet.actions.monthReport'),     sub: `${monthSpend} ${t('fleet.actions.spent')}`,                    color: 'rgba(255,255,255,0.7)', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', Icon: FileText,      onClick: () => setTab('rapports') },
                     { label: t('fleet.actions.contact'),         sub: t('fleet.actions.whatsapp'),                    color: '#00DD88',              bg: 'rgba(0,221,136,0.05)',    border: 'rgba(0,221,136,0.15)',  Icon: MessageCircle, onClick: () => window.open('https://wa.me/212777348065', '_blank') },
                   ].map((a, i) => (
                     <button key={i} onClick={a.onClick} style={{
@@ -491,7 +491,7 @@ export default function FleetDashboard() {
                         </div>
                         {lastBooking && (
                           <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
-                            {t('fleet.reports.lastService')}: {new Date(lastBooking.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                            {t('fleet.reports.lastService')}: {new Date(lastBooking.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })}
                           </div>
                         )}
                       </div>
@@ -610,7 +610,7 @@ export default function FleetDashboard() {
                       <div style={{ fontFamily: 'monospace', fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{b.reference || b.id.substring(0, 8).toUpperCase()}</div>
                       <div style={{ fontSize: '12px', color: 'white' }}>{b.service_name}</div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                        {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                        {new Date(b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
                       </div>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: '#00DD88' }}>{b.amount_ttc} MAD</div>
                       <span style={{ padding: '3px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 500, background: s.bg, color: s.color }}>{t(`status.${b.status}`)}</span>
@@ -645,7 +645,7 @@ export default function FleetDashboard() {
                     Adresse:    b.address,
                     Statut:     b.status,
                     MontantMAD: b.amount_ttc || 0,
-                    Date:       new Date(b.created_at).toLocaleDateString('fr-FR'),
+                    Date:       new Date(b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR'),
                   })), 'mecalik-rapport-interventions.csv')}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '7px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>
                   <Download size={12} /> {t('fleet.reports.interventionsReport')}
@@ -706,7 +706,7 @@ export default function FleetDashboard() {
                       <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{vBk.length}</div>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: vTotal > 0 ? '#F0C040' : 'rgba(255,255,255,0.3)' }}>{vTotal > 0 ? `${vTotal} MAD` : '—'}</div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>
-                        {last ? new Date(last.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                        {last ? new Date(last.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                       </div>
                     </div>
                   )
@@ -729,7 +729,7 @@ function BookingsTable({
   onRowClick: (id: string) => void
   compact?: boolean
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   if (bookings.length === 0) {
     return (
@@ -791,7 +791,7 @@ function BookingsTable({
             </span>
             {compact && (
               <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
-                {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                {new Date(b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })}
               </div>
             )}
           </div>
