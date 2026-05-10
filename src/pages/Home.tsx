@@ -9,14 +9,14 @@ import {
 import { supabase } from '../lib/supabase'
 
 
-const ACTIVITIES = [
-  { service: 'Vidange', location: 'Maarif', time: '4 min' },
-  { service: 'Batterie', location: 'Ain Diab', time: '11 min' },
-  { service: 'Lavage', location: 'Anfa', time: '18 min' },
-  { service: 'Diagnostic', location: 'Bourgogne', time: '23 min' },
-  { service: 'Pneus', location: 'CIL', time: '31 min' },
-  { service: 'Urgence', location: 'Hay Hassani', time: '42 min' },
-  { service: 'Vidange', location: 'Sidi Maarouf', time: '55 min' },
+const ACTIVITY_IDS = [
+  { serviceId: 'vidange',    location: 'Maarif',        time: '4 min' },
+  { serviceId: 'batterie',   location: 'Ain Diab',      time: '11 min' },
+  { serviceId: 'lavage',     location: 'Anfa',          time: '18 min' },
+  { serviceId: 'diagnostic', location: 'Bourgogne',     time: '23 min' },
+  { serviceId: 'pneus',      location: 'CIL',           time: '31 min' },
+  { serviceId: 'urgence',    location: 'Hay Hassani',   time: '42 min' },
+  { serviceId: 'vidange',    location: 'Sidi Maarouf',  time: '55 min' },
 ]
 
 function LiveActivityTicker() {
@@ -25,12 +25,12 @@ function LiveActivityTicker() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % ACTIVITIES.length)
+      setCurrentIndex(prev => (prev + 1) % ACTIVITY_IDS.length)
     }, 3000)
     return () => clearInterval(interval)
   }, [])
 
-  const activity = ACTIVITIES[currentIndex]
+  const activity = ACTIVITY_IDS[currentIndex]
 
   return (
     <div className="rounded-2xl p-5"
@@ -52,7 +52,7 @@ function LiveActivityTicker() {
       </div>
       <div key={currentIndex} style={{ animation: 'fadeIn 0.4s ease' }}>
         <div className="text-sm font-medium mb-0.5" style={{ color: 'white' }}>
-          {activity.service}
+          {t('services.' + activity.serviceId)}
         </div>
         <div className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
           {activity.location}, Casablanca
@@ -537,7 +537,7 @@ export default function Home() {
                 fontSize: '22px', fontWeight: 600, color: 'white',
                 marginBottom: '10px', letterSpacing: '-0.015em',
               }}>
-                Vidange &amp; Filtres
+                {t('services.vidange')}
               </h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 {t('landing.vidangeDesc')}
@@ -581,7 +581,7 @@ export default function Home() {
                 fontSize: '20px', fontWeight: 600, color: 'white',
                 marginBottom: '8px', letterSpacing: '-0.015em',
               }}>
-                Batterie
+                {t('services.batterie')}
               </h3>
               <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 {t('landing.batterieDesc')}
@@ -622,7 +622,7 @@ export default function Home() {
                 fontSize: '20px', fontWeight: 600, color: 'white',
                 marginBottom: '8px', letterSpacing: '-0.015em',
               }}>
-                Pneus
+                {t('services.pneus')}
               </h3>
               <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 {t('landing.pneusDesc')}
@@ -1155,7 +1155,7 @@ export default function Home() {
                     Salma Amrani
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    Casablanca · {t('landing.reviewDaysAgo')} 3 {t('landing.reviewDays')} · Batterie
+                    Casablanca · {t('landing.reviewDaysAgo')} 3 {t('landing.reviewDays')} · {t('services.batterie')}
                   </div>
                 </div>
                 <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full"
@@ -1197,7 +1197,7 @@ export default function Home() {
                   <div>
                     <div className="text-sm font-medium" style={{ color: 'white' }}>Karim Ouazzani</div>
                     <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      Maarif · {t('landing.reviewDaysAgo')} 1 {t('landing.reviewWeek')} · Vidange
+                      Maarif · {t('landing.reviewDaysAgo')} 1 {t('landing.reviewWeek')} · {t('services.vidange')}
                     </div>
                   </div>
                 </div>
