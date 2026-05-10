@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Clock, ShieldCheck,
-  Wrench, MessageSquare, MapPin,
+  Wrench, MessageSquare,
   ArrowRight, Phone, Wallet,
   Smartphone, CheckCircle2, ArrowDownRight,
 } from 'lucide-react'
@@ -262,19 +262,7 @@ export default function Home() {
                   background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 50%)',
                 }} />
 
-                <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <MapPin size={12} style={{ color: '#43BCC9' }} />
-                      <span className="text-xs font-medium uppercase tracking-wider"
-                        style={{ color: 'rgba(255,255,255,0.6)' }}>
-                        {t('landing.heroInService')}
-                      </span>
-                    </div>
-                    <div className="text-sm font-semibold" style={{ color: 'white' }}>
-                      Maarif, Casablanca
-                    </div>
-                  </div>
+                <div className="absolute top-4 right-4">
                   <div
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                     style={{ background: 'rgba(0,221,136,0.15)', border: '1px solid rgba(0,221,136,0.3)' }}
@@ -285,28 +273,6 @@ export default function Home() {
                       {t('landing.heroLive')}
                     </span>
                   </div>
-                </div>
-              </div>
-
-              {/* Floating next-available card */}
-              <div
-                className="absolute -bottom-5 -left-4 px-5 py-3 rounded-2xl hidden md:block"
-                style={{
-                  background: 'rgba(15,15,15,0.95)',
-                  backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-                }}
-              >
-                <div className="text-[10px] font-medium uppercase tracking-wider mb-0.5"
-                  style={{ color: 'rgba(255,255,255,0.4)' }}>
-                  {t('landing.heroNextSlot')}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock size={14} style={{ color: '#43BCC9' }} />
-                  <span className="text-sm font-bold" style={{ color: 'white' }}>
-                    {t('landing.heroToday')} · 14h30
-                  </span>
                 </div>
               </div>
             </div>
