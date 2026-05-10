@@ -1,9 +1,6 @@
 import { MessageCircle } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
 
 export default function WhatsAppFAB() {
-  const { t } = useTranslation()
-
   const handleClick = () => {
     window.dispatchEvent(new CustomEvent('openBooking'))
   }
