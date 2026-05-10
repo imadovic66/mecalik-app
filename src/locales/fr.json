@@ -583,7 +583,22 @@
     "kpiCompleted": "complétées",
     "sidebarTitle": "Administration",
     "notifPlaceholder": "Ex: Profitez de -20% sur le lavage auto ce week-end.",
-    "viewAll": "Voir tout"
+    "viewAll": "Voir tout",
+    "finance": {
+      "title": "Tableau financier",
+      "totalRevenue": "Chiffre d'affaires total",
+      "thisMonth": "Ce mois-ci",
+      "avgPerService": "Moy. par intervention",
+      "b2bShare": "Part B2B",
+      "revenueByMonth": "Revenus par mois",
+      "revenueByService": "Revenus par service",
+      "recentTransactions": "Transactions récentes",
+      "b2bVsB2c": "B2B vs B2C",
+      "interventions": "interventions",
+      "avgPrice": "Prix moy.",
+      "type": "Type",
+      "noData": "Aucune donnée disponible"
+    }
   },
   "services": {
     "lavage": "Lavage Auto",

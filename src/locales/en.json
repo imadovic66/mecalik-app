@@ -583,7 +583,22 @@
     "kpiCompleted": "completed",
     "sidebarTitle": "Administration",
     "notifPlaceholder": "Ex: Get -20% off car wash this weekend.",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "finance": {
+      "title": "Financial dashboard",
+      "totalRevenue": "Total revenue",
+      "thisMonth": "This month",
+      "avgPerService": "Avg per service",
+      "b2bShare": "B2B share",
+      "revenueByMonth": "Revenue per month",
+      "revenueByService": "Revenue by service",
+      "recentTransactions": "Recent transactions",
+      "b2bVsB2c": "B2B vs B2C",
+      "interventions": "interventions",
+      "avgPrice": "Avg price",
+      "type": "Type",
+      "noData": "No data available"
+    }
   },
   "services": {
     "lavage": "Car Wash",
