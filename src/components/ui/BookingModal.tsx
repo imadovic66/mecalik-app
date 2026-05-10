@@ -7,22 +7,13 @@ import { useAuth } from '../../hooks/useAuth'
 import { SERVICES, getPrice } from '../../data/pricing'
 
 const SERVICE_OPTIONS = [
-  { id: 'lavage',     label: 'Lavage Auto',       duration: '~45 min' },
-  { id: 'vidange',    label: 'Vidange & Filtres', duration: '~60 min' },
-  { id: 'batterie',   label: 'Batterie',          duration: '~30 min' },
-  { id: 'pneus',      label: 'Pneus',             duration: '~45 min' },
-  { id: 'diagnostic', label: 'Diagnostic',        duration: '~30 min' },
-  { id: 'urgence',    label: 'Urgence 24/7',      duration: 'ASAP' },
+  { id: 'lavage',     duration: '~45 min' },
+  { id: 'vidange',    duration: '~60 min' },
+  { id: 'batterie',   duration: '~30 min' },
+  { id: 'pneus',      duration: '~45 min' },
+  { id: 'diagnostic', duration: '~30 min' },
+  { id: 'urgence',    duration: 'ASAP' },
 ]
-
-const SERVICE_LABEL_MAP: Record<string, string> = {
-  lavage: 'Lavage Auto',
-  vidange: 'Vidange & Filtres',
-  batterie: 'Batterie',
-  pneus: 'Pneus',
-  diagnostic: 'Diagnostic',
-  urgence: 'Urgence 24/7',
-}
 
 export default function BookingModal() {
   const { user, profile } = useAuth()
@@ -116,14 +107,12 @@ export default function BookingModal() {
       ? `${selectedCar.brand} ${selectedCar.model}${selectedCar.year ? ' ' + selectedCar.year : ''}${selectedCar.license_plate ? ' · ' + selectedCar.license_plate : ''}`
       : ''
 
-    const serviceLabel = SERVICE_LABEL_MAP[selectedService] || selectedService
-
     const { data: booking, error: insertError } = await supabase
       .from('bookings')
       .insert({
         user_id:       user.id,
         car_id:        selectedCarId || null,
-        service_name:  serviceLabel,
+        service_name:  selectedService,
         address,
         address_notes: addressNotes || null,
         status:        'pending',
@@ -140,7 +129,7 @@ export default function BookingModal() {
     const message = encodeURIComponent(
       `Bonjour MecaLIK,\n\n` +
       `Je souhaite réserver:\n` +
-      `Service: ${serviceLabel}\n` +
+      `Service: ${selectedService}\n` +
       (carInfo ? `Véhicule: ${carInfo}\n` : '') +
       `Adresse: ${address}\n` +
       (addressNotes ? `Précisions: ${addressNotes}\n` : '') +
@@ -315,7 +304,7 @@ export default function BookingModal() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '15px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
-                        {svc.label}
+                        {t('services.' + svc.id)}
                       </div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', display: 'flex', gap: '8px' }}>
                         <span>{svc.duration}</span>
@@ -348,7 +337,7 @@ export default function BookingModal() {
                 }}>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#43BCC9', display: 'inline-block' }} />
                   <span style={{ fontSize: '12px', color: '#43BCC9', fontWeight: 600 }}>
-                    {SERVICE_LABEL_MAP[selectedService] || selectedService}
+                    {t('services.' + selectedService)}
                   </span>
                 </div>
               )}

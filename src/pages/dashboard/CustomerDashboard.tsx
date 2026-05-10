@@ -10,6 +10,7 @@ import {
   Home, Clock as ClockIcon, Car as CarIcon, User, Wrench, ArrowRight, ChevronDown,
 } from 'lucide-react'
 import AddCarModal from '../../components/ui/AddCarModal'
+import { serviceIdFromName } from '../../lib/serviceUtils'
 
 type Booking = {
   id: string
@@ -44,11 +45,6 @@ const QUICK_SERVICES: {
   { id: 'urgence',    label: 'Urgence',     icon: AlertTriangle, price: 239, gradient: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', dot: '#FF4444', urgent: true },
 ]
 
-const SERVICE_LABELS: Record<string, string> = {
-  lavage: 'Lavage Auto', vidange: 'Vidange & Filtres',
-  batterie: 'Batterie',  pneus: 'Pneus',
-  diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
-}
 
 function getFirstName(fullName: string | null | undefined, email: string | null | undefined): string {
   if (fullName?.trim()) {
@@ -231,7 +227,7 @@ export default function CustomerDashboard() {
                     fontSize: '22px', fontWeight: 600, color: 'white',
                     marginBottom: '4px', letterSpacing: '-0.015em',
                   }}>
-                    {SERVICE_LABELS[activeBooking.service_name] ?? activeBooking.service_name}
+                    {t('services.' + serviceIdFromName(activeBooking.service_name))}
                   </div>
 
                   {st.eta && (
@@ -578,7 +574,7 @@ export default function CustomerDashboard() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '14px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
-                        {SERVICE_LABELS[b.service_name] ?? b.service_name}
+                        {t('services.' + serviceIdFromName(b.service_name))}
                       </div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
                         {new Date(b.completed_at ?? b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short' })}

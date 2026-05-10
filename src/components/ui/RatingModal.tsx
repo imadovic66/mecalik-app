@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { serviceIdFromName } from '../../lib/serviceUtils'
 
 type Props = {
   bookingId: string
@@ -10,15 +12,11 @@ type Props = {
   onSubmitted: () => void
 }
 
-const SERVICE_LABELS: Record<string, string> = {
-  lavage: 'Lavage Auto', vidange: 'Vidange & Filtres', batterie: 'Batterie',
-  pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
-}
-
 const RATING_LABELS = ['', 'Mauvais', 'Passable', 'Bien', 'Très bien', 'Excellent']
 const MAX_CHARS = 500
 
 export default function RatingModal({ bookingId, serviceName, isOpen, onClose, onSubmitted }: Props) {
+  const { t } = useTranslation()
   const [rating, setRating]       = useState(0)
   const [hovered, setHovered]     = useState(0)
   const [comment, setComment]     = useState('')
@@ -81,7 +79,7 @@ export default function RatingModal({ bookingId, serviceName, isOpen, onClose, o
               Comment s&apos;est passée votre intervention ?
             </h2>
             <p className="text-xs mt-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {SERVICE_LABELS[serviceName] || serviceName}
+              {t('services.' + serviceIdFromName(serviceName))}
             </p>
           </div>
           <button

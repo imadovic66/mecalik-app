@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
+import { serviceIdFromName } from '../../lib/serviceUtils'
 import {
   LayoutDashboard, ShoppingBag, Users,
   LogOut,
@@ -73,10 +74,6 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled:   '#FF4444',
 }
 
-const SERVICE_LABELS: Record<string, string> = {
-  lavage: 'Lavage Auto', vidange: 'Vidange & Filtres', batterie: 'Batterie',
-  pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
-}
 
 type Tab = 'overview' | 'bookings' | 'customers' | 'finances' | 'reviews' | 'notifications'
 
@@ -199,7 +196,7 @@ export default function AdminDashboard() {
         notifyCustomerByWhatsApp({
           customerName: booking.profiles?.full_name || null,
           customerPhone: booking.profiles?.phone || null,
-          serviceLabel: SERVICE_LABELS[booking.service_name] || booking.service_name,
+          serviceLabel: t('services.' + serviceIdFromName(booking.service_name)),
           bookingRef: bookingId.slice(0, 8).toUpperCase(),
           status: newStatus,
         })
@@ -207,9 +204,9 @@ export default function AdminDashboard() {
         // Push notification to customer
         if (booking.user_id) {
           const statusMessages: Record<string, { title: string; body: string }> = {
-            confirmed:   { title: 'Réservation confirmée', body: `Votre ${SERVICE_LABELS[booking.service_name] || booking.service_name} est confirmé. Un technicien est assigné.` },
-            in_progress: { title: 'Technicien en route',   body: `Votre technicien est en route pour ${SERVICE_LABELS[booking.service_name] || booking.service_name}.` },
-            completed:   { title: 'Service terminé',        body: `Votre ${SERVICE_LABELS[booking.service_name] || booking.service_name} est terminé. Donnez votre avis !` },
+            confirmed:   { title: 'Réservation confirmée', body: `Votre ${t('services.' + serviceIdFromName(booking.service_name))} est confirmé. Un technicien est assigné.` },
+            in_progress: { title: 'Technicien en route',   body: `Votre technicien est en route pour ${t('services.' + serviceIdFromName(booking.service_name))}.` },
+            completed:   { title: 'Service terminé',        body: `Votre ${t('services.' + serviceIdFromName(booking.service_name))} est terminé. Donnez votre avis !` },
             cancelled:   { title: 'Réservation annulée',   body: `Votre réservation a été annulée. Contactez-nous pour plus d'informations.` },
           }
           const msg = statusMessages[newStatus]
@@ -238,7 +235,7 @@ export default function AdminDashboard() {
   const filteredBookings = bookings.filter(b => {
     const matchSearch = !searchQuery ||
       b.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (SERVICE_LABELS[b.service_name] ?? b.service_name).toLowerCase().includes(searchQuery.toLowerCase())
+      t('services.' + serviceIdFromName(b.service_name)).toLowerCase().includes(searchQuery.toLowerCase())
     const matchStatus = statusFilter === 'all' || b.status === statusFilter
     return matchSearch && matchStatus
   })
@@ -561,7 +558,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <div className="text-sm font-medium" style={{ color: 'white' }}>
-                            {SERVICE_LABELS[booking.service_name] || booking.service_name}
+                            {t('services.' + serviceIdFromName(booking.service_name))}
                           </div>
                           <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
                             {booking.profiles?.full_name || 'Client anonyme'}
@@ -654,7 +651,7 @@ export default function AdminDashboard() {
                       </div>
                       {/* Service */}
                       <div style={{ fontSize: '12px', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {SERVICE_LABELS[booking.service_name] ?? booking.service_name}
+                        {t('services.' + serviceIdFromName(booking.service_name))}
                       </div>
                       {/* Client */}
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -890,7 +887,7 @@ export default function AdminDashboard() {
                           {review.profiles?.full_name || 'Anonyme'}
                         </div>
                         <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
-                          {SERVICE_LABELS[review.service_type ?? ''] ?? review.service_type ?? '—'}
+                          {review.service_type ? t('services.' + serviceIdFromName(review.service_type)) : '—'}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                           {Array.from({ length: review.rating }, (_, idx) => (
@@ -1278,7 +1275,7 @@ export default function AdminDashboard() {
 
             {/* Info rows */}
             {[
-              { icon: <Wrench size={16} style={{ color: '#43BCC9' }} />,   label: 'Service',   value: SERVICE_LABELS[selectedBooking.service_name] ?? selectedBooking.service_name },
+              { icon: <Wrench size={16} style={{ color: '#43BCC9' }} />,   label: 'Service',   value: t('services.' + serviceIdFromName(selectedBooking.service_name)) },
               { icon: <Users size={16} style={{ color: '#43BCC9' }} />,    label: 'Client',    value: selectedBooking.profiles?.full_name || 'Inconnu' },
               { icon: <MapPin size={16} style={{ color: '#43BCC9' }} />,   label: 'Adresse',   value: selectedBooking.address },
               { icon: <Calendar size={16} style={{ color: '#43BCC9' }} />, label: 'Date',      value: selectedBooking.preferred_date ? new Date(selectedBooking.preferred_date).toLocaleString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : 'Dès que possible' },

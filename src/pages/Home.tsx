@@ -487,7 +487,7 @@ export default function Home() {
                   fontSize: '26px', fontWeight: 600, color: 'white',
                   marginBottom: '12px', letterSpacing: '-0.015em',
                 }}>
-                  Lavage Auto
+                  {t('services.lavage')}
                 </h3>
                 <p className="text-sm leading-relaxed mb-8"
                   style={{ color: 'rgba(255,255,255,0.5)', maxWidth: '280px' }}>
@@ -727,7 +727,7 @@ export default function Home() {
                   fontSize: '26px', fontWeight: 700, color: 'white',
                   marginBottom: '12px', letterSpacing: '-0.015em',
                 }}>
-                  Urgence 24/7
+                  {t('services.urgence')}
                 </h3>
                 <p className="text-sm leading-relaxed mb-8"
                   style={{ color: 'rgba(255,255,255,0.55)', maxWidth: '280px' }}>
@@ -858,7 +858,7 @@ export default function Home() {
                     </div>
                   </div>
                   {[
-                    { label: t('landing.step1FormService'), value: 'Vidange & Filtres' },
+                    { label: t('landing.step1FormService'), value: t('services.vidange') },
                     { label: t('landing.step1FormCar'),     value: 'Dacia Logan 2019' },
                     { label: t('landing.step1FormAddress'), value: 'Maarif, Casablanca' },
                   ].map(row => (
@@ -1227,7 +1227,7 @@ export default function Home() {
                   <div>
                     <div className="text-sm font-medium" style={{ color: 'white' }}>Nadia Benali</div>
                     <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      Ain Diab · {t('landing.reviewDaysAgo')} 2 {t('landing.reviewDays')} · Urgence 24/7
+                      Ain Diab · {t('landing.reviewDaysAgo')} 2 {t('landing.reviewDays')} · {t('services.urgence')}
                     </div>
                   </div>
                 </div>

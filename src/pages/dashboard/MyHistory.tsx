@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
+import { serviceIdFromName } from '../../lib/serviceUtils'
 import {
   ArrowLeft, ArrowRight, Star, Wrench, Droplet, Battery, Disc,
   Search, Sparkles, AlertTriangle, Calendar,
@@ -24,19 +25,12 @@ type Booking = {
 type ServiceVisual = { icon: React.ElementType; gradient: string; color: string }
 
 const SERVICE_VISUALS: Record<string, ServiceVisual> = {
-  'Vidange & Filtres':  { icon: Droplet,       gradient: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)', color: '#3B82F6' },
-  'Vidange Moteur':     { icon: Droplet,       gradient: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)', color: '#3B82F6' },
-  'Vidange':            { icon: Droplet,       gradient: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)', color: '#3B82F6' },
-  'Batterie':           { icon: Battery,       gradient: 'linear-gradient(135deg, #14532D 0%, #166534 100%)', color: '#22C55E' },
-  'Remplacement Batterie': { icon: Battery,    gradient: 'linear-gradient(135deg, #14532D 0%, #166534 100%)', color: '#22C55E' },
-  'Diagnostic':         { icon: Search,        gradient: 'linear-gradient(135deg, #0E7490 0%, #155E75 100%)', color: '#06B6D4' },
-  'Diagnostic Simple':  { icon: Search,        gradient: 'linear-gradient(135deg, #0E7490 0%, #155E75 100%)', color: '#06B6D4' },
-  'Pneus':              { icon: Disc,          gradient: 'linear-gradient(135deg, #422006 0%, #57340a 100%)', color: '#D97706' },
-  'Changement de Pneus':{ icon: Disc,          gradient: 'linear-gradient(135deg, #422006 0%, #57340a 100%)', color: '#D97706' },
-  'Lavage Auto':        { icon: Sparkles,      gradient: 'linear-gradient(135deg, #312E81 0%, #3730A3 100%)', color: '#818CF8' },
-  'Lavage':             { icon: Sparkles,      gradient: 'linear-gradient(135deg, #312E81 0%, #3730A3 100%)', color: '#818CF8' },
-  'Urgence 24/7':       { icon: AlertTriangle, gradient: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', color: '#FF4444' },
-  'Urgence':            { icon: AlertTriangle, gradient: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', color: '#FF4444' },
+  vidange:    { icon: Droplet,       gradient: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)', color: '#3B82F6' },
+  batterie:   { icon: Battery,       gradient: 'linear-gradient(135deg, #14532D 0%, #166534 100%)', color: '#22C55E' },
+  diagnostic: { icon: Search,        gradient: 'linear-gradient(135deg, #0E7490 0%, #155E75 100%)', color: '#06B6D4' },
+  pneus:      { icon: Disc,          gradient: 'linear-gradient(135deg, #422006 0%, #57340a 100%)', color: '#D97706' },
+  lavage:     { icon: Sparkles,      gradient: 'linear-gradient(135deg, #312E81 0%, #3730A3 100%)', color: '#818CF8' },
+  urgence:    { icon: AlertTriangle, gradient: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', color: '#FF4444' },
 }
 
 const FALLBACK_VISUAL: ServiceVisual = {
@@ -274,7 +268,7 @@ export default function MyHistory() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {grouped[year].map(b => {
-                  const visual      = getVisual(b.service_name)
+                  const visual      = getVisual(serviceIdFromName(b.service_name))
                   const Icon        = visual.icon
                   const isCompleted = b.status === 'completed'
 
@@ -313,7 +307,7 @@ export default function MyHistory() {
                             fontSize: '14px', fontWeight: 600, color: 'white',
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           }}>
-                            {b.service_name}
+                            {t('services.' + serviceIdFromName(b.service_name))}
                           </div>
                           <span style={{
                             fontSize: '9px', padding: '2px 6px', borderRadius: '4px',

@@ -6,6 +6,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { X, Plus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const localizer = dateFnsLocalizer({
   format, parse, startOfWeek, getDay,
@@ -35,6 +36,7 @@ type Vehicle = {
 
 export default function FleetCalendar() {
   const { profile } = useAuth()
+  const { t } = useTranslation()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [showAddEvent, setShowAddEvent] = useState(false)
@@ -82,11 +84,11 @@ export default function FleetCalendar() {
   }
 
   const SERVICE_TYPES = [
-    { value: 'vidange',    label: 'Vidange & Filtres' },
-    { value: 'pneus',      label: 'Pneus' },
-    { value: 'batterie',   label: 'Batterie' },
-    { value: 'diagnostic', label: 'Diagnostic' },
-    { value: 'lavage',     label: 'Lavage' },
+    { value: 'vidange',    label: t('services.vidange') },
+    { value: 'pneus',      label: t('services.pneus') },
+    { value: 'batterie',   label: t('services.batterie') },
+    { value: 'diagnostic', label: t('services.diagnostic') },
+    { value: 'lavage',     label: t('services.lavage') },
   ]
 
   return (
