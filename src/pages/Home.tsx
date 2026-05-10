@@ -66,18 +66,7 @@ function LiveActivityTicker() {
 
 export default function Home() {
   const { t, i18n } = useTranslation()
-  const [techCount, setTechCount] = useState(7)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTechCount(prev => {
-        const variation = Math.random() > 0.5 ? 1 : -1
-        const next = prev + variation
-        return Math.max(5, Math.min(11, next))
-      })
-    }, 4500)
-    return () => clearInterval(interval)
-  }, [])
+  const techCount = 6
 
   const isFr = i18n.language === 'fr'
 
