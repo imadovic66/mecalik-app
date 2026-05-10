@@ -20,6 +20,8 @@ import MyCars from './pages/dashboard/MyCars'
 import MyHistory from './pages/dashboard/MyHistory'
 import MyProfile from './pages/dashboard/MyProfile'
 import MechanicDashboard from './pages/mechanic/MechanicDashboard'
+import Tarifs from './pages/Tarifs'
+import Flottes from './pages/Flottes'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
 
@@ -47,6 +49,8 @@ function AppShell() {
           <Route path="/services" element={<PublicRoute><Services /></PublicRoute>} />
           <Route path="/fleet"    element={<PublicRoute><Fleet /></PublicRoute>} />
           <Route path="/about"    element={<PublicRoute><About /></PublicRoute>} />
+          <Route path="/tarifs"   element={<PublicRoute><Tarifs /></PublicRoute>} />
+          <Route path="/flottes"  element={<PublicRoute><Flottes /></PublicRoute>} />
           <Route path="/devis"    element={<QuoteCalculator />} />
           <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup"   element={<PublicRoute><Signup /></PublicRoute>} />
