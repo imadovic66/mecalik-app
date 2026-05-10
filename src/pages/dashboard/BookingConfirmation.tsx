@@ -54,12 +54,14 @@ export default function BookingConfirmation() {
     fetchBooking()
 
     const channel = supabase
-      .channel(`booking-${id}`)
+      .channel(`booking-confirm-${id}`)
       .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'bookings',
-        filter: `id=eq.${id}`,
+        event: '*', schema: 'public', table: 'bookings',
       }, payload => {
-        setBooking(payload.new as Booking)
+        const record = (payload.new as any) || (payload.old as any)
+        if (!record || record.id === id) {
+          fetchBooking()
+        }
       })
       .subscribe()
 

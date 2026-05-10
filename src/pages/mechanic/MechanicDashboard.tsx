@@ -81,10 +81,9 @@ export default function MechanicDashboard() {
   useEffect(() => {
     if (!profile?.full_name) return
     const channel = supabase
-      .channel(`mechanic-${profile.full_name}`)
+      .channel(`mechanic-bookings-${profile.full_name}`)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'bookings',
-        filter: `technician_name=eq.${profile.full_name}`,
       }, () => fetchBookings())
       .subscribe()
     return () => { supabase.removeChannel(channel) }

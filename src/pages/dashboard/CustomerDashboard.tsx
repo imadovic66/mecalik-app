@@ -70,13 +70,17 @@ export default function CustomerDashboard() {
 
     // ── Real-time: refresh active booking card when admin updates status ──
     const channel = supabase
-      .channel(`customer-${user.id}`)
+      .channel(`customer-bookings-${user.id}`)
       .on('postgres_changes', {
-        event: 'UPDATE',
+        event: '*',
         schema: 'public',
         table: 'bookings',
-        filter: `user_id=eq.${user.id}`,
-      }, () => { fetchAll() })
+      }, (payload) => {
+        const record = (payload.new as any) || (payload.old as any)
+        if (!record || record.user_id === user.id) {
+          fetchAll()
+        }
+      })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
