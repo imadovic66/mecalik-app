@@ -139,7 +139,7 @@ export default function CustomerDashboard() {
             <MapPin size={13} color="#43BCC9" />
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Adresse
+                {t('common.address')}
               </div>
               <div style={{ fontSize: '13px', fontWeight: 500, color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 Casablanca
@@ -384,14 +384,6 @@ export default function CustomerDashboard() {
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                   }}>
-                    {/* Teal corner glow */}
-                    <div style={{
-                      position: 'absolute', top: '-50px', right: '-50px',
-                      width: '160px', height: '160px',
-                      background: 'radial-gradient(circle, rgba(67,188,201,0.12) 0%, transparent 70%)',
-                      borderRadius: '50%', pointerEvents: 'none',
-                    }} />
-
                     {/* Top — icon + plate */}
                     <div style={{
                       position: 'relative',
@@ -399,12 +391,12 @@ export default function CustomerDashboard() {
                       marginBottom: '12px',
                     }}>
                       <div style={{
-                        width: '40px', height: '40px', borderRadius: '10px',
-                        background: 'rgba(67,188,201,0.1)',
-                        border: '1px solid rgba(67,188,201,0.2)',
+                        width: '32px', height: '32px', borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.08)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        <CarIcon size={18} color="#43BCC9" />
+                        <CarIcon size={15} color="#43BCC9" />
                       </div>
                       {car.license_plate && (
                         <div style={{
@@ -516,7 +508,7 @@ export default function CustomerDashboard() {
                   }} />
                   <div style={{ position: 'relative' }}>
                     <div style={{
-                      width: '36px', height: '36px', borderRadius: '10px',
+                      width: '36px', height: '36px', borderRadius: '8px',
                       background: 'rgba(255,255,255,0.06)',
                       border: '1px solid rgba(255,255,255,0.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -598,46 +590,37 @@ export default function CustomerDashboard() {
           {!loading && !activeBooking && cars.length > 0 && (
             <section style={{ marginBottom: '28px' }}>
               <div style={{
-                background: 'linear-gradient(135deg, #1A1A1A 0%, #0F0F0F 100%)',
-                border: '1px solid rgba(240,192,64,0.15)',
+                background: '#111111',
+                border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: '16px', padding: '18px',
-                position: 'relative', overflow: 'hidden',
               }}>
                 <div style={{
-                  position: 'absolute', top: '-40px', right: '-40px',
-                  width: '160px', height: '160px',
-                  background: 'radial-gradient(circle, rgba(240,192,64,0.15) 0%, transparent 70%)',
-                  borderRadius: '50%', pointerEvents: 'none',
-                }} />
-                <div style={{ position: 'relative' }}>
-                  <div style={{
-                    fontSize: '10px', color: '#F0C040', letterSpacing: '0.12em',
-                    fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px',
-                  }}>
-                    Astuce maintenance
-                  </div>
-                  <div style={{
-                    fontFamily: 'Space Grotesk, sans-serif',
-                    fontSize: '17px', fontWeight: 600, color: 'white',
-                    letterSpacing: '-0.01em', marginBottom: '6px',
-                  }}>
-                    Vidange tous les 10 000 km
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '14px', lineHeight: 1.5 }}>
-                    Pour préserver le moteur de votre {cars[0].brand} {cars[0].model}
-                  </div>
-                  <button
-                    onClick={() => openBookingWithService('vidange')}
-                    style={{
-                      background: '#F0C040', color: '#000000',
-                      border: 'none', padding: '8px 14px',
-                      borderRadius: '8px', fontSize: '12px', fontWeight: 600,
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
-                    }}
-                  >
-                    Réserver une vidange <ArrowRight size={12} />
-                  </button>
+                  fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em',
+                  fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px',
+                }}>
+                  {t('customer.maintenanceTag')}
                 </div>
+                <div style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: '17px', fontWeight: 600, color: 'white',
+                  letterSpacing: '-0.01em', marginBottom: '6px',
+                }}>
+                  {t('customer.maintenanceTip')}
+                </div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '14px', lineHeight: 1.5 }}>
+                  {t('customer.maintenanceTipDesc', { brand: cars[0].brand, model: cars[0].model })}
+                </div>
+                <button
+                  onClick={() => openBookingWithService('vidange')}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)', color: 'white',
+                    border: '1px solid rgba(255,255,255,0.12)', padding: '8px 14px',
+                    borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+                  }}
+                >
+                  {t('customer.maintenanceCta')} <ArrowRight size={12} />
+                </button>
               </div>
             </section>
           )}
