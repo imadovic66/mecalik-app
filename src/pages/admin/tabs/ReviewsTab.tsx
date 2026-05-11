@@ -1,35 +1,64 @@
-/** Reviews tab — summary stat bar, rating filter, and reviews table with visibility toggle */
+/** Reviews tab — fetches rated bookings directly, KPI bar, filter pills, review cards */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Star } from 'lucide-react'
-import { type Review } from '../adminShared'
+import { supabase } from '../../../lib/supabase'
 import { serviceIdFromName } from '../../../lib/serviceUtils'
 
-interface Props {
-  reviews: Review[]
-  onToggleVisibility: (id: string, isVisible: boolean) => void
+type RatedBooking = {
+  id: string
+  reference: string
+  service_name: string | null
+  rating: number
+  rating_comment: string | null
+  technician_name: string | null
+  amount_ttc: number | null
+  created_at: string
+  notes_admin: string | null
 }
 
-export default function ReviewsTab({ reviews, onToggleVisibility }: Props) {
-  const { t, i18n } = useTranslation()
-  const [reviewRatingFilter, setReviewRatingFilter] = useState('all')
+function getGuestName(notes_admin: string | null): string {
+  if (!notes_admin) return 'Anonyme'
+  const m = notes_admin.match(/Nom:\s*([^|]+)/)
+  return m ? m[1].trim() : 'Anonyme'
+}
 
-  const totalReviews = reviews.length
-  const avgNum = totalReviews > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews : 0
-  const avgStr = avgNum > 0 ? avgNum.toFixed(1) : '—'
-  const fiveStars = reviews.filter(r => r.rating === 5).length
-  const negative  = reviews.filter(r => r.rating <= 2).length
+export default function ReviewsTab() {
+  const { t, i18n } = useTranslation()
+  const [reviews, setReviews] = useState<RatedBooking[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('all')
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('id, reference, service_name, rating, rating_comment, technician_name, amount_ttc, created_at, notes_admin')
+        .not('rating', 'is', null)
+        .order('created_at', { ascending: false })
+      if (!error && data) setReviews(data as RatedBooking[])
+      setLoading(false)
+    }
+    fetchReviews()
+  }, [])
+
+  const avgRating = reviews.length
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : '—'
+  const fiveStars    = reviews.filter(r => r.rating === 5).length
+  const negativeCount = reviews.filter(r => r.rating <= 2).length
 
   const filtered = reviews.filter(r => {
-    if (reviewRatingFilter === 'all') return true
-    if (reviewRatingFilter === '2')   return r.rating <= 2
-    return r.rating === parseInt(reviewRatingFilter)
+    if (filter === 'all') return true
+    if (filter === '2')   return r.rating <= 2
+    return r.rating === parseInt(filter)
   })
 
   return (
     <>
-      {/* Summary stat bar */}
+      {/* KPI bar */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '1px', background: 'rgba(255,255,255,0.06)',
@@ -37,10 +66,10 @@ export default function ReviewsTab({ reviews, onToggleVisibility }: Props) {
         overflow: 'hidden', marginBottom: '24px',
       }}>
         {[
-          { label: t('landing.stat3Label'), value: `${avgStr} / 5`, color: '#F0C040', note: t('landing.reviewsRating') },
-          { label: 'Total avis',    value: String(totalReviews), color: 'white',   note: 'soumis' },
-          { label: '5 étoiles',     value: String(fiveStars),    color: '#00DD88', note: totalReviews ? `${Math.round(fiveStars / totalReviews * 100)}%` : '0%' },
-          { label: 'Avis négatifs', value: String(negative),     color: '#FF4444', note: '≤ 2 étoiles' },
+          { label: 'Note moyenne',  value: `${avgRating} / 5`,       color: '#F0C040', note: 'sur 5 étoiles'  },
+          { label: 'Total avis',    value: String(reviews.length),    color: 'white',   note: 'soumis'         },
+          { label: '5 étoiles',     value: String(fiveStars),         color: '#00DD88', note: reviews.length ? `${Math.round(fiveStars / reviews.length * 100)}%` : '0%' },
+          { label: 'Avis négatifs', value: String(negativeCount),     color: '#FF4444', note: '≤ 2 étoiles'   },
         ].map((s, i) => (
           <div key={i} style={{ background: '#0D0D0D', padding: '20px 24px' }}>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', fontWeight: 500 }}>{s.label}</div>
@@ -50,8 +79,8 @@ export default function ReviewsTab({ reviews, onToggleVisibility }: Props) {
         ))}
       </div>
 
-      {/* Rating filter */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+      {/* Filter pills */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {[
           { key: 'all', label: 'Tous' },
           { key: '5',   label: '5 ★'  },
@@ -61,12 +90,12 @@ export default function ReviewsTab({ reviews, onToggleVisibility }: Props) {
         ].map(f => (
           <button
             key={f.key}
-            onClick={() => setReviewRatingFilter(f.key)}
+            onClick={() => setFilter(f.key)}
             style={{
               padding: '6px 14px', borderRadius: '100px', border: 'none',
               fontSize: '12px', fontWeight: 500, cursor: 'pointer',
-              background: reviewRatingFilter === f.key ? '#43BCC9' : 'rgba(255,255,255,0.06)',
-              color: reviewRatingFilter === f.key ? '#080808' : 'rgba(255,255,255,0.5)',
+              background: filter === f.key ? '#43BCC9' : 'rgba(255,255,255,0.06)',
+              color:      filter === f.key ? '#080808' : 'rgba(255,255,255,0.5)',
             }}
           >
             {f.label}
@@ -74,68 +103,73 @@ export default function ReviewsTab({ reviews, onToggleVisibility }: Props) {
         ))}
       </div>
 
-      {/* Table */}
-      {filtered.length === 0 ? (
+      {/* Content */}
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-24 rounded-xl animate-pulse" style={{ background: '#141414' }} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
           <Star size={32} style={{ color: 'rgba(255,255,255,0.1)', margin: '0 auto 12px', display: 'block' }} />
           <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.35)' }}>Aucun avis</div>
         </div>
       ) : (
-        <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '90px 140px 140px 76px 1fr 80px 44px', padding: '10px 20px', background: '#0D0D0D', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            {['Date', 'Client', 'Service', 'Note', 'Commentaire', 'Statut', ''].map(h => (
-              <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</div>
-            ))}
-          </div>
-          {filtered.map((review, i) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {filtered.map(review => (
             <div
               key={review.id}
-              style={{
-                display: 'grid', gridTemplateColumns: '90px 140px 140px 76px 1fr 80px 44px',
-                padding: '12px 20px', alignItems: 'center',
-                borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                opacity: review.is_visible ? 1 : 0.45, transition: 'opacity 0.2s',
-              }}
+              style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '20px 24px' }}
             >
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>
-                {new Date(review.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })}
-              </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
-                {review.profiles?.full_name || 'Anonyme'}
-              </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
-                {review.service_type ? t('services.' + serviceIdFromName(review.service_type)) : '—'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                {Array.from({ length: review.rating }, (_, idx) => (
-                  <svg key={idx} width="11" height="11" viewBox="0 0 24 24" fill="#F0C040">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                ))}
-              </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
-                {review.comment || '—'}
-              </div>
-              <div>
-                <span style={{
-                  fontSize: '11px', fontWeight: 500, padding: '3px 8px', borderRadius: '4px',
-                  background: review.is_visible ? 'rgba(0,221,136,0.08)' : 'rgba(255,68,68,0.08)',
-                  color: review.is_visible ? '#00DD88' : '#FF4444',
-                }}>
-                  {review.is_visible ? 'Visible' : 'Masqué'}
-                </span>
-              </div>
-              <div>
-                <button
-                  onClick={() => onToggleVisibility(review.id, review.is_visible)}
-                  title={review.is_visible ? 'Masquer' : 'Afficher'}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'rgba(255,255,255,0.35)', display: 'flex', alignItems: 'center' }}
-                >
-                  {review.is_visible
-                    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  }
-                </button>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+
+                {/* Left — stars + comment */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                    {Array.from({ length: 5 }, (_, idx) => (
+                      <svg key={idx} width="14" height="14" viewBox="0 0 24 24" fill={idx < review.rating ? '#F0C040' : 'rgba(255,255,255,0.1)'}>
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    ))}
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#F0C040', marginLeft: '2px' }}>{review.rating}/5</span>
+                  </div>
+
+                  {review.rating_comment ? (
+                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5, marginBottom: '12px', fontStyle: 'italic' }}>
+                      &ldquo;{review.rating_comment}&rdquo;
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginBottom: '12px' }}>Pas de commentaire</p>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                      {review.service_name ? t('services.' + serviceIdFromName(review.service_name)) : '—'}
+                    </span>
+                    {review.technician_name && (
+                      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                        Tech: {review.technician_name}
+                      </span>
+                    )}
+                    {review.amount_ttc && (
+                      <span style={{ fontSize: '11px', color: '#43BCC9' }}>{review.amount_ttc} MAD</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right — meta */}
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>
+                    {getGuestName(review.notes_admin)}
+                  </div>
+                  <div style={{ fontSize: '10px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', marginBottom: '4px' }}>
+                    {review.reference || review.id.slice(0, 8).toUpperCase()}
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>
+                    {new Date(review.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </div>
+                </div>
               </div>
             </div>
           ))}

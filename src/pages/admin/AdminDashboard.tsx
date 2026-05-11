@@ -17,7 +17,7 @@ import { notifyCustomerByWhatsApp, getNotifiableStatuses } from '../../utils/wha
 import { usePushNotifications } from '../../hooks/usePushNotifications'
 
 import {
-  type Tab, type Booking, type Customer, type Review, type FinanceBooking,
+  type Tab, type Booking, type Customer, type FinanceBooking,
   STATUS_CONFIG, STATUS_KEYS, StatusPill,
 } from './adminShared'
 import OverviewTab       from './tabs/OverviewTab'
@@ -35,7 +35,6 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab]             = useState<Tab>('overview')
   const [bookings, setBookings]               = useState<Booking[]>([])
   const [customers, setCustomers]             = useState<Customer[]>([])
-  const [reviews, setReviews]                 = useState<Review[]>([])
   const [loading, setLoading]                 = useState(true)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [updatingStatus, setUpdatingStatus]   = useState(false)
@@ -50,14 +49,12 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [{ data: bookingData }, { data: customerData }, { data: reviewData }] = await Promise.all([
+    const [{ data: bookingData }, { data: customerData }] = await Promise.all([
       supabase.from('bookings').select('*, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100),
       supabase.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
-      supabase.from('reviews').select('*, profiles!customer_id(full_name)').order('created_at', { ascending: false }),
     ])
     setBookings(bookingData ?? [])
     setCustomers(customerData ?? [])
-    setReviews(reviewData ?? [])
     setLoading(false)
   }, [])
 
@@ -125,11 +122,6 @@ export default function AdminDashboard() {
       }
     }
     setUpdatingStatus(false)
-  }
-
-  const toggleReviewVisibility = async (reviewId: string, isVisible: boolean) => {
-    await supabase.from('reviews').update({ is_visible: !isVisible }).eq('id', reviewId)
-    setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_visible: !r.is_visible } : r))
   }
 
   const handleSignOut = async () => { await signOut(); navigate('/') }
@@ -302,7 +294,7 @@ export default function AdminDashboard() {
             <FinancesTab financeBookings={financeBookings} financeLoading={financeLoading} />
           )}
           {activeTab === 'reviews' && (
-            <ReviewsTab reviews={reviews} onToggleVisibility={toggleReviewVisibility} />
+            <ReviewsTab />
           )}
           {activeTab === 'notifications' && (
             <NotificationsTab
