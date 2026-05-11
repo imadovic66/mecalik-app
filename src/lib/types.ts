@@ -1,8 +1,6 @@
-/** Shared TypeScript types used across dashboards and pages */
-
 import type { BookingStatus } from './constants'
 
-/** A booking record from the database */
+/** A booking record from the bookings table */
 export interface Booking {
   id: string
   reference: string
@@ -24,11 +22,9 @@ export interface Booking {
   created_at: string
   confirmed_at: string | null
   completed_at: string | null
-  preferred_date?: string | null
-  profiles?: { full_name: string | null; phone: string | null }
 }
 
-/** A user profile record from the database */
+/** A user profile from the profiles table */
 export interface Profile {
   id: string
   full_name: string | null
@@ -39,12 +35,10 @@ export interface Profile {
   role: 'customer' | 'mechanic' | 'admin' | 'fleet manager'
   company_id: string | null
   push_token?: string | null
-  push_subscription?: string | null
-  referral_code?: string | null
   created_at: string
 }
 
-/** A car record from the database */
+/** A car registered by a customer */
 export interface Car {
   id: string
   user_id: string
@@ -52,17 +46,20 @@ export interface Car {
   model: string
   year: number | null
   license_plate: string | null
-  mileage?: number | null
-  color?: string | null
   fuel_type: string | null
   is_primary: boolean
-  photo_url?: string | null
-  notes?: string | null
   created_at: string
-  updated_at?: string
 }
 
-/** Service option shown in the booking modal */
+/** Form data collected in the booking modal */
+export interface BookingFormData {
+  name: string
+  phone: string
+  address: string
+  notes: string
+}
+
+/** A service option shown in the booking modal step 1 */
 export interface ServiceOption {
   id: string
   label: string
@@ -70,12 +67,4 @@ export interface ServiceOption {
   price?: string
   duration?: string
   icon?: string
-}
-
-/** Form data collected during booking flow */
-export interface BookingFormData {
-  name: string
-  phone: string
-  address: string
-  notes: string
 }
