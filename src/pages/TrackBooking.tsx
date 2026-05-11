@@ -268,7 +268,7 @@ export default function TrackBooking() {
               />
 
               {/* Guest name if any */}
-              {!booking.profiles?.full_name && parseGuestName(booking.notes_admin) && (
+              {parseGuestName(booking.notes_admin) && (
                 <Row
                   label={isFr ? 'Nom' : 'Name'}
                   value={parseGuestName(booking.notes_admin)!}
