@@ -38,7 +38,7 @@ export interface Profile {
   created_at: string
 }
 
-/** A car registered by a customer */
+/** A vehicle registered by a customer */
 export interface Car {
   id: string
   user_id: string
@@ -59,7 +59,7 @@ export interface BookingFormData {
   notes: string
 }
 
-/** A service option shown in the booking modal step 1 */
+/** A service option shown in booking modal step 1 */
 export interface ServiceOption {
   id: string
   label: string
