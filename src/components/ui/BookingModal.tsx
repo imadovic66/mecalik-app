@@ -169,11 +169,6 @@ export default function BookingModal() {
     setSubmitting(true)
     setError('')
 
-    const selectedCar = cars.find(c => c.id === selectedCarId)
-    const carInfo = selectedCar
-      ? `${selectedCar.brand} ${selectedCar.model}${selectedCar.year ? ' ' + selectedCar.year : ''}${selectedCar.license_plate ? ' · ' + selectedCar.license_plate : ''}`
-      : ''
-
     const { data: booking, error: insertError } = await supabase
       .from('bookings')
       .insert({
