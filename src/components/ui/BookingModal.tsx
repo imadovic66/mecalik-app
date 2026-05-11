@@ -15,6 +15,18 @@ const SERVICE_OPTIONS = [
   { id: 'urgence',    duration: 'ASAP' },
 ]
 
+const SERVICE_LABELS: Record<string, string> = {
+  lavage:     'Lavage Auto',
+  vidange:    'Vidange & Filtres',
+  batterie:   'Batterie',
+  pneus:      'Pneus',
+  diagnostic: 'Diagnostic',
+  urgence:    'Urgence 24/7',
+}
+
+const resolveServiceName = (id: string): string =>
+  SERVICE_LABELS[id] || id
+
 export default function BookingModal() {
   const { user, profile } = useAuth()
   const { t } = useTranslation()
@@ -102,11 +114,11 @@ export default function BookingModal() {
     // Save guest booking to DB — no user_id, contact info stored in notes_admin
     try {
       await supabase.from('bookings').insert({
-        service_name:  selectedService,
+        service_name:  resolveServiceName(selectedService),
         address,
         address_notes: addressNotes || null,
         status:        'pending',
-        notes_admin:   `Guest booking — Nom: ${name} | Tél: ${phone}`,
+        notes_admin:   `Guest booking — Nom: ${name} | Tél: ${phone} | Service: ${resolveServiceName(selectedService)}`,
       })
     } catch (err) {
       console.error('Failed to save guest booking', err)
@@ -159,7 +171,7 @@ export default function BookingModal() {
       .insert({
         user_id:       user.id,
         car_id:        selectedCarId || null,
-        service_name:  selectedService,
+        service_name:  resolveServiceName(selectedService),
         address,
         address_notes: addressNotes || null,
         status:        'pending',
