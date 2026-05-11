@@ -62,7 +62,7 @@ export default function TrackBooking() {
     setLoading(false)
     if (dbErr) { setError(isFr ? 'Erreur lors de la recherche.' : 'Lookup error.'); return }
     if (!data)  { setError(isFr ? 'Aucune réservation trouvée pour cette référence.' : 'No booking found for this reference.'); return }
-    setBooking(data as BookingData)
+    setBooking(data as unknown as BookingData)
   }
 
   // Auto-lookup when reference comes from URL
