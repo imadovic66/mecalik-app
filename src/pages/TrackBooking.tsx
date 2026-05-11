@@ -45,38 +45,55 @@ export default function TrackBooking() {
   const [error, setError]       = useState<string | null>(null)
   const [searched, setSearched] = useState(false)
 
-  const lookup = async (ref: string) => {
-    const clean = ref.trim().toUpperCase()
-    if (!clean) return
+  const fetchBooking = async (refToSearch: string) => {
     setLoading(true)
     setError(null)
+    setBooking(null)
     setSearched(true)
 
-    const { data, error: dbErr } = await supabase
-      .from('bookings')
-      .select('id, reference, service_name, address, address_notes, status, notes_admin, created_at, scheduled_at, mechanic_id')
-      .eq('reference', clean)
-      .maybeSingle()
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('id, reference, service_name, address, address_notes, status, notes_admin, created_at, scheduled_at, mechanic_id')
+        .eq('reference', refToSearch.toUpperCase().trim())
+        .maybeSingle()
 
-    setLoading(false)
-    if (dbErr) {
-      console.error('TrackBooking error:', dbErr)
-      setError(isFr ? 'Erreur lors de la recherche.' : 'Lookup error.')
-      return
+      console.log('TrackBooking result:', data, error)
+
+      if (error) {
+        console.error('TrackBooking error:', error)
+        setError(isFr ? 'Erreur de connexion. Réessayez.' : 'Connection error. Please try again.')
+        return
+      }
+
+      if (!data) {
+        setError(isFr
+          ? 'Aucune réservation trouvée avec cette référence.'
+          : 'No booking found with this reference.')
+        return
+      }
+
+      setBooking(data as unknown as BookingData)
+    } catch (err) {
+      console.error('TrackBooking exception:', err)
+      setError(isFr ? 'Erreur inattendue.' : 'Unexpected error.')
+    } finally {
+      setLoading(false)
     }
-    if (!data)  { setError(isFr ? 'Aucune réservation trouvée pour cette référence.' : 'No booking found for this reference.'); return }
-    setBooking(data as unknown as BookingData)
   }
 
   // Auto-lookup when reference comes from URL
   useEffect(() => {
-    if (urlRef) lookup(urlRef)
+    if (urlRef && urlRef.length > 3) {
+      setInputRef(urlRef.toUpperCase())
+      fetchBooking(urlRef)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlRef])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    lookup(inputRef)
+    fetchBooking(inputRef)
   }
 
   const waMessage = booking
