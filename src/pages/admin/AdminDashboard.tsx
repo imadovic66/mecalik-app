@@ -24,7 +24,7 @@ import { usePushNotifications } from '../../hooks/usePushNotifications'
 
 type Booking = {
   id: string
-  user_id: string
+  user_id: string | null
   service_name: string
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
   address: string
@@ -86,6 +86,15 @@ type FinanceBooking = {
 }
 
 const STATUS_KEYS = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] as const
+
+function getGuestLabel(booking: { user_id: string | null; notes_admin: string | null; profiles?: { full_name: string | null } | undefined }): string {
+  if (booking.profiles?.full_name) return booking.profiles.full_name
+  if (!booking.user_id && booking.notes_admin) {
+    const m = booking.notes_admin.match(/Nom:\s*([^|]+)/)
+    if (m) return m[1].trim()
+  }
+  return 'Anonyme'
+}
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return '?'
@@ -590,8 +599,13 @@ export default function AdminDashboard() {
                           <div className="text-sm font-medium" style={{ color: 'white' }}>
                             {t('services.' + serviceIdFromName(booking.service_name))}
                           </div>
-                          <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                            {booking.profiles?.full_name || 'Client anonyme'}
+                          <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            {!booking.user_id && (
+                              <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Guest
+                              </span>
+                            )}
+                            {getGuestLabel(booking)}
                           </div>
                         </div>
                       </div>
@@ -684,8 +698,15 @@ export default function AdminDashboard() {
                         {t('services.' + serviceIdFromName(booking.service_name))}
                       </div>
                       {/* Client */}
-                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {booking.profiles?.full_name || 'Anonyme'}
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        {!booking.user_id && (
+                          <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
+                            Guest
+                          </span>
+                        )}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {getGuestLabel(booking)}
+                        </span>
                       </div>
                       {/* Technicien — inline assignment select */}
                       <select

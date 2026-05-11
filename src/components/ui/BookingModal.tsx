@@ -97,8 +97,21 @@ export default function BookingModal() {
     )
   }
 
-  const handleGuestBooking = () => {
+  const handleGuestBooking = async () => {
     if (!name || !phone || !address) { setError('Tous les champs marqués * sont obligatoires'); return }
+    // Save guest booking to DB — no user_id, contact info stored in notes_admin
+    try {
+      await supabase.from('bookings').insert({
+        service_name:  selectedService,
+        address,
+        address_notes: addressNotes || null,
+        status:        'pending',
+        notes_admin:   `Guest booking — Nom: ${name} | Tél: ${phone}`,
+      })
+    } catch (err) {
+      console.error('Failed to save guest booking', err)
+      // Don't block WhatsApp even if DB save fails
+    }
     window.open(`https://wa.me/212777348065?text=${encodeURIComponent(buildWhatsAppMessage())}`, '_blank')
     close()
   }

@@ -5,6 +5,7 @@ ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "clients_select_own" ON bookings;
 DROP POLICY IF EXISTS "clients_insert_own" ON bookings;
+DROP POLICY IF EXISTS "guest_insert_booking" ON bookings;
 DROP POLICY IF EXISTS "fleet_select_company" ON bookings;
 DROP POLICY IF EXISTS "mechanic_select_assigned" ON bookings;
 DROP POLICY IF EXISTS "mechanic_update_assigned" ON bookings;
@@ -17,6 +18,10 @@ CREATE POLICY "clients_select_own" ON bookings
 -- Clients: create their own bookings
 CREATE POLICY "clients_insert_own" ON bookings
   FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Guests: insert bookings without a user account (user_id must be NULL)
+CREATE POLICY "guest_insert_booking" ON bookings
+  FOR INSERT WITH CHECK (user_id IS NULL);
 
 -- Fleet managers: read their company bookings
 CREATE POLICY "fleet_select_company" ON bookings
