@@ -58,6 +58,7 @@
   "status": {
     "pending": "Pending",
     "confirmed": "Confirmed",
+    "on_the_way": "Mechanic on the way",
     "in_progress": "In progress",
     "completed": "Completed",
     "cancelled": "Cancelled",

@@ -33,14 +33,16 @@ type Booking = {
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
   pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
   confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
+  on_the_way:  { label: 'on_the_way',  color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
   in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
   completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88' },
   cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444' },
 }
 
-const NEXT_STATUS: Record<string, { label: string; next: string; color: string }> = {
-  confirmed:   { label: 'Démarrer le trajet',  next: 'in_progress', color: '#43BCC9' },
-  in_progress: { label: 'Terminer le service', next: 'completed',   color: '#00DD88' },
+const NEXT_STATUS: Record<string, { label: string; next: string; color: string; icon: string }> = {
+  confirmed:   { label: "🚗 Je suis en route / I'm on my way",          next: 'on_the_way',  color: '#F0C040' , icon: 'car'   },
+  on_the_way:  { label: "🔧 Je suis arrivé — Démarrer / I've arrived — Start service", next: 'in_progress', color: '#43BCC9', icon: 'wrench' },
+  in_progress: { label: '✅ Intervention terminée / Service completed',  next: 'completed',   color: '#00DD88', icon: 'check'  },
 }
 
 type TabId = 'jobs' | 'history' | 'gains' | 'profil'
@@ -113,7 +115,7 @@ export default function MechanicDashboard() {
     setUpdatingId(null)
   }
 
-  const activeJobs    = bookings.filter(b => ['confirmed', 'in_progress', 'pending'].includes(b.status))
+  const activeJobs    = bookings.filter(b => ['confirmed', 'on_the_way', 'in_progress', 'pending'].includes(b.status))
   const historyJobs   = bookings.filter(b => ['completed', 'cancelled'].includes(b.status))
   const completedJobs = bookings.filter(b => b.status === 'completed')
 
@@ -240,13 +242,13 @@ export default function MechanicDashboard() {
                     return (
                       <div key={job.id} style={{
                         background: '#0F0F0F',
-                        border: job.status === 'in_progress'
+                        border: (job.status === 'in_progress' || job.status === 'on_the_way')
                           ? '1px solid rgba(67,188,201,0.3)'
                           : '1px solid rgba(255,255,255,0.07)',
                         borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s',
                       }}>
                         {/* In-progress top accent */}
-                        {job.status === 'in_progress' && (
+                        {(job.status === 'in_progress' || job.status === 'on_the_way') && (
                           <div style={{ height: '2px', background: 'linear-gradient(90deg, #43BCC9 0%, rgba(67,188,201,0.2) 100%)' }} />
                         )}
 
@@ -258,7 +260,7 @@ export default function MechanicDashboard() {
                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 9px', borderRadius: '5px', background: status.bg, marginBottom: '10px' }}>
                                 <span style={{
                                   width: '5px', height: '5px', borderRadius: '50%', background: status.dot,
-                                  animation: job.status === 'in_progress' ? 'mechPulse 2s infinite' : 'none',
+                                  animation: (job.status === 'in_progress' || job.status === 'on_the_way') ? 'mechPulse 2s infinite' : 'none',
                                 }} />
                                 <span style={{ fontSize: '9px', fontWeight: 600, color: status.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                                   {i18nT(`status.${job.status}`)}
@@ -357,14 +359,13 @@ export default function MechanicDashboard() {
                                   fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em',
                                 }}
                               >
-                                {isUpdating ? i18nT('mechanic.updating') : (
-                                  <>
-                                    {nextAction.next === 'in_progress' && <Navigation size={16} />}
-                                    {nextAction.next === 'completed'   && <CheckCircle size={16} />}
-                                    {nextAction.next === 'in_progress' ? i18nT('mechanic.startRoute') : i18nT('mechanic.endService')}
-                                  </>
-                                )}
+                                {isUpdating ? i18nT('mechanic.updating') : nextAction.label}
                               </button>
+                            )}
+                            {job.status === 'completed' && (
+                              <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                                ✓ {i18nT('status.completed')}
+                              </div>
                             )}
                           </div>
                         )}

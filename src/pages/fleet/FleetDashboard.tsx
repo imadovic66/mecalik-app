@@ -63,6 +63,7 @@ const VEHICLE_STATUS: Record<string, { label: string; color: string; bg: string 
 const BOOKING_STATUS: Record<string, { label: string; color: string; bg: string }> = {
   pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)' },
   confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)' },
+  on_the_way:  { label: 'on_the_way',  color: '#F0C040', bg: 'rgba(240,192,64,0.08)' },
   in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)' },
   completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)'  },
   cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)'  },
@@ -524,7 +525,7 @@ export default function FleetDashboard() {
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '5px' }}>
-                  {(['all', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] as const).map(f => (
+                  {(['all', 'pending', 'confirmed', 'on_the_way', 'in_progress', 'completed', 'cancelled'] as const).map(f => (
                     <button key={f} onClick={() => setBookingFilter(f)} style={{
                       padding: '5px 10px', borderRadius: '5px', border: 'none', cursor: 'pointer', fontSize: '10px', fontWeight: 500,
                       background: bookingFilter === f ? 'rgba(240,192,64,0.12)' : 'rgba(255,255,255,0.04)',

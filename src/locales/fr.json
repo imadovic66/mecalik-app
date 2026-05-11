@@ -58,6 +58,7 @@
   "status": {
     "pending": "En attente",
     "confirmed": "Confirmée",
+    "on_the_way": "Mécanicien en route",
     "in_progress": "En cours",
     "completed": "Terminée",
     "cancelled": "Annulée",

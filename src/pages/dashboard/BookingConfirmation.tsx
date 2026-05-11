@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   ArrowLeft, MapPin, Phone, MessageCircle, Star,
-  Check, Clock, Wrench, Sparkles, AlertCircle, Calendar,
+  Check, Clock, Wrench, Sparkles, AlertCircle, Calendar, Truck,
 } from 'lucide-react'
 import RatingModal from '../../components/ui/RatingModal'
 
@@ -32,12 +32,13 @@ type Booking = {
 const STATUS_STEPS_BASE = [
   { key: 'pending',     labelKey: 'booking.requestReceived',   icon: Check    },
   { key: 'confirmed',   labelKey: 'booking.requestConfirmed',  icon: Calendar },
+  { key: 'on_the_way',  labelKey: 'booking.technicianEnRoute', icon: Truck    },
   { key: 'in_progress', labelKey: 'booking.technicianEnRoute', icon: Wrench   },
   { key: 'completed',   labelKey: 'booking.serviceCompleted',  icon: Sparkles },
 ]
 
 const STATUS_INDEX: Record<string, number> = {
-  pending: 0, confirmed: 1, in_progress: 2, completed: 3, cancelled: -1,
+  pending: 0, confirmed: 1, on_the_way: 2, in_progress: 3, completed: 4, cancelled: -1,
 }
 
 export default function BookingConfirmation() {

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 const SUPABASE_URL = 'https://nggvlwiisvvjczpyccfj.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nZ3Zsd2lpc3Z2amN6cHljY2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTA3ODksImV4cCI6MjA5MDYyNjc4OX0.qjYAD4YVjEMANIVXfvfbj5O6VvkXqagwZIo_6sbrQ6Y'
 
-const STATUS_STEPS = ['pending', 'confirmed', 'in_progress', 'completed']
+const STATUS_STEPS = ['pending', 'confirmed', 'on_the_way', 'in_progress', 'completed']
 
 const SERVICE_PRICES: Record<string, string> = {
   'lavage auto':          'À partir de 150 MAD',
@@ -35,6 +35,7 @@ export default function TrackBooking() {
   const [selectedRating, setSelectedRating] = useState(0)
   const [ratingComment, setRatingComment] = useState('')
   const [submittingRating, setSubmittingRating] = useState(false)
+  const [showAccountPopup, setShowAccountPopup] = useState(false)
   const navigate = useNavigate()
 
   const getPrice = (b: any): string => {
@@ -51,6 +52,15 @@ export default function TrackBooking() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlRef])
+
+  const isGuestBooking = booking?.notes_admin?.includes('Guest booking')
+
+  useEffect(() => {
+    if (booking?.status === 'completed' && isGuestBooking && !booking.rating) {
+      const t = setTimeout(() => setShowAccountPopup(true), 2000)
+      return () => clearTimeout(t)
+    }
+  }, [booking?.status, booking?.rating, isGuestBooking])
 
   const fetchBooking = async (refToSearch: string) => {
     setLoading(true)
@@ -114,11 +124,12 @@ export default function TrackBooking() {
 
   const getStatusInfo = (status: string) => {
     const map: Record<string, any> = {
-      pending:     { icon: '⏳', color: '#F0C040', label: isFr ? 'En attente' : 'Pending',     desc: isFr ? 'Votre demande a été reçue. Confirmation dans 5 minutes.' : 'Request received. Confirmation within 5 minutes.' },
-      confirmed:   { icon: '✅', color: '#43BCC9', label: isFr ? 'Confirmée' : 'Confirmed',    desc: isFr ? 'Votre intervention est confirmée. Technicien assigné.' : 'Service confirmed. Technician assigned.' },
-      in_progress: { icon: '🔧', color: '#43BCC9', label: isFr ? 'En cours' : 'In progress',  desc: isFr ? 'Le technicien est en route ou sur place.' : 'Technician is on the way or on site.' },
-      completed:   { icon: '🎉', color: '#22C55E', label: isFr ? 'Terminée' : 'Completed',    desc: isFr ? 'Intervention terminée. Merci !' : 'Service completed. Thank you!' },
-      cancelled:   { icon: '❌', color: '#FF4444', label: isFr ? 'Annulée' : 'Cancelled',     desc: isFr ? 'Cette intervention a été annulée.' : 'This booking has been cancelled.' },
+      pending:     { icon: '⏳', color: '#F0C040', label: isFr ? 'En attente' : 'Pending',                desc: isFr ? 'Votre demande a été reçue. Confirmation dans 5 minutes.' : 'Request received. Confirmation within 5 minutes.' },
+      confirmed:   { icon: '✅', color: '#43BCC9', label: isFr ? 'Confirmée' : 'Confirmed',               desc: isFr ? 'Votre intervention est confirmée. Technicien assigné.' : 'Service confirmed. Technician assigned.' },
+      on_the_way:  { icon: '🚗', color: '#F0C040', label: isFr ? 'Mécanicien en route' : 'Mechanic on the way', desc: isFr ? 'Le technicien est en route vers votre adresse.' : 'The technician is on the way to your address.' },
+      in_progress: { icon: '🔧', color: '#43BCC9', label: isFr ? 'En cours' : 'In progress',             desc: isFr ? 'Le technicien est sur place.' : 'Technician is on site.' },
+      completed:   { icon: '🎉', color: '#22C55E', label: isFr ? 'Terminée' : 'Completed',               desc: isFr ? 'Intervention terminée. Merci !' : 'Service completed. Thank you!' },
+      cancelled:   { icon: '❌', color: '#FF4444', label: isFr ? 'Annulée' : 'Cancelled',                desc: isFr ? 'Cette intervention a été annulée.' : 'This booking has been cancelled.' },
     }
     return map[status] || map['pending']
   }
@@ -202,7 +213,7 @@ export default function TrackBooking() {
                 ))}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
-                {(isFr ? ['Reçue', 'Confirmée', 'En cours', 'Terminée'] : ['Received', 'Confirmed', 'In progress', 'Done']).map((label, i) => (
+                {(isFr ? ['Reçue', 'Confirmée', 'En route', 'En cours', 'Terminée'] : ['Received', 'Confirmed', 'On the way', 'In progress', 'Done']).map((label, i) => (
                   <span key={i} style={{ fontSize: '10px', color: i <= currentStep ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)' }}>
                     {label}
                   </span>
@@ -359,6 +370,50 @@ export default function TrackBooking() {
           {isFr ? 'Suivre toutes vos interventions ?' : 'Track all your services?'}{' '}
           <a href="/signup" style={{ color: '#43BCC9', textDecoration: 'none' }}>{isFr ? 'Créer un compte' : 'Create an account'}</a>
         </p>
+      )}
+
+      {/* Account creation popup for completed guest bookings */}
+      {showAccountPopup && (
+        <div
+          onClick={() => setShowAccountPopup(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: '480px', background: '#141414', borderRadius: '20px 20px 0 0', padding: '32px 24px 40px', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.15)', margin: '0 auto 24px' }} />
+            <div style={{ fontSize: '24px', marginBottom: '12px', textAlign: 'center' }}>🎉</div>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'white', textAlign: 'center', margin: '0 0 8px' }}>
+              {isFr ? 'Merci pour votre confiance !' : 'Thank you for using MecaLIK!'}
+            </h2>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', textAlign: 'center', margin: '0 0 24px', lineHeight: 1.6 }}>
+              {isFr
+                ? 'Créez un compte gratuit pour suivre toutes vos interventions, accéder à votre historique et recevoir des offres exclusives.'
+                : 'Create a free account to track all your services, access your history, and get exclusive offers.'}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+              {(isFr
+                ? ['📋 Historique de toutes vos interventions', '🔔 Notifications de statut en temps réel', '💰 Offres et réductions exclusives']
+                : ['📋 Full history of all your services', '🔔 Real-time status notifications', '💰 Exclusive offers and discounts']
+              ).map((benefit, i) => (
+                <div key={i} style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>{benefit}</div>
+              ))}
+            </div>
+            <a
+              href="/signup"
+              style={{ display: 'block', width: '100%', padding: '14px', borderRadius: '12px', background: '#43BCC9', color: '#0A0A0A', fontSize: '15px', fontWeight: 700, textAlign: 'center', textDecoration: 'none', fontFamily: 'Outfit, sans-serif', boxSizing: 'border-box' }}
+            >
+              {isFr ? 'Créer mon compte gratuit' : 'Create my free account'}
+            </a>
+            <button
+              onClick={() => setShowAccountPopup(false)}
+              style={{ display: 'block', width: '100%', marginTop: '12px', padding: '12px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: '13px', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+            >
+              {isFr ? 'Plus tard' : 'Maybe later'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

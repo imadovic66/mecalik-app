@@ -28,6 +28,7 @@ type Booking = {
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; eta: string }> = {
   pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Confirmation en cours'  },
   confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Technicien assigné'      },
+  on_the_way:  { label: 'on_the_way',  color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Arrive sous 90 min'      },
   in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Arrive sous 30 min'      },
   completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88', eta: ''                        },
   cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444', eta: ''                        },
@@ -100,7 +101,7 @@ export default function CustomerDashboard() {
     setLoading(false)
   }
 
-  const activeBooking   = bookings.find(b => ['pending', 'confirmed', 'in_progress'].includes(b.status))
+  const activeBooking   = bookings.find(b => ['pending', 'confirmed', 'on_the_way', 'in_progress'].includes(b.status))
   const recentCompleted = bookings.filter(b => b.status === 'completed').slice(0, 3)
   const firstName       = getFirstName(profile?.full_name, user?.email)
 
@@ -217,7 +218,7 @@ export default function CustomerDashboard() {
                     <span style={{
                       width: '7px', height: '7px', borderRadius: '50%',
                       background: st.dot, display: 'inline-block',
-                      animation: activeBooking.status === 'in_progress' ? 'mecaPulse 2s ease-in-out infinite' : 'none',
+                      animation: (activeBooking.status === 'in_progress' || activeBooking.status === 'on_the_way') ? 'mecaPulse 2s ease-in-out infinite' : 'none',
                     }} />
                     <span style={{
                       fontSize: '10px', fontWeight: 700, color: st.color,

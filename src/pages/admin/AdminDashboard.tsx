@@ -26,7 +26,7 @@ type Booking = {
   id: string
   user_id: string | null
   service_name: string
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+  status: 'pending' | 'confirmed' | 'on_the_way' | 'in_progress' | 'completed' | 'cancelled'
   address: string
   preferred_date: string | null
   amount_ttc: number | null
@@ -59,16 +59,18 @@ type Review = {
 }
 
 const STATUS_CONFIG = {
-  pending:     { label: 'En attente',  color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },
-  confirmed:   { label: 'Confirmé',    color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
-  in_progress: { label: 'En cours',    color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
-  completed:   { label: 'Terminé',     color: '#00DD88', bg: 'rgba(0,221,136,0.1)',   border: 'rgba(0,221,136,0.25)'   },
-  cancelled:   { label: 'Annulé',      color: '#FF4444', bg: 'rgba(255,68,68,0.1)',   border: 'rgba(255,68,68,0.25)'   },
+  pending:     { label: 'En attente',        color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },
+  confirmed:   { label: 'Confirmé',          color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
+  on_the_way:  { label: 'Mécanicien en route', color: '#F0C040', bg: 'rgba(240,192,64,0.1)', border: 'rgba(240,192,64,0.25)'  },
+  in_progress: { label: 'En cours',          color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
+  completed:   { label: 'Terminé',           color: '#00DD88', bg: 'rgba(0,221,136,0.1)',   border: 'rgba(0,221,136,0.25)'   },
+  cancelled:   { label: 'Annulé',            color: '#FF4444', bg: 'rgba(255,68,68,0.1)',   border: 'rgba(255,68,68,0.25)'   },
 }
 
 const STATUS_COLORS: Record<string, string> = {
   pending:     '#F0C040',
   confirmed:   '#43BCC9',
+  on_the_way:  '#F0C040',
   in_progress: '#43BCC9',
   completed:   '#00DD88',
   cancelled:   '#FF4444',
@@ -85,7 +87,7 @@ type FinanceBooking = {
   company_id: string | null
 }
 
-const STATUS_KEYS = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'] as const
+const STATUS_KEYS = ['pending', 'confirmed', 'on_the_way', 'in_progress', 'completed', 'cancelled'] as const
 
 function getGuestLabel(booking: { user_id: string | null; notes_admin: string | null; profiles?: { full_name: string | null } | undefined }): string {
   if (booking.profiles?.full_name) return booking.profiles.full_name
@@ -239,8 +241,9 @@ export default function AdminDashboard() {
         // Push notification to customer
         if (booking.user_id) {
           const statusMessages: Record<string, { title: string; body: string }> = {
-            confirmed:   { title: 'Réservation confirmée', body: `Votre ${t('services.' + serviceIdFromName(booking.service_name))} est confirmé. Un technicien est assigné.` },
-            in_progress: { title: 'Technicien en route',   body: `Votre technicien est en route pour ${t('services.' + serviceIdFromName(booking.service_name))}.` },
+            confirmed:   { title: 'Réservation confirmée',   body: `Votre ${t('services.' + serviceIdFromName(booking.service_name))} est confirmé. Un technicien est assigné.` },
+            on_the_way:  { title: 'Mécanicien en route',    body: `Votre technicien est en route pour votre ${t('services.' + serviceIdFromName(booking.service_name))}.` },
+            in_progress: { title: 'Intervention démarrée',  body: `Le technicien est arrivé. Votre ${t('services.' + serviceIdFromName(booking.service_name))} a commencé.` },
             completed:   { title: 'Service terminé',        body: `Votre ${t('services.' + serviceIdFromName(booking.service_name))} est terminé. Donnez votre avis !` },
             cancelled:   { title: 'Réservation annulée',   body: `Votre réservation a été annulée. Contactez-nous pour plus d'informations.` },
           }
@@ -755,6 +758,7 @@ export default function AdminDashboard() {
                       >
                         <option value="pending">{t('status.pending')}</option>
                         <option value="confirmed">{t('status.confirmed')}</option>
+                        <option value="on_the_way">{t('status.on_the_way')}</option>
                         <option value="in_progress">{t('status.in_progress')}</option>
                         <option value="completed">{t('status.completed')}</option>
                         <option value="cancelled">{t('status.cancelled')}</option>

@@ -23,7 +23,7 @@ Notre technicien sera chez vous prochainement. Nous vous contactons pour confirm
 
 MecaLIK — Votre voiture, votre lieu.`,
 
-  in_progress: (d) => `Bonjour ${d.customerName || 'client'} 👋
+  on_the_way: (d) => `Bonjour ${d.customerName || 'client'} 👋
 
 Votre technicien MecaLIK est *en route* 🚗
 
@@ -31,6 +31,13 @@ Votre technicien MecaLIK est *en route* 🚗
 🔖 Réf: ${d.bookingRef}
 
 Il arrive dans les prochaines minutes. Merci de vous assurer que votre véhicule est accessible.`,
+
+  in_progress: (d) => `Bonjour ${d.customerName || 'client'} 👋
+
+Votre technicien MecaLIK est *arrivé* 🔧 — L'intervention commence maintenant.
+
+🔧 Service: ${d.serviceLabel}
+🔖 Réf: ${d.bookingRef}`,
 
   completed: (d) => `Bonjour ${d.customerName || 'client'} 👋
 

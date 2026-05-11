@@ -456,6 +456,7 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { color: string; bg: string }> = {
     completed:   { color: '#00DD88', bg: 'rgba(0,221,136,0.08)'   },
     in_progress: { color: '#43BCC9', bg: 'rgba(67,188,201,0.08)'  },
+    on_the_way:  { color: '#F0C040', bg: 'rgba(240,192,64,0.08)'  },
     confirmed:   { color: '#43BCC9', bg: 'rgba(67,188,201,0.08)'  },
     pending:     { color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.04)' },
     cancelled:   { color: '#FF4444', bg: 'rgba(255,68,68,0.08)'   },

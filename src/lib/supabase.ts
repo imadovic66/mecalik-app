@@ -56,7 +56,7 @@ export type Database = {
           user_id: string
           car_id: string | null
           service: string
-          status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+          status: 'pending' | 'confirmed' | 'on_the_way' | 'in_progress' | 'completed' | 'cancelled'
           address: string
           scheduled_at: string | null
           price: number | null
