@@ -118,7 +118,14 @@
     "chooseOption": "or",
     "continueAsGuest": "Continue as guest (WhatsApp)",
     "createAccountAndBook": "Create account & track my booking",
-    "accountBenefit": "History, real-time tracking, invoices"
+    "accountBenefit": "History, real-time tracking, invoices",
+    "confirmed": "Request sent!",
+    "confirmedDesc": "Your request has been received. We'll confirm by WhatsApp within 5 minutes.",
+    "yourReference": "Your reference",
+    "saveReference": "Save this number to track your booking",
+    "trackBooking": "Track my booking",
+    "wantHistory": "Want a history of all your services?",
+    "createAccountLink": "Create a free account"
   },
   "customer": {
     "greeting": "Hey",

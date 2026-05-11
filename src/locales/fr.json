@@ -118,7 +118,14 @@
     "chooseOption": "ou",
     "continueAsGuest": "Continuer sans compte (WhatsApp)",
     "createAccountAndBook": "Créer un compte et suivre ma réservation",
-    "accountBenefit": "Historique, suivi en temps réel, factures"
+    "accountBenefit": "Historique, suivi en temps réel, factures",
+    "confirmed": "Demande envoyée !",
+    "confirmedDesc": "Votre demande a été reçue. Nous vous confirmons par WhatsApp dans les 5 minutes.",
+    "yourReference": "Votre référence",
+    "saveReference": "Notez ce numéro pour suivre votre réservation",
+    "trackBooking": "Suivre ma réservation",
+    "wantHistory": "Vous voulez un historique de vos interventions ?",
+    "createAccountLink": "Créer un compte gratuit"
   },
   "customer": {
     "greeting": "Salut",

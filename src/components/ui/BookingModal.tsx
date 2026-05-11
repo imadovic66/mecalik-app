@@ -34,6 +34,7 @@ export default function BookingModal() {
 
   const [isOpen, setIsOpen]                 = useState(false)
   const [step, setStep]                     = useState(1)
+  const [bookingReference, setBookingReference] = useState('')
   const [selectedService, setSelectedService] = useState<string>('')
   const [name, setName]                     = useState('')
   const [phone, setPhone]                   = useState('')
@@ -128,7 +129,8 @@ export default function BookingModal() {
       ? `\n\n📋 Référence: ${reference}\n🔗 Suivi: https://mecalik.com/track/${reference}`
       : ''
     window.open(`https://wa.me/212777348065?text=${encodeURIComponent(buildWhatsAppMessage() + trackingLine)}`, '_blank')
-    close()
+    setBookingReference(reference ?? '')
+    setStep(3)
   }
 
   const handleCreateAccount = () => {
@@ -278,11 +280,13 @@ export default function BookingModal() {
               fontSize: '20px', fontWeight: 600, color: 'white',
               letterSpacing: '-0.015em', marginBottom: '2px',
             }}>
-              {step === 1 ? t('booking.chooseService') : t('booking.title')}
+              {step === 1 ? t('booking.chooseService') : step === 3 ? t('booking.confirmed') : t('booking.title')}
             </h2>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-              {step === 1 ? t('booking.chooseService') : t('booking.whatsappResponse')}
-            </div>
+            {step !== 3 && (
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                {step === 1 ? t('booking.chooseService') : t('booking.whatsappResponse')}
+              </div>
+            )}
           </div>
           <button
             onClick={close}
@@ -299,8 +303,8 @@ export default function BookingModal() {
           </button>
         </div>
 
-        {/* Progress bar */}
-        <div style={{
+        {/* Progress bar — hidden on step 3 */}
+        {step < 3 && <div style={{
           padding: '12px 20px',
           display: 'flex', alignItems: 'center', gap: '6px',
           flexShrink: 0,
@@ -316,7 +320,7 @@ export default function BookingModal() {
             background: step === 2 ? '#43BCC9' : 'rgba(255,255,255,0.1)',
             borderRadius: '2px', transition: 'all 0.3s',
           }} />
-        </div>
+        </div>}
 
         {/* Scrollable body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 20px' }}>
@@ -478,6 +482,64 @@ export default function BookingModal() {
                   borderRadius: '12px',
                 }}
               />
+            </div>
+          )}
+
+          {/* ── STEP 3 — confirmation ── */}
+          {step === 3 && (
+            <div style={{ padding: '8px 0 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+
+              {/* Success icon */}
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(67,188,201,0.12)', border: '2px solid #43BCC9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+                ✓
+              </div>
+
+              <div>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.6 }}>
+                  {t('booking.confirmedDesc')}
+                </p>
+              </div>
+
+              {/* Reference number */}
+              <div style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                  {t('booking.yourReference')}
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#43BCC9', letterSpacing: '0.05em', fontFamily: 'Space Grotesk, monospace' }}>
+                  {bookingReference || '—'}
+                </div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginTop: '4px' }}>
+                  {t('booking.saveReference')}
+                </div>
+              </div>
+
+              {/* Track booking link */}
+              {bookingReference && (
+                <a
+                  href={`/track/${bookingReference}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ width: '100%', padding: '13px', borderRadius: '10px', background: '#43BCC9', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}
+                >
+                  🔍 {t('booking.trackBooking')}
+                </a>
+              )}
+
+              {/* Create account nudge */}
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', margin: 0 }}>
+                {t('booking.wantHistory')}{' '}
+                <a href="/signup" style={{ color: '#43BCC9', textDecoration: 'none' }}>
+                  {t('booking.createAccountLink')}
+                </a>
+              </p>
+
+              {/* Close button */}
+              <button
+                onClick={close}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '13px', cursor: 'pointer', marginTop: '4px', fontFamily: 'inherit' }}
+              >
+                {t('common.close')}
+              </button>
             </div>
           )}
 
