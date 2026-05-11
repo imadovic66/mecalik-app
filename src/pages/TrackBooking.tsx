@@ -26,7 +26,6 @@ type BookingData = {
   created_at: string
   scheduled_at: string | null
   mechanic_id: string | null
-  profiles?: { full_name: string | null } | null
 }
 
 function parseGuestName(notes_admin: string | null): string | null {
@@ -55,12 +54,16 @@ export default function TrackBooking() {
 
     const { data, error: dbErr } = await supabase
       .from('bookings')
-      .select('id, reference, service_name, address, address_notes, status, notes_admin, created_at, scheduled_at, mechanic_id, profiles(full_name)')
+      .select('id, reference, service_name, address, address_notes, status, notes_admin, created_at, scheduled_at, mechanic_id')
       .eq('reference', clean)
       .maybeSingle()
 
     setLoading(false)
-    if (dbErr) { setError(isFr ? 'Erreur lors de la recherche.' : 'Lookup error.'); return }
+    if (dbErr) {
+      console.error('TrackBooking error:', dbErr)
+      setError(isFr ? 'Erreur lors de la recherche.' : 'Lookup error.')
+      return
+    }
     if (!data)  { setError(isFr ? 'Aucune réservation trouvée pour cette référence.' : 'No booking found for this reference.'); return }
     setBooking(data as unknown as BookingData)
   }
@@ -272,33 +275,6 @@ export default function TrackBooking() {
                 />
               )}
 
-              {/* Mechanic name if visible */}
-              {booking.profiles?.full_name && (
-                <div style={{
-                  padding: '12px 14px',
-                  background: 'rgba(67,188,201,0.06)',
-                  border: '1px solid rgba(67,188,201,0.15)',
-                  borderRadius: '12px',
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                }}>
-                  <div style={{
-                    width: '34px', height: '34px', borderRadius: '50%',
-                    background: 'rgba(67,188,201,0.15)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    <Wrench size={14} color="#43BCC9" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {isFr ? 'Votre technicien' : 'Your technician'}
-                    </div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>
-                      {booking.profiles.full_name}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* WhatsApp CTA */}
