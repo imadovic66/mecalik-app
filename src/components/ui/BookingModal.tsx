@@ -111,20 +111,23 @@ export default function BookingModal() {
 
   const handleGuestBooking = async () => {
     if (!name || !phone || !address) { setError('Tous les champs marqués * sont obligatoires'); return }
-    // Save guest booking to DB — no user_id, contact info stored in notes_admin
+    let reference: string | null = null
     try {
-      await supabase.from('bookings').insert({
+      const { data } = await supabase.from('bookings').insert({
         service_name:  resolveServiceName(selectedService),
         address,
         address_notes: addressNotes || null,
         status:        'pending',
         notes_admin:   `Guest booking — Nom: ${name} | Tél: ${phone} | Service: ${resolveServiceName(selectedService)}`,
-      })
+      }).select('reference').single()
+      reference = (data as { reference: string } | null)?.reference ?? null
     } catch (err) {
       console.error('Failed to save guest booking', err)
-      // Don't block WhatsApp even if DB save fails
     }
-    window.open(`https://wa.me/212777348065?text=${encodeURIComponent(buildWhatsAppMessage())}`, '_blank')
+    const trackingLine = reference
+      ? `\n\n📋 Référence: ${reference}\n🔗 Suivi: https://mecalik.com/track/${reference}`
+      : ''
+    window.open(`https://wa.me/212777348065?text=${encodeURIComponent(buildWhatsAppMessage() + trackingLine)}`, '_blank')
     close()
   }
 

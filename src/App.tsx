@@ -22,6 +22,7 @@ import MyProfile from './pages/dashboard/MyProfile'
 import MechanicDashboard from './pages/mechanic/MechanicDashboard'
 import Tarifs from './pages/Tarifs'
 import Flottes from './pages/Flottes'
+import TrackBooking from './pages/TrackBooking'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
 
@@ -70,6 +71,8 @@ function AppShell() {
           <Route path="/fleet-dashboard" element={
             <ProtectedRoute><FleetDashboard /></ProtectedRoute>
           } />
+          <Route path="/track/:reference?" element={<TrackBooking />} />
+          <Route path="/suivi/:reference?" element={<TrackBooking />} />
           <Route path="/mechanic" element={<MechanicDashboard />} />
           <Route path="/admin" element={
             <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>
