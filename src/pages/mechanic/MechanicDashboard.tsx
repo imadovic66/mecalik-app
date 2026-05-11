@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   MapPin, MessageCircle, Navigation,
-  CheckCircle, Wrench, Star,
+  Wrench, Star,
   History, Wallet, User, Calendar,
 } from 'lucide-react'
 
