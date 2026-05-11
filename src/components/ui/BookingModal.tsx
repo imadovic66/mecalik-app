@@ -519,6 +519,13 @@ export default function BookingModal() {
                 </a>
               </p>
 
+              {/* Google review nudge */}
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', textAlign: 'center', margin: '4px 0 0' }}>
+                {isFr
+                  ? 'Après votre intervention, laissez-nous un avis Google ⭐'
+                  : 'After your service, leave us a Google review ⭐'}
+              </p>
+
               {/* Close button */}
               <button
                 onClick={close}

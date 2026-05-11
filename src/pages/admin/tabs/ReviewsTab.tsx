@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Star } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { serviceIdFromName } from '../../../lib/serviceUtils'
+import { GOOGLE_REVIEW_URL } from '../../../lib/constants'
 
 type RatedBooking = {
   id: string
@@ -26,6 +27,7 @@ function getGuestName(notes_admin: string | null): string {
 
 export default function ReviewsTab() {
   const { t, i18n } = useTranslation()
+  const isFr = i18n.language === 'fr'
   const [reviews, setReviews] = useState<RatedBooking[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -77,6 +79,34 @@ export default function ReviewsTab() {
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>{s.note}</div>
           </div>
         ))}
+      </div>
+
+      {/* Google Reviews banner */}
+      <div style={{
+        padding: '14px 20px', borderRadius: '10px', marginBottom: '24px',
+        background: 'rgba(66,133,244,0.08)', border: '1px solid rgba(66,133,244,0.2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
+      }}>
+        <div>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', marginBottom: '2px' }}>
+            📍 Google Reviews
+          </div>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+            {isFr ? 'Partagez ce lien avec vos clients pour obtenir des avis Google' : 'Share this link with customers to get Google reviews'}
+          </div>
+        </div>
+        <a
+          href={GOOGLE_REVIEW_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: '8px 16px', borderRadius: '8px', background: '#4285F4',
+            color: 'white', fontSize: '12px', fontWeight: 700,
+            textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
+          }}
+        >
+          {isFr ? 'Voir sur Google' : 'View on Google'}
+        </a>
       </div>
 
       {/* Filter pills */}

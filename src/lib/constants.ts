@@ -3,6 +3,8 @@
 export const WHATSAPP_NUMBER = '212777348065'
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`
 
+export const GOOGLE_REVIEW_URL = 'https://g.page/r/CactTpE5lu6jEAE/review'
+
 /** Public-safe Supabase credentials (anon key is safe to expose in client-side code) */
 export const SUPABASE_URL = 'https://nggvlwiisvvjczpyccfj.supabase.co'
 export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nZ3Zsd2lpc3Z2amN6cHljY2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTA3ODksImV4cCI6MjA5MDYyNjc4OX0.qjYAD4YVjEMANIVXfvfbj5O6VvkXqagwZIo_6sbrQ6Y'
