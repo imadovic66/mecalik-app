@@ -38,6 +38,7 @@ export default function TrackBooking() {
   const navigate = useNavigate()
 
   const getPrice = (b: any): string => {
+    if (b.status === 'pending') return isFr ? 'En cours de confirmation' : 'Pending confirmation'
     if (b.amount_ttc) return `${b.amount_ttc} MAD`
     const key = (b.service_name || '').toLowerCase().trim()
     return SERVICE_PRICES[key] || (isFr ? 'Prix à confirmer' : 'Price to confirm')
@@ -102,7 +103,8 @@ export default function TrackBooking() {
           body: JSON.stringify({ rating: selectedRating, rating_comment: ratingComment || null }),
         }
       )
-      fetchBooking(booking.reference)
+      await new Promise(r => setTimeout(r, 500))
+      await fetchBooking(booking.reference)
     } catch (e) {
       console.error('Rating error:', e)
     } finally {
@@ -222,8 +224,8 @@ export default function TrackBooking() {
               <span style={{ fontSize: '13px', color: 'white', fontWeight: 600 }}>{booking.service_name || (isFr ? 'À confirmer' : 'TBC')}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{isFr ? 'Prix estimé' : 'Est. price'}</span>
-              <span style={{ fontSize: '13px', color: '#43BCC9', fontWeight: 600 }}>{getPrice(booking)}</span>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{isFr ? 'Prix' : 'Price'}</span>
+              <span style={{ fontSize: '13px', color: booking.status === 'pending' ? 'rgba(255,255,255,0.4)' : '#43BCC9', fontWeight: 600 }}>{getPrice(booking)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{isFr ? 'Adresse' : 'Address'}</span>
