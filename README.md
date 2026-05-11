@@ -1,73 +1,84 @@
-# React + TypeScript + Vite
+# MecaLIK
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+On-demand mobile mechanic platform for Casablanca. Book a certified technician to come to you — oil changes, battery replacements, diagnostics, tyre services, car washes, and 24/7 emergency roadside assistance.
 
-Currently, two official plugins are available:
+## Tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Layer        | Technology                              |
+|--------------|-----------------------------------------|
+| Framework    | React 18 + TypeScript + Vite            |
+| Styling      | Tailwind CSS + inline styles            |
+| Routing      | React Router v6                         |
+| Backend      | Supabase (Postgres + Auth + Realtime)   |
+| i18n         | react-i18next (fr / en)                 |
+| Charts       | Recharts                                |
+| Icons        | Lucide React                            |
+| Push notifs  | Web Push API via `/api/notify`          |
+| Deployment   | Vercel                                  |
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # production build
+npx tsc --noEmit   # type check
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Environment variables (`.env.local`):
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
+
+## Project structure
+
+```
+src/
+├── components/
+│   ├── home/              # Landing page sections (Hero, Stats, Services, …)
+│   └── ui/                # Shared UI components (LanguageSwitcher, …)
+├── data/
+│   └── pricing.ts         # Service catalogue with zone-based pricing
+├── hooks/                 # useAuth, usePushNotifications, …
+├── lib/
+│   ├── constants.ts       # App-wide magic values (WhatsApp URL, status colours, …)
+│   ├── supabase.ts        # Supabase client
+│   ├── types.ts           # Shared TypeScript interfaces (Booking, Profile, Car)
+│   └── utils.ts           # Pure helpers (formatDate, buildWhatsAppMessage, …)
+├── pages/
+│   ├── admin/
+│   │   ├── AdminDashboard.tsx   # Thin orchestrator (sidebar + modal + tab routing)
+│   │   ├── adminShared.tsx      # Types, STATUS_CONFIG, StatusPill shared by tabs
+│   │   └── tabs/                # One file per admin tab
+│   │       ├── OverviewTab.tsx
+│   │       ├── ReservationsTab.tsx
+│   │       ├── ClientsTab.tsx
+│   │       ├── FinancesTab.tsx
+│   │       ├── ReviewsTab.tsx
+│   │       └── NotificationsTab.tsx
+│   └── Home.tsx           # Thin orchestrator for landing page sections
+└── utils/
+    └── whatsappNotify.ts  # WhatsApp deep-link message builder
+```
+
+## Booking status flow
+
+```
+pending → confirmed → on_the_way → in_progress → completed
+                 └─────────────────────────────→ cancelled
+```
+
+Status transitions from the admin dashboard automatically send a WhatsApp notification and a push notification to the customer.
+
+## Services
+
+| Service     | Typical duration |
+|-------------|-----------------|
+| Lavage      | ~45 min         |
+| Vidange     | ~60 min         |
+| Batterie    | ~30 min         |
+| Pneus       | ~45 min         |
+| Diagnostic  | ~30 min         |
+| Urgence     | ASAP            |
