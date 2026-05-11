@@ -37,30 +37,48 @@ VITE_SUPABASE_ANON_KEY=...
 ```
 src/
 ├── components/
-│   ├── home/              # Landing page sections (Hero, Stats, Services, …)
-│   └── ui/                # Shared UI components (LanguageSwitcher, …)
-├── data/
-│   └── pricing.ts         # Service catalogue with zone-based pricing
-├── hooks/                 # useAuth, usePushNotifications, …
+│   ├── home/                    # Landing page sections
+│   │   ├── HeroSection.tsx      # Hero headline, CTA, mechanic photo
+│   │   ├── ServicesSection.tsx  # 6 service cards grid
+│   │   ├── HowItWorksSection.tsx
+│   │   ├── ReviewsSection.tsx   # Customer reviews + live activity
+│   │   └── CtaSection.tsx       # Bottom WhatsApp CTA
+│   └── ui/
+│       ├── BookingModal.tsx     # 3-step booking flow (service → form → confirm)
+│       ├── Navbar.tsx
+│       └── WhatsAppFAB.tsx      # Floating WhatsApp button
+├── hooks/
+│   └── usePushNotifications.ts
 ├── lib/
-│   ├── constants.ts       # App-wide magic values (WhatsApp URL, status colours, …)
-│   ├── supabase.ts        # Supabase client
-│   ├── types.ts           # Shared TypeScript interfaces (Booking, Profile, Car)
-│   └── utils.ts           # Pure helpers (formatDate, buildWhatsAppMessage, …)
-├── pages/
-│   ├── admin/
-│   │   ├── AdminDashboard.tsx   # Thin orchestrator (sidebar + modal + tab routing)
-│   │   ├── adminShared.tsx      # Types, STATUS_CONFIG, StatusPill shared by tabs
-│   │   └── tabs/                # One file per admin tab
-│   │       ├── OverviewTab.tsx
-│   │       ├── ReservationsTab.tsx
-│   │       ├── ClientsTab.tsx
-│   │       ├── FinancesTab.tsx
-│   │       ├── ReviewsTab.tsx
-│   │       └── NotificationsTab.tsx
-│   └── Home.tsx           # Thin orchestrator for landing page sections
-└── utils/
-    └── whatsappNotify.ts  # WhatsApp deep-link message builder
+│   ├── constants.ts   # WHATSAPP_NUMBER, BOOKING_STATUSES, STATUS_COLORS, SERVICE_PRICES
+│   ├── sanitize.ts    # Input sanitization (strips HTML, limits length)
+│   ├── supabase.ts    # Supabase client (anon key from env vars)
+│   ├── types.ts       # TypeScript interfaces: Booking, Profile, Car, BookingFormData
+│   └── utils.ts       # getStatusColor, formatDate, generateReference, buildWhatsAppMessage
+├── locales/
+│   ├── fr.json        # French translations
+│   └── en.json        # English translations
+└── pages/
+    ├── admin/
+    │   ├── AdminDashboard.tsx   # Shell: auth check, data fetch, tab nav
+    │   └── tabs/
+    │       ├── OverviewTab.tsx      # KPIs, revenue chart, recent activity
+    │       ├── ReservationsTab.tsx  # Bookings table, status/mechanic updates
+    │       ├── ClientsTab.tsx       # Profiles list
+    │       ├── FinancesTab.tsx      # Financial dashboard, B2B/B2C, transactions
+    │       ├── ReviewsTab.tsx
+    │       └── NotificationsTab.tsx
+    ├── auth/
+    │   ├── Login.tsx
+    │   └── Signup.tsx
+    ├── dashboard/
+    │   └── CustomerDashboard.tsx    # Client portal (bookings, cars, profile)
+    ├── fleet/
+    │   └── FleetDashboard.tsx       # Fleet manager portal
+    ├── mechanic/
+    │   └── MechanicDashboard.tsx    # Mechanic job board + status actions
+    ├── Home.tsx                     # Landing page orchestrator
+    └── TrackBooking.tsx             # Guest booking tracker (no login required)
 ```
 
 ## Booking status flow
