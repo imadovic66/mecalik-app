@@ -29,7 +29,8 @@ const resolveServiceName = (id: string): string =>
 
 export default function BookingModal() {
   const { user, profile } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isFr = i18n.language === 'fr'
   const navigate = useNavigate()
 
   const [isOpen, setIsOpen]                 = useState(false)
@@ -92,22 +93,27 @@ export default function BookingModal() {
     setError('')
   }
 
-  const buildWhatsAppMessage = () => {
+  const openWhatsApp = (message: string) => {
+    const url = `https://wa.me/212777348065?text=${encodeURIComponent(message)}`
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      window.location.href = url
+    } else {
+      window.open(url, '_blank')
+    }
+  }
+
+  const buildWhatsAppMessage = (bookingRef: string) => {
     const selectedCar = cars.find(c => c.id === selectedCarId)
     const carInfo = selectedCar
       ? `${selectedCar.brand} ${selectedCar.model}${selectedCar.year ? ' ' + selectedCar.year : ''}${selectedCar.license_plate ? ' · ' + selectedCar.license_plate : ''}`
       : ''
-    return (
-      `Bonjour MecaLIK,\n\n` +
-      `Je souhaite réserver:\n` +
-      `Service: ${selectedService}\n` +
-      (carInfo ? `Véhicule: ${carInfo}\n` : '') +
-      `Adresse: ${address}\n` +
-      (addressNotes ? `Précisions: ${addressNotes}\n` : '') +
-      `Nom: ${name}\n` +
-      `Téléphone: ${phone}\n\n` +
-      `Merci !`
-    )
+    const trackingLine = bookingRef
+      ? `\n\n📋 *${isFr ? 'Référence' : 'Reference'} :* ${bookingRef}\n🔗 *${isFr ? 'Suivi' : 'Track'} :* https://mecalik.com/track/${bookingRef}`
+      : ''
+    if (isFr) {
+      return `Bonjour MecaLIK ! 👋\n\nJe souhaite réserver une intervention :\n\n🔧 *Service :* ${resolveServiceName(selectedService)}\n📍 *Adresse :* ${address}\n👤 *Nom :* ${name}\n📞 *Téléphone :* ${phone}${addressNotes ? `\n📝 *Notes :* ${addressNotes}` : ''}${carInfo ? `\n🚗 *Véhicule :* ${carInfo}` : ''}${trackingLine}\n\nMerci !`
+    }
+    return `Hello MecaLIK! 👋\n\nI'd like to book a service:\n\n🔧 *Service:* ${resolveServiceName(selectedService)}\n📍 *Address:* ${address}\n👤 *Name:* ${name}\n📞 *Phone:* ${phone}${addressNotes ? `\n📝 *Notes:* ${addressNotes}` : ''}${carInfo ? `\n🚗 *Vehicle:* ${carInfo}` : ''}${trackingLine}\n\nThank you!`
   }
 
   const handleGuestBooking = async () => {
@@ -125,17 +131,14 @@ export default function BookingModal() {
     } catch (err) {
       console.error('Failed to save guest booking', err)
     }
-    const trackingLine = reference
-      ? `\n\n📋 Référence: ${reference}\n🔗 Suivi: https://mecalik.com/track/${reference}`
-      : ''
-    window.open(`https://wa.me/212777348065?text=${encodeURIComponent(buildWhatsAppMessage() + trackingLine)}`, '_blank')
+    openWhatsApp(buildWhatsAppMessage(reference ?? ''))
     setBookingReference(reference ?? '')
     setStep(3)
   }
 
   const handleCreateAccount = () => {
     if (!name || !phone || !address) { setError('Tous les champs marqués * sont obligatoires'); return }
-    window.open(`https://wa.me/212777348065?text=${encodeURIComponent(buildWhatsAppMessage())}`, '_blank')
+    openWhatsApp(buildWhatsAppMessage(''))
     sessionStorage.setItem('pendingBooking', JSON.stringify({
       service: selectedService, name, phone, address, notes: addressNotes || '',
     }))
@@ -190,19 +193,7 @@ export default function BookingModal() {
       return
     }
 
-    const message = encodeURIComponent(
-      `Bonjour MecaLIK,\n\n` +
-      `Je souhaite réserver:\n` +
-      `Service: ${selectedService}\n` +
-      (carInfo ? `Véhicule: ${carInfo}\n` : '') +
-      `Adresse: ${address}\n` +
-      (addressNotes ? `Précisions: ${addressNotes}\n` : '') +
-      `Nom: ${name}\n` +
-      `Téléphone: ${phone}\n\n` +
-      `Référence: ${(booking as { reference?: string } | null)?.reference ?? ''}\n\n` +
-      `Merci !`
-    )
-    window.open(`https://wa.me/212777348065?text=${message}`, '_blank')
+    openWhatsApp(buildWhatsAppMessage((booking as { reference?: string } | null)?.reference ?? ''))
 
     setSubmitting(false)
     close()

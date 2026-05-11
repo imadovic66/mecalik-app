@@ -7,6 +7,23 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const STATUS_STEPS = ['pending', 'confirmed', 'in_progress', 'completed']
 
+const SERVICE_PRICES: Record<string, string> = {
+  'lavage auto':          'À partir de 150 MAD',
+  'car wash':             'From 150 MAD',
+  'vidange':              'À partir de 250 MAD',
+  'vidange & filtres':    'À partir de 250 MAD',
+  'oil change & filters': 'From 250 MAD',
+  'batterie':             'À partir de 210 MAD',
+  'battery':              'From 210 MAD',
+  'pneus':                'À partir de 200 MAD',
+  'tyres':                'From 200 MAD',
+  'diagnostic':           'À partir de 220 MAD',
+  'diagnostic simple':    'À partir de 220 MAD',
+  'urgence':              'À partir de 239 MAD',
+  'urgence 24/7':         'À partir de 239 MAD',
+  'emergency 24/7':       'From 239 MAD',
+}
+
 export default function TrackBooking() {
   const { reference: urlRef } = useParams<{ reference?: string }>()
   const { i18n } = useTranslation()
@@ -15,7 +32,16 @@ export default function TrackBooking() {
   const [booking, setBooking] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [selectedRating, setSelectedRating] = useState(0)
+  const [ratingComment, setRatingComment] = useState('')
+  const [submittingRating, setSubmittingRating] = useState(false)
   const navigate = useNavigate()
+
+  const getPrice = (b: any): string => {
+    if (b.amount_ttc) return `${b.amount_ttc} MAD`
+    const key = (b.service_name || '').toLowerCase().trim()
+    return SERVICE_PRICES[key] || (isFr ? 'Prix à confirmer' : 'Price to confirm')
+  }
 
   useEffect(() => {
     if (urlRef && urlRef.length > 3) {
@@ -31,7 +57,7 @@ export default function TrackBooking() {
     setBooking(null)
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/bookings?reference=eq.${encodeURIComponent(refToSearch.trim())}&select=reference,service_name,status,address,technician_name,technician_phone,created_at,notes_admin`,
+        `${SUPABASE_URL}/rest/v1/bookings?reference=eq.${encodeURIComponent(refToSearch.trim())}&select=reference,service_name,status,address,technician_name,technician_phone,created_at,notes_admin,amount_ttc,rating,rating_comment`,
         {
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -58,6 +84,30 @@ export default function TrackBooking() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (ref.trim()) fetchBooking(ref.trim())
+  }
+
+  const handleSubmitRating = async () => {
+    if (!selectedRating || !booking) return
+    setSubmittingRating(true)
+    try {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/bookings?reference=eq.${booking.reference}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ rating: selectedRating, rating_comment: ratingComment || null }),
+        }
+      )
+      fetchBooking(booking.reference)
+    } catch (e) {
+      console.error('Rating error:', e)
+    } finally {
+      setSubmittingRating(false)
+    }
   }
 
   const getStatusInfo = (status: string) => {
@@ -172,6 +222,10 @@ export default function TrackBooking() {
               <span style={{ fontSize: '13px', color: 'white', fontWeight: 600 }}>{booking.service_name || (isFr ? 'À confirmer' : 'TBC')}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{isFr ? 'Prix estimé' : 'Est. price'}</span>
+              <span style={{ fontSize: '13px', color: '#43BCC9', fontWeight: 600 }}>{getPrice(booking)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{isFr ? 'Adresse' : 'Address'}</span>
               <span style={{ fontSize: '13px', color: 'white', fontWeight: 600, textAlign: 'right', maxWidth: '220px' }}>{booking.address}</span>
             </div>
@@ -204,6 +258,96 @@ export default function TrackBooking() {
               💬 {isFr ? 'Contacter sur WhatsApp' : 'Contact on WhatsApp'}
             </a>
           </div>
+        </div>
+      )}
+
+      {/* Completed recap + rating */}
+      {booking?.status === 'completed' && (
+        <div style={{ width: '100%', maxWidth: '440px', marginTop: '16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflow: 'hidden' }}>
+
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'white', marginBottom: '4px' }}>
+              🎉 {isFr ? 'Intervention terminée' : 'Service completed'}
+            </div>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+              {isFr ? 'Merci de votre confiance !' : 'Thank you for choosing MecaLIK!'}
+            </div>
+          </div>
+
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Service</span>
+              <span style={{ fontSize: '13px', color: 'white', fontWeight: 600 }}>{booking.service_name}</span>
+            </div>
+            {booking.amount_ttc && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>{isFr ? 'Montant payé' : 'Amount paid'}</span>
+                <span style={{ fontSize: '13px', color: '#43BCC9', fontWeight: 700 }}>{booking.amount_ttc} MAD</span>
+              </div>
+            )}
+            {booking.technician_name && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Technicien</span>
+                <span style={{ fontSize: '13px', color: 'white', fontWeight: 600 }}>{booking.technician_name}</span>
+              </div>
+            )}
+          </div>
+
+          {!booking.rating ? (
+            <div style={{ padding: '20px 24px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'white', marginBottom: '4px' }}>
+                {isFr ? 'Évaluez votre expérience' : 'Rate your experience'}
+              </div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '16px' }}>
+                {isFr ? 'Votre avis nous aide à améliorer notre service' : 'Your feedback helps us improve'}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '16px' }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    onClick={() => setSelectedRating(star)}
+                    style={{
+                      fontSize: '32px', background: 'none', border: 'none', cursor: 'pointer',
+                      opacity: star <= selectedRating ? 1 : 0.3,
+                      transition: 'opacity 0.15s, transform 0.15s',
+                      transform: star <= selectedRating ? 'scale(1.1)' : 'scale(1)',
+                      padding: '4px',
+                    }}
+                  >⭐</button>
+                ))}
+              </div>
+              {selectedRating > 0 && (
+                <textarea
+                  value={ratingComment}
+                  onChange={e => setRatingComment(e.target.value)}
+                  placeholder={isFr ? 'Un commentaire ? (optionnel)' : 'Any comments? (optional)'}
+                  rows={3}
+                  style={{ width: '100%', padding: '12px', borderRadius: '10px', marginBottom: '12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'white', fontSize: '13px', fontFamily: 'Outfit, sans-serif', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
+                />
+              )}
+              {selectedRating > 0 && (
+                <button
+                  onClick={handleSubmitRating}
+                  disabled={submittingRating}
+                  style={{ width: '100%', padding: '13px', borderRadius: '10px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                >
+                  {submittingRating ? '...' : (isFr ? 'Envoyer mon avis' : 'Submit review')}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div style={{ padding: '20px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>{'⭐'.repeat(booking.rating)}</div>
+              <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
+                {isFr ? 'Merci pour votre avis !' : 'Thank you for your review!'}
+              </div>
+              {booking.rating_comment && (
+                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginTop: '8px', fontStyle: 'italic' }}>
+                  "{booking.rating_comment}"
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
