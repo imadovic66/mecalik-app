@@ -71,7 +71,7 @@ export default function Signup() {
             })
             sessionStorage.removeItem('pendingBooking')
           } catch (e) {
-            console.error('Failed to save pending booking', e)
+            if (import.meta.env.DEV) console.error('Failed to save pending booking', e)
           }
         }
         navigate('/dashboard')

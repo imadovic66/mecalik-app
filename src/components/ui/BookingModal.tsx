@@ -129,7 +129,7 @@ export default function BookingModal() {
       }).select('reference').single()
       reference = (data as { reference: string } | null)?.reference ?? null
     } catch (err) {
-      console.error('Failed to save guest booking', err)
+      if (import.meta.env.DEV) console.error('Failed to save guest booking', err)
     }
     openWhatsApp(buildWhatsAppMessage(reference ?? ''))
     setBookingReference(reference ?? '')

@@ -85,7 +85,7 @@ export default function TrackBooking() {
       }
       setBooking(data[0])
     } catch (err: any) {
-      console.error('TrackBooking error:', err)
+      if (import.meta.env.DEV) console.error('TrackBooking error:', err)
       setError(isFr ? 'Erreur de connexion. Réessayez.' : 'Connection error. Please try again.')
     } finally {
       setLoading(false)
@@ -116,7 +116,7 @@ export default function TrackBooking() {
       await new Promise(r => setTimeout(r, 500))
       await fetchBooking(booking.reference)
     } catch (e) {
-      console.error('Rating error:', e)
+      if (import.meta.env.DEV) console.error('Rating error:', e)
     } finally {
       setSubmittingRating(false)
     }
