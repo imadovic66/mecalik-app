@@ -114,7 +114,11 @@
     "requestedOn": "Requested on",
     "arriving": "Arriving in 30 min",
     "notFound": "Booking not found",
-    "notFoundSub": "This booking does not exist or has been deleted."
+    "notFoundSub": "This booking does not exist or has been deleted.",
+    "chooseOption": "or",
+    "continueAsGuest": "Continue as guest (WhatsApp)",
+    "createAccountAndBook": "Create account & track my booking",
+    "accountBenefit": "History, real-time tracking, invoices"
   },
   "customer": {
     "greeting": "Hey",

@@ -114,7 +114,11 @@
     "requestedOn": "Demandé le",
     "arriving": "Arrive sous 30 min",
     "notFound": "Réservation introuvable",
-    "notFoundSub": "Cette réservation n'existe pas ou a été supprimée."
+    "notFoundSub": "Cette réservation n'existe pas ou a été supprimée.",
+    "chooseOption": "ou",
+    "continueAsGuest": "Continuer sans compte (WhatsApp)",
+    "createAccountAndBook": "Créer un compte et suivre ma réservation",
+    "accountBenefit": "Historique, suivi en temps réel, factures"
   },
   "customer": {
     "greeting": "Salut",

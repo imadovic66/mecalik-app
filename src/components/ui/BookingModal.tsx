@@ -79,6 +79,40 @@ export default function BookingModal() {
     setError('')
   }
 
+  const buildWhatsAppMessage = () => {
+    const selectedCar = cars.find(c => c.id === selectedCarId)
+    const carInfo = selectedCar
+      ? `${selectedCar.brand} ${selectedCar.model}${selectedCar.year ? ' ' + selectedCar.year : ''}${selectedCar.license_plate ? ' · ' + selectedCar.license_plate : ''}`
+      : ''
+    return (
+      `Bonjour MecaLIK,\n\n` +
+      `Je souhaite réserver:\n` +
+      `Service: ${selectedService}\n` +
+      (carInfo ? `Véhicule: ${carInfo}\n` : '') +
+      `Adresse: ${address}\n` +
+      (addressNotes ? `Précisions: ${addressNotes}\n` : '') +
+      `Nom: ${name}\n` +
+      `Téléphone: ${phone}\n\n` +
+      `Merci !`
+    )
+  }
+
+  const handleGuestBooking = () => {
+    if (!name || !phone || !address) { setError('Tous les champs marqués * sont obligatoires'); return }
+    window.open(`https://wa.me/212777348065?text=${encodeURIComponent(buildWhatsAppMessage())}`, '_blank')
+    close()
+  }
+
+  const handleCreateAccount = () => {
+    if (!name || !phone || !address) { setError('Tous les champs marqués * sont obligatoires'); return }
+    window.open(`https://wa.me/212777348065?text=${encodeURIComponent(buildWhatsAppMessage())}`, '_blank')
+    sessionStorage.setItem('pendingBooking', JSON.stringify({
+      service: selectedService, name, phone, address, notes: addressNotes || '',
+    }))
+    close()
+    window.location.href = '/signup?from=booking'
+  }
+
   const goToStep2 = () => {
     if (!selectedService) {
       setError('Veuillez choisir un service')
@@ -459,27 +493,80 @@ export default function BookingModal() {
           )}
 
           {step === 2 && (
-            <button
-              onClick={submit}
-              disabled={!canSubmit}
-              style={{
-                width: '100%', padding: '14px',
-                borderRadius: '12px', border: 'none',
-                background: canSubmit ? '#00DD88' : 'rgba(255,255,255,0.06)',
-                color:      canSubmit ? '#0A0A0A' : 'rgba(255,255,255,0.3)',
-                fontSize: '15px', fontWeight: 600,
-                cursor: canSubmit ? 'pointer' : 'not-allowed',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                transition: 'all 0.15s',
-              }}
-            >
-              {submitting ? t('common.loading') : (
-                <>
-                  <MessageCircle size={16} />
-                  {t('booking.submitWhatsapp')}
-                </>
-              )}
-            </button>
+            user ? (
+              /* Logged-in: save to DB + WhatsApp (existing flow) */
+              <button
+                onClick={submit}
+                disabled={!canSubmit}
+                style={{
+                  width: '100%', padding: '14px',
+                  borderRadius: '12px', border: 'none',
+                  background: canSubmit ? '#00DD88' : 'rgba(255,255,255,0.06)',
+                  color:      canSubmit ? '#0A0A0A' : 'rgba(255,255,255,0.3)',
+                  fontSize: '15px', fontWeight: 600,
+                  cursor: canSubmit ? 'pointer' : 'not-allowed',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {submitting ? t('common.loading') : (
+                  <>
+                    <MessageCircle size={16} />
+                    {t('booking.submitWhatsapp')}
+                  </>
+                )}
+              </button>
+            ) : (
+              /* Guest: two-option layout */
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '0 0 12px' }}>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {t('booking.chooseOption')}
+                  </span>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                </div>
+
+                <button
+                  onClick={handleGuestBooking}
+                  disabled={!canSubmit}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: '12px',
+                    background: canSubmit ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: canSubmit ? 'white' : 'rgba(255,255,255,0.3)',
+                    fontSize: '14px', fontWeight: 600,
+                    cursor: canSubmit ? 'pointer' : 'not-allowed',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <span>💬</span>
+                  {t('booking.continueAsGuest')}
+                </button>
+
+                <button
+                  onClick={handleCreateAccount}
+                  disabled={!canSubmit}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: '12px',
+                    background: canSubmit ? '#43BCC9' : 'rgba(67,188,201,0.3)',
+                    border: 'none',
+                    color: '#0A0A0A', fontSize: '14px', fontWeight: 700,
+                    cursor: canSubmit ? 'pointer' : 'not-allowed',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    fontFamily: 'inherit', marginTop: '8px',
+                  }}
+                >
+                  <span>✦</span>
+                  {t('booking.createAccountAndBook')}
+                </button>
+
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', textAlign: 'center', margin: '8px 0 0' }}>
+                  {t('booking.accountBenefit')}
+                </p>
+              </div>
+            )
           )}
         </div>
       </div>

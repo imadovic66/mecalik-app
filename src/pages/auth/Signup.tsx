@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
@@ -13,6 +13,20 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Pre-fill name/phone from booking flow
+  useEffect(() => {
+    const raw = sessionStorage.getItem('pendingBooking')
+    if (!raw) return
+    try {
+      const booking = JSON.parse(raw)
+      setForm(prev => ({
+        ...prev,
+        fullName: booking.name || prev.fullName,
+        phone: booking.phone || prev.phone,
+      }))
+    } catch {}
+  }, [])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,6 +58,22 @@ export default function Signup() {
       }
 
       if (data?.user) {
+        const raw = sessionStorage.getItem('pendingBooking')
+        if (raw) {
+          try {
+            const booking = JSON.parse(raw)
+            await supabase.from('bookings').insert({
+              user_id:       data.user.id,
+              service_name:  booking.service,
+              address:       booking.address,
+              address_notes: booking.notes || null,
+              status:        'pending',
+            })
+            sessionStorage.removeItem('pendingBooking')
+          } catch (e) {
+            console.error('Failed to save pending booking', e)
+          }
+        }
         navigate('/dashboard')
       } else {
         setError('Vérifiez votre email pour confirmer votre compte.')
