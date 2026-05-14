@@ -202,33 +202,33 @@ export default function FleetDashboard() {
       }}>
 
         {/* Brand */}
-        <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '15px', fontWeight: 700, color: 'white', letterSpacing: '-0.02em' }}>
             Meca<span style={{ color: '#43BCC9' }}>LIK</span>
           </div>
-          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: '1px' }}>
+          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '2px' }}>
             Fleet Portal
           </div>
         </div>
 
         {/* Company */}
-        <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-          <div style={{ fontSize: '11px', fontWeight: 600, color: 'white', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: 'white', marginBottom: '7px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {company?.name || 'Ma flotte'}
           </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{
-              padding: '1px 7px', borderRadius: '3px',
-              background: 'rgba(67,188,201,0.15)', border: '1px solid rgba(67,188,201,0.3)',
-              fontSize: '9px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.08em',
+              padding: '2px 8px', borderRadius: '4px',
+              background: 'rgba(67,188,201,0.12)', border: '1px solid rgba(67,188,201,0.25)',
+              fontSize: '10px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.05em', textTransform: 'uppercase',
             }}>
               {company?.plan?.toUpperCase() || 'FLOTTE'}
             </span>
             {company?.is_active && (
               <span style={{
-                padding: '1px 7px', borderRadius: '3px',
-                background: 'rgba(34,197,94,0.12)',
-                fontSize: '9px', fontWeight: 600, color: '#22C55E',
+                padding: '2px 8px', borderRadius: '4px',
+                background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
+                fontSize: '10px', fontWeight: 700, color: '#22C55E',
               }}>
                 {t('fleet.active')}
               </span>
@@ -240,24 +240,18 @@ export default function FleetDashboard() {
         <nav style={{ padding: '8px', flex: 1 }}>
           {NAV.map(({ id, Icon }) => {
             const label = t(`fleet.tabs.${id === 'rapports' ? 'reports' : id}`)
-
             const active = tab === id
             return (
               <button key={id} onClick={() => setTab(id)} style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
-                padding: '8px 10px', borderRadius: '7px', border: 'none',
-                marginBottom: '1px', cursor: 'pointer', textAlign: 'left',
-                background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
-                color: active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)',
-                fontSize: '12px', fontWeight: active ? 500 : 400,
+                padding: '8px 12px', borderRadius: '7px', border: 'none',
+                marginBottom: '2px', cursor: 'pointer', textAlign: 'left',
+                background: active ? 'rgba(67,188,201,0.08)' : 'transparent',
+                color: active ? 'white' : 'rgba(255,255,255,0.45)',
+                fontSize: '12px', fontWeight: active ? 600 : 400,
                 position: 'relative', transition: 'all 0.12s',
+                borderLeft: active ? '2px solid #43BCC9' : '2px solid transparent',
               }}>
-                {active && (
-                  <div style={{
-                    position: 'absolute', left: 0, top: '18%', bottom: '18%',
-                    width: '2px', background: '#43BCC9', borderRadius: '0 2px 2px 0',
-                  }} />
-                )}
                 <Icon size={13} style={{ opacity: active ? 1 : 0.5, flexShrink: 0 }} />
                 {label}
               </button>
@@ -285,67 +279,69 @@ export default function FleetDashboard() {
 
         {/* Sticky top bar */}
         <div style={{
-          padding: '12px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)',
-          background: 'rgba(8,8,8,0.9)', backdropFilter: 'blur(12px)',
-          position: 'sticky', top: 0, zIndex: 20,
+          padding: '0 28px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: 'rgba(8,8,8,0.92)', backdropFilter: 'blur(12px)',
+          position: 'sticky', top: 0, zIndex: 20, height: '56px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div>
-            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
+            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 700, color: 'white', letterSpacing: '-0.02em', lineHeight: 1 }}>
               {t(`fleet.tabs.${tab === 'rapports' ? 'reports' : tab}`)}
             </div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
               {company?.name || 'MecaLIK Fleet'} · {vehicles.length} {t('fleet.vehiclesCount')}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <LanguageSwitcher />
             <button onClick={fetchAll} style={{
-              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '7px', padding: '6px 10px', cursor: 'pointer',
-              color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px',
+              background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '8px', padding: '7px 14px', cursor: 'pointer',
+              color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px',
             }}>
-              <RefreshCw size={11} /> {t('common.refresh')}
+              <RefreshCw size={13} /> {t('common.refresh')}
             </button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))} style={{
               background: '#43BCC9', color: '#0A0A0A', border: 'none',
-              padding: '7px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: 700,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 700,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
             }}>
-              <Plus size={13} /> {t('fleet.actions.requestIntervention')}
+              <Plus size={14} /> {t('fleet.actions.requestIntervention')}
             </button>
           </div>
         </div>
 
         {/* ── CONTENT ── */}
-        <div style={{ padding: '24px 28px', flex: 1 }}>
+        <div style={{ padding: '28px', flex: 1 }}>
 
           {/* ══ VUE D'ENSEMBLE ══ */}
           {tab === 'overview' && (
             <div>
-              {/* Stats bar */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
-                borderRadius: '10px', overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.06)',
-                background: 'rgba(255,255,255,0.04)',
-                gap: '1px', marginBottom: '24px',
-              }}>
+              {/* KPI cards with left-border accent */}
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
                 {[
-                  { label: t('fleet.stats.total'),       value: vehicles.length, color: 'white',   sub: t('fleet.stats.vehicles')    },
-                  { label: t('fleet.stats.operational'), value: operational,     color: '#00DD88', sub: t('fleet.stats.inOperation')  },
-                  { label: t('fleet.stats.serviceDue'),  value: serviceDue,      color: '#F0C040', sub: t('fleet.stats.toPlan')       },
-                  { label: t('fleet.stats.inService'),   value: inService,       color: '#43BCC9', sub: t('fleet.stats.currently')    },
-                  { label: t('fleet.stats.alerts'),      value: alerts,          color: '#FF4444', sub: t('fleet.stats.urgent')       },
+                  { label: t('fleet.stats.total'),       value: vehicles.length, color: 'white',   border: 'rgba(255,255,255,0.2)', sub: t('fleet.stats.vehicles')    },
+                  { label: t('fleet.stats.operational'), value: operational,     color: '#43BCC9', border: '#43BCC9',               sub: t('fleet.stats.inOperation')  },
+                  { label: t('fleet.stats.serviceDue'),  value: serviceDue,      color: '#F0C040', border: '#F0C040',               sub: t('fleet.stats.toPlan')       },
+                  { label: t('fleet.stats.inService'),   value: inService,       color: '#43BCC9', border: '#43BCC9',               sub: t('fleet.stats.currently')    },
+                  { label: t('fleet.stats.alerts'),      value: alerts,          color: '#FF4444', border: '#FF4444',               sub: t('fleet.stats.urgent')       },
                 ].map((s, i) => (
-                  <div key={i} style={{ background: '#0A0A0A', padding: '16px 18px' }}>
-                    <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+                  <div key={i} style={{
+                    flex: 1, padding: '20px 24px',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    borderLeft: `3px solid ${s.border}`,
+                    borderRadius: '12px',
+                  }}>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
                       {s.label}
                     </div>
-                    <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '26px', fontWeight: 700, color: s.color, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: '3px' }}>
+                    <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '32px', fontWeight: 800, color: s.color, lineHeight: 1 }}>
                       {s.value}
                     </div>
-                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)' }}>{s.sub}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '6px' }}>
+                      {s.sub}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -362,7 +358,7 @@ export default function FleetDashboard() {
                 if (alertVehicles.length === 0) return null
                 const isFr = i18n.language !== 'en'
                 return (
-                  <div style={{ marginBottom: '24px' }}>
+                  <div style={{ marginBottom: '32px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                       <div style={{ fontSize: '14px', fontWeight: 700, color: 'white' }}>
                         {isFr ? 'Maintenance à planifier' : 'Maintenance due'}
@@ -498,7 +494,7 @@ export default function FleetDashboard() {
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>{t('fleet.vehicles.contactToRegister')}</div>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                   {filteredVehicles.map(v => (
                     <VehicleCard
                       key={v.id}
@@ -544,33 +540,65 @@ export default function FleetDashboard() {
                 </button>
               </div>
 
-              <div style={{ marginBottom: '10px', fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+              <div style={{ marginBottom: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
                 {filteredBookings.length} {filteredBookings.length !== 1 ? t('fleet.interventions.totalPlural') : t('fleet.interventions.total')}
                 {bookingFilter !== 'all' || bookingSearch ? ` · ${t('fleet.interventions.filtered')} ${bookings.length}` : ` ${t('fleet.interventions.inTotal')}`}
               </div>
 
-              <BookingsTable bookings={filteredBookings} onRowClick={id => navigate(`/booking/${id}`)} />
+              {filteredBookings.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
+                  {t('fleet.interventions.noInterventions')}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {filteredBookings.map(b => {
+                    const dotColor = b.status === 'completed' ? '#22C55E' : b.status === 'cancelled' ? '#FF4444' : '#43BCC9'
+                    const badgeBg  = b.status === 'completed' ? 'rgba(34,197,94,0.1)' : b.status === 'cancelled' ? 'rgba(255,68,68,0.1)' : 'rgba(67,188,201,0.1)'
+                    return (
+                      <div
+                        key={b.id}
+                        onClick={() => navigate(`/booking/${b.id}`)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 18px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}
+                      >
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: dotColor }} />
+                        <span style={{ fontSize: '12px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', width: '90px', flexShrink: 0 }}>
+                          {b.reference || b.id.slice(0, 8).toUpperCase()}
+                        </span>
+                        <span style={{ flex: 1, fontSize: '14px', fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {b.service_name}
+                        </span>
+                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', width: '80px', textAlign: 'right', flexShrink: 0 }}>
+                          {new Date(b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })}
+                        </span>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#43BCC9', width: '90px', textAlign: 'right', flexShrink: 0 }}>
+                          {b.amount_ttc ? `${b.amount_ttc} MAD` : '—'}
+                        </span>
+                        <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, background: badgeBg, color: dotColor, width: '90px', textAlign: 'center', flexShrink: 0 }}>
+                          {t(`status.${b.status}`)}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 
           {/* ══ FINANCE ══ */}
           {tab === 'finance' && (
             <div>
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '1px', background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px',
-                overflow: 'hidden', marginBottom: '24px',
-              }}>
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
                 {[
-                  { label: t('fleet.finance.thisMonth'),     value: `${monthSpend} MAD`, color: '#43BCC9', sub: `${thisMonth.filter(b => b.status === 'completed').length} ${t('fleet.finance.interventionsCompleted')}` },
-                  { label: t('fleet.finance.total'),          value: `${totalSpend} MAD`, color: 'white',   sub: t('fleet.finance.sinceStart') },
-                  { label: t('fleet.finance.avgPerVehicle'), value: vehicles.length > 0 ? `${Math.round(totalSpend / vehicles.length)} MAD` : '0 MAD', color: 'white', sub: t('fleet.finance.overPeriod') },
+                  { label: t('fleet.finance.thisMonth'),     value: `${monthSpend} MAD`,  color: '#43BCC9', border: '#43BCC9',               sub: `${thisMonth.filter(b => b.status === 'completed').length} ${t('fleet.finance.interventionsCompleted')}` },
+                  { label: t('fleet.finance.total'),          value: `${totalSpend} MAD`,  color: 'white',   border: 'rgba(255,255,255,0.2)', sub: t('fleet.finance.sinceStart') },
+                  { label: t('fleet.finance.avgPerVehicle'), value: vehicles.length > 0 ? `${Math.round(totalSpend / vehicles.length)} MAD` : '0 MAD', color: 'white', border: 'rgba(255,255,255,0.2)', sub: t('fleet.finance.overPeriod') },
                 ].map((s, i) => (
-                  <div key={i} style={{ background: '#0A0A0A', padding: '18px 22px' }}>
-                    <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>{s.label}</div>
-                    <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '24px', fontWeight: 700, color: s.color, letterSpacing: '-0.02em', marginBottom: '4px' }}>{s.value}</div>
-                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)' }}>{s.sub}</div>
+                  <div key={i} style={{ flex: 1, padding: '20px 24px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderLeft: `3px solid ${s.border}`, borderRadius: '12px' }}>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>{s.label}</div>
+                    <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '28px', fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: '6px' }}>{s.value}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>{s.sub}</div>
                   </div>
                 ))}
               </div>
@@ -934,93 +962,129 @@ function VehicleCard({
   onBook: () => void
   onHistory: () => void
 }) {
-  const s = VEHICLE_STATUS[v.status] || VEHICLE_STATUS.operational
   const lastService = vBk.find(b => b.status === 'completed')
-  const mileagePct = v.mileage ? Math.min(v.mileage / 200000 * 100, 100) : 0
   const mileageColor = !v.mileage ? '#43BCC9' : v.mileage < 100000 ? '#43BCC9' : v.mileage < 150000 ? '#F0C040' : '#FF4444'
-  const driverInitial = v.driver_name ? v.driver_name.charAt(0).toUpperCase() : '?'
+  const cardBorder = v.status === 'alert' ? 'rgba(255,68,68,0.25)' : v.status === 'service_due' ? 'rgba(240,192,64,0.2)' : 'rgba(255,255,255,0.07)'
+  const statusStyle = (
+    v.status === 'operational' ? { background: 'rgba(34,197,94,0.1)', color: '#22C55E' } :
+    v.status === 'service_due' ? { background: 'rgba(240,192,64,0.1)', color: '#F0C040' } :
+    v.status === 'alert'       ? { background: 'rgba(255,68,68,0.1)',  color: '#FF4444' } :
+    v.status === 'in_service'  ? { background: 'rgba(67,188,201,0.1)', color: '#43BCC9' } :
+                                 { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }
+  )
+  const statusLabel = VEHICLE_STATUS[v.status]?.label || v.status
+  const driverInitials = v.driver_name
+    ? v.driver_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
+    : '?'
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <div style={{
+      background: 'rgba(255,255,255,0.04)',
+      border: `1px solid ${cardBorder}`,
+      borderRadius: '14px', padding: '22px',
+      display: 'flex', flexDirection: 'column', gap: '16px',
+      position: 'relative',
+    }}>
 
-      {/* Header: name + status badge */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      {/* Row 1: Name + year inline + status badge */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: 'white', fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em' }}>
             {v.brand} {v.model}
-          </div>
-          {v.year && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '2px' }}>{v.year}</div>}
+          </span>
+          {v.year && (
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.35)', marginLeft: '8px' }}>
+              {v.year}
+            </span>
+          )}
         </div>
-        <span style={{ padding: '3px 9px', borderRadius: '6px', fontSize: '10px', fontWeight: 600, background: s.bg, color: s.color, flexShrink: 0 }}>
-          {s.label}
+        <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em', flexShrink: 0, ...statusStyle }}>
+          {statusLabel}
         </span>
       </div>
 
-      {/* Plate — premium badge */}
-      <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', fontSize: '13px', fontWeight: 700, color: 'white', letterSpacing: '0.05em', fontFamily: 'monospace', alignSelf: 'flex-start' }}>
-        {v.plate}
+      {/* Row 2: Plate badge */}
+      <div style={{ display: 'inline-flex', width: 'fit-content' }}>
+        <span style={{ padding: '5px 12px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', fontSize: '13px', fontWeight: 700, color: 'white', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
+          {v.plate}
+        </span>
       </div>
 
-      {/* Mileage bar — color-coded */}
+      {/* Row 3: Mileage bar */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-          <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)' }}>Kilométrage</span>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: mileageColor }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Kilométrage
+          </span>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: mileageColor }}>
             {v.mileage ? v.mileage.toLocaleString('fr-FR') + ' km' : '—'}
           </span>
         </div>
-        <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${mileagePct}%`, background: mileageColor, borderRadius: '2px', transition: 'width 0.4s ease' }} />
+        <div style={{ height: '3px', borderRadius: '99px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', borderRadius: '99px', width: `${Math.min(((v.mileage || 0) / 200000) * 100, 100)}%`, background: mileageColor, transition: 'width 0.6s ease' }} />
         </div>
       </div>
 
-      {/* Driver avatar — solid teal */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{
-          width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
-          background: v.driver_name ? '#43BCC9' : 'rgba(255,255,255,0.06)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '12px', fontWeight: 700, color: v.driver_name ? '#0A0A0A' : 'rgba(255,255,255,0.2)',
-        }}>
-          {driverInitial}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {v.driver_name ? (
-            <>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>{v.driver_name}</div>
-              {v.driver_phone && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{v.driver_phone}</div>}
-            </>
-          ) : (
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>Aucun conducteur</div>
-          )}
-        </div>
-      </div>
-
-      {/* Service info */}
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <div style={{ flex: 1, padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: '7px' }}>
-          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>Dernier service</div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
-            {lastService ? new Date(lastService.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+      {/* Row 4: Driver */}
+      {v.driver_name ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)' }}>
+          <div style={{ width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0, background: '#43BCC9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, color: '#0A0A0A' }}>
+            {driverInitials}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {v.driver_name}
+            </div>
+            {v.driver_phone && (
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{v.driver_phone}</div>
+            )}
           </div>
         </div>
-        <div style={{ flex: 1, padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: '7px' }}>
-          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>Interventions</div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>{vBk.length} total</div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
+          <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: '14px', opacity: 0.4 }}>?</span>
+          </div>
+          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>Aucun conducteur assigné</span>
         </div>
+      )}
+
+      {/* Row 5: Stats grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        {[
+          {
+            label: 'Dernier service',
+            value: lastService ? new Date(lastService.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Jamais',
+            valueColor: lastService ? 'white' : 'rgba(255,68,68,0.8)',
+          },
+          {
+            label: 'Interventions',
+            value: String(vBk.length),
+            valueColor: vBk.length > 0 ? '#43BCC9' : 'rgba(255,255,255,0.3)',
+          },
+        ].map((stat, i) => (
+          <div key={i} style={{ padding: '10px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' }}>
+              {stat.label}
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: stat.valueColor }}>
+              {stat.value}
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: '8px', paddingTop: '4px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      {/* Row 6: Actions */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
         <button
           onClick={onHistory}
-          style={{ flex: 1, padding: '7px 0', borderRadius: '7px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: '11px', fontWeight: 500, cursor: 'pointer' }}>
-          📋 Historique
+          style={{ padding: '10px', borderRadius: '8px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>
+          Historique
         </button>
         <button
           onClick={onBook}
-          style={{ flex: 1, padding: '7px 0', borderRadius: '7px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-          + Réserver
+          style={{ padding: '10px', borderRadius: '8px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>
+          Réserver
         </button>
       </div>
     </div>
