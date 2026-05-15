@@ -9,6 +9,16 @@ import {
 } from 'lucide-react'
 import RatingModal from '../../components/ui/RatingModal'
 
+type ServiceDetail = {
+  type: 'product' | 'part' | 'labor'
+  name: string
+  brand?: string
+  reference?: string
+  quantity?: string
+  unit_price?: number
+  total_price?: number
+}
+
 type Booking = {
   id: string
   reference: string | null
@@ -27,6 +37,7 @@ type Booking = {
   created_at: string
   confirmed_at: string | null
   completed_at: string | null
+  service_details?: ServiceDetail[] | null
 }
 
 const STATUS_STEPS_BASE = [
@@ -387,6 +398,85 @@ export default function BookingConfirmation() {
               )}
             </div>
           </div>
+
+          {/* ── PRODUITS & PIÈCES UTILISÉS ── */}
+          {booking.service_details && booking.service_details.length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <SectionLabel>Produits &amp; Pièces utilisés</SectionLabel>
+              <div style={{
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.07)',
+                overflow: 'hidden',
+              }}>
+                {booking.service_details.map((item, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '14px 16px',
+                    borderBottom: i < booking.service_details!.length - 1
+                      ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                  }}>
+                    {/* Brand badge */}
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '8px', flexShrink: 0,
+                      background: item.type === 'labor'
+                        ? 'rgba(67,188,201,0.1)' : 'rgba(255,255,255,0.06)',
+                      border: item.type === 'labor'
+                        ? '1px solid rgba(67,188,201,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '10px', fontWeight: 800,
+                      color: item.type === 'labor' ? '#43BCC9' : 'rgba(255,255,255,0.6)',
+                      letterSpacing: '-0.02em',
+                    }}>
+                      {(item.brand || item.name || '?').substring(0, 2).toUpperCase()}
+                    </div>
+                    {/* Name + meta */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: '14px', fontWeight: 600, color: 'white',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
+                        {[item.brand, item.reference, item.quantity].filter(Boolean).join(' · ')}
+                      </div>
+                    </div>
+                    {/* Price */}
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#43BCC9' }}>
+                        {item.unit_price
+                          ? `${(item.unit_price * parseFloat(item.quantity || '1')).toFixed(0)} MAD`
+                          : '—'}
+                      </div>
+                      {parseFloat(item.quantity || '1') > 1 && item.unit_price && (
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '2px' }}>
+                          {item.unit_price} MAD × {item.quantity}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {/* Total row */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '12px 16px',
+                  background: 'rgba(67,188,201,0.05)',
+                  borderTop: '1px solid rgba(67,188,201,0.1)',
+                }}>
+                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                    Total produits &amp; pièces
+                  </span>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#43BCC9' }}>
+                    {booking.service_details
+                      .reduce((sum, item) =>
+                        sum + ((item.unit_price || 0) * parseFloat(item.quantity || '1')), 0)
+                      .toFixed(0)} MAD
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── RATING DISPLAY (already rated) ── */}
           {isCompleted && booking.rating && (

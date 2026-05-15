@@ -105,7 +105,6 @@ export default function FleetDashboard() {
   const [bookingSearch, setBookingSearch] = useState('')
   const [bookingFilter, setBookingFilter] = useState('all')
   const [selectedVehicle, setSelectedVehicle] = useState<FleetVehicle | null>(null)
-  const [expandedIntervention, setExpandedIntervention] = useState<string | null>(null)
 
   void loading
 
@@ -861,12 +860,11 @@ export default function FleetDashboard() {
                   <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Aucune intervention</div>
                 ) : vBk.map((b, i) => {
                   const s = BOOKING_STATUS[b.status] || { label: b.status, color: 'rgba(255,255,255,0.4)', bg: 'rgba(255,255,255,0.04)' }
-                  const isExp = expandedIntervention === b.id
                   const hasDetails = b.service_details && b.service_details.length > 0
                   return (
                     <div key={b.id} style={{
                       borderBottom: i < vBk.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                      marginBottom: i < vBk.length - 1 ? '0' : '0',
+                      paddingBottom: hasDetails ? '10px' : '0',
                     }}>
                       {/* Main row */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px' }}>
@@ -878,75 +876,50 @@ export default function FleetDashboard() {
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           {b.amount_ttc != null && <div style={{ fontSize: '12px', fontWeight: 600, color: '#00DD88', marginBottom: '2px' }}>{b.amount_ttc} MAD</div>}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
-                            <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, background: s.bg, color: s.color }}>{b.status}</span>
-                            {hasDetails && (
-                              <button
-                                onClick={() => setExpandedIntervention(isExp ? null : b.id)}
-                                style={{
-                                  background: isExp ? 'rgba(67,188,201,0.12)' : 'rgba(255,255,255,0.05)',
-                                  border: `1px solid ${isExp ? 'rgba(67,188,201,0.25)' : 'rgba(255,255,255,0.08)'}`,
-                                  borderRadius: '4px', padding: '2px 6px',
-                                  fontSize: '9px', fontWeight: 600, cursor: 'pointer',
-                                  color: isExp ? '#43BCC9' : 'rgba(255,255,255,0.4)',
-                                }}
-                              >
-                                {isExp ? '▲' : '▼'} Détails
-                              </button>
-                            )}
-                          </div>
+                          <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, background: s.bg, color: s.color }}>{b.status}</span>
                         </div>
                       </div>
-                      {/* Expanded service details */}
-                      {isExp && hasDetails && (
+                      {/* Always-visible service details */}
+                      {hasDetails && (
                         <div style={{
-                          margin: '0 12px 10px',
-                          background: 'rgba(0,0,0,0.4)',
-                          border: '1px solid rgba(67,188,201,0.1)',
-                          borderRadius: '8px',
-                          padding: '10px',
+                          marginTop: '8px', marginBottom: '4px',
+                          paddingLeft: '16px',
+                          display: 'flex', flexDirection: 'column', gap: '6px',
                         }}>
-                          <div style={{ fontSize: '8px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', marginBottom: '8px' }}>
-                            Produits &amp; pièces
-                          </div>
-                          {b.service_details!.map((item, idx) => {
-                            const typeColor = item.type === 'labor' ? '#43BCC9' : item.type === 'part' ? '#A78BFA' : '#F0C040'
-                            const initials  = (item.brand || item.name).slice(0, 2).toUpperCase()
-                            const price     = item.total_price ?? (item.unit_price && item.quantity ? item.unit_price * parseFloat(item.quantity) : item.unit_price)
-                            return (
-                              <div key={idx} style={{
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                padding: '6px 8px',
-                                background: idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
-                                borderRadius: '6px',
-                                marginBottom: idx < b.service_details!.length - 1 ? '2px' : '0',
-                              }}>
+                          {b.service_details!.map((item, idx) => (
+                            <div key={idx} style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              padding: '8px 12px', borderRadius: '8px',
+                              background: 'rgba(255,255,255,0.03)',
+                              border: '1px solid rgba(255,255,255,0.05)',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <div style={{
-                                  width: '26px', height: '26px', borderRadius: '6px', flexShrink: 0,
-                                  background: `${typeColor}18`, border: `1px solid ${typeColor}30`,
+                                  width: '24px', height: '24px', borderRadius: '4px', flexShrink: 0,
+                                  background: 'rgba(67,188,201,0.08)',
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontSize: '8px', fontWeight: 700, color: typeColor,
+                                  fontSize: '8px', fontWeight: 800, color: '#43BCC9',
                                 }}>
-                                  {initials}
+                                  {(item.brand || item.name || '?').substring(0, 2).toUpperCase()}
                                 </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <div>
+                                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>
                                     {item.name}
-                                  </div>
-                                  {(item.brand || item.quantity) && (
-                                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
-                                      {[item.brand, item.quantity ? `×${item.quantity}` : null].filter(Boolean).join(' · ')}
-                                    </div>
+                                  </span>
+                                  {(item.brand || item.reference || item.quantity) && (
+                                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginLeft: '6px' }}>
+                                      {[item.brand, item.reference ? `· ${item.reference}` : null, item.quantity ? `· ${item.quantity}` : null].filter(Boolean).join(' ')}
+                                    </span>
                                   )}
                                 </div>
-                                {price != null && (
-                                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>
-                                    {price} MAD
-                                  </div>
-                                )}
                               </div>
-                            )
-                          })}
+                              <span style={{ fontSize: '12px', fontWeight: 700, color: '#43BCC9', flexShrink: 0 }}>
+                                {item.unit_price
+                                  ? `${(item.unit_price * parseFloat(item.quantity || '1')).toFixed(0)} MAD`
+                                  : '—'}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
