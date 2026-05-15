@@ -12,6 +12,18 @@ import {
 import AddCarModal from '../../components/ui/AddCarModal'
 import { serviceIdFromName } from '../../lib/serviceUtils'
 
+type ServiceDetail = {
+  type: 'product' | 'part' | 'labor'
+  name: string
+  brand?: string
+  reference?: string
+  quantity?: string
+  unit_price?: number
+  total_price?: number
+  photo_url?: string | null
+  notes?: string | null
+}
+
 type Booking = {
   id: string
   reference: string | null
@@ -23,6 +35,7 @@ type Booking = {
   technician_phone: string | null
   created_at: string
   completed_at: string | null
+  service_details?: ServiceDetail[] | null
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; eta: string }> = {
@@ -61,10 +74,11 @@ export default function CustomerDashboard() {
     { id: 'urgence',    label: t('services.urgence'),    icon: AlertTriangle, price: 239, gradient: 'linear-gradient(135deg, #1A0A0A 0%, #1F0D0D 100%)', dot: '#FF4444', urgent: true },
   ]
 
-  const [bookings, setBookings]     = useState<Booking[]>([])
-  const [cars, setCars]             = useState<Car[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [showAddCar, setShowAddCar] = useState(false)
+  const [bookings, setBookings]         = useState<Booking[]>([])
+  const [cars, setCars]                 = useState<Car[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [showAddCar, setShowAddCar]     = useState(false)
+  const [expandedHistory, setExpandedHistory] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) { navigate('/login'); return }
@@ -540,7 +554,7 @@ export default function CustomerDashboard() {
             </div>
           </section>
 
-          {/* ── BOOK AGAIN ────────────────────────────────────────── */}
+          {/* ── BOOK AGAIN / SERVICE HISTORY ─────────────────────── */}
           {recentCompleted.length > 0 && (
             <section style={{ marginBottom: '28px' }}>
               <h2 style={{
@@ -551,38 +565,130 @@ export default function CustomerDashboard() {
                 {t('customer.bookAgain')}
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {recentCompleted.map(b => (
-                  <div
-                    key={b.id}
-                    onClick={() => openBookingWithService(b.service_name)}
-                    style={{
-                      padding: '14px 16px', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: '12px',
+                {recentCompleted.map(b => {
+                  const isExpanded = expandedHistory === b.id
+                  const hasDetails = b.service_details && b.service_details.length > 0
+                  return (
+                    <div key={b.id} style={{
                       background: '#0F0F0F',
-                      border: '1px solid rgba(255,255,255,0.06)',
+                      border: `1px solid ${isExpanded ? 'rgba(67,188,201,0.2)' : 'rgba(255,255,255,0.06)'}`,
                       borderRadius: '14px',
-                    }}
-                  >
-                    <div style={{
-                      width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-                      background: 'rgba(255,255,255,0.04)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      overflow: 'hidden',
+                      transition: 'border-color 0.2s',
                     }}>
-                      <Wrench size={15} color="rgba(255,255,255,0.55)" />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '14px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
-                        {t('services.' + serviceIdFromName(b.service_name))}
+                      {/* Main row */}
+                      <div
+                        onClick={() => openBookingWithService(b.service_name)}
+                        style={{
+                          padding: '14px 16px', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '12px',
+                        }}
+                      >
+                        <div style={{
+                          width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                          background: 'rgba(255,255,255,0.04)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Wrench size={15} color="rgba(255,255,255,0.55)" />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '14px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
+                            {t('services.' + serviceIdFromName(b.service_name))}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                              {new Date(b.completed_at ?? b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short' })}
+                            </span>
+                            {b.amount_ttc && (
+                              <>
+                                <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'inline-block' }} />
+                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{b.amount_ttc} MAD</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#43BCC9', fontSize: '12px', fontWeight: 600 }}>
+                            {t('customer.bookAgain')} <ArrowRight size={12} />
+                          </div>
+                          {hasDetails && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setExpandedHistory(isExpanded ? null : b.id) }}
+                              style={{
+                                background: 'transparent', border: 'none', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: '3px',
+                                color: 'rgba(255,255,255,0.35)', fontSize: '10px', padding: 0,
+                              }}
+                            >
+                              Détails
+                              <ChevronDown size={10} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                        {new Date(b.completed_at ?? b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short' })}
-                      </div>
+
+                      {/* Expandable service details panel */}
+                      {isExpanded && hasDetails && (
+                        <div style={{
+                          borderTop: '1px solid rgba(255,255,255,0.05)',
+                          padding: '12px 16px',
+                          background: 'rgba(0,0,0,0.3)',
+                        }}>
+                          <div style={{
+                            fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em',
+                            color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase',
+                            marginBottom: '10px',
+                          }}>
+                            Produits & pièces utilisés
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {b.service_details!.map((item, idx) => {
+                              const typeColor = item.type === 'labor' ? '#43BCC9' : item.type === 'part' ? '#A78BFA' : '#F0C040'
+                              const initials  = item.brand ? item.brand.slice(0, 2).toUpperCase() : item.name.slice(0, 2).toUpperCase()
+                              const price     = item.total_price ?? (item.unit_price && item.quantity ? item.unit_price * parseFloat(item.quantity) : item.unit_price)
+                              return (
+                                <div key={idx} style={{
+                                  display: 'flex', alignItems: 'center', gap: '10px',
+                                  padding: '8px 10px',
+                                  background: 'rgba(255,255,255,0.02)',
+                                  border: '1px solid rgba(255,255,255,0.04)',
+                                  borderRadius: '10px',
+                                }}>
+                                  {/* Brand/type avatar */}
+                                  <div style={{
+                                    width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
+                                    background: `${typeColor}18`,
+                                    border: `1px solid ${typeColor}30`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '10px', fontWeight: 700, color: typeColor,
+                                    letterSpacing: '0.03em',
+                                  }}>
+                                    {initials}
+                                  </div>
+                                  {/* Name + brand */}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {item.name}
+                                    </div>
+                                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '1px' }}>
+                                      {[item.brand, item.quantity ? `×${item.quantity}` : null].filter(Boolean).join(' · ')}
+                                    </div>
+                                  </div>
+                                  {/* Price */}
+                                  {price != null && (
+                                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.7)', flexShrink: 0 }}>
+                                      {price} MAD
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#43BCC9', fontSize: '12px', fontWeight: 600, flexShrink: 0 }}>
-                      {t('customer.bookAgain')} <ArrowRight size={12} />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           )}

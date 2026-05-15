@@ -4,6 +4,18 @@ import { useTranslation } from 'react-i18next'
 
 export type BookingStatus = 'pending' | 'confirmed' | 'on_the_way' | 'in_progress' | 'completed' | 'cancelled'
 
+export type ServiceDetail = {
+  type: 'product' | 'part' | 'labor'
+  name: string
+  brand?: string
+  reference?: string
+  quantity?: string
+  unit_price?: number
+  total_price?: number
+  photo_url?: string | null
+  notes?: string | null
+}
+
 export type Booking = {
   id: string
   user_id: string | null
@@ -17,6 +29,7 @@ export type Booking = {
   rating_comment: string | null
   technician_name: string | null
   created_at: string
+  service_details?: ServiceDetail[] | null
   profiles?: { full_name: string | null; phone: string | null }
 }
 

@@ -26,6 +26,18 @@ type FleetVehicle = {
   created_at: string
 }
 
+type ServiceDetail = {
+  type: 'product' | 'part' | 'labor'
+  name: string
+  brand?: string
+  reference?: string
+  quantity?: string
+  unit_price?: number
+  total_price?: number
+  photo_url?: string | null
+  notes?: string | null
+}
+
 type Booking = {
   id: string
   reference: string
@@ -37,6 +49,7 @@ type Booking = {
   created_at: string
   completed_at: string | null
   fleet_vehicle_id: string | null
+  service_details?: ServiceDetail[] | null
 }
 
 type Company = {
@@ -92,6 +105,7 @@ export default function FleetDashboard() {
   const [bookingSearch, setBookingSearch] = useState('')
   const [bookingFilter, setBookingFilter] = useState('all')
   const [selectedVehicle, setSelectedVehicle] = useState<FleetVehicle | null>(null)
+  const [expandedIntervention, setExpandedIntervention] = useState<string | null>(null)
 
   void loading
 
@@ -847,18 +861,94 @@ export default function FleetDashboard() {
                   <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Aucune intervention</div>
                 ) : vBk.map((b, i) => {
                   const s = BOOKING_STATUS[b.status] || { label: b.status, color: 'rgba(255,255,255,0.4)', bg: 'rgba(255,255,255,0.04)' }
+                  const isExp = expandedIntervention === b.id
+                  const hasDetails = b.service_details && b.service_details.length > 0
                   return (
-                    <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderBottom: i < vBk.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>{b.service_name}</div>
-                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
-                          {b.reference || b.id.slice(0, 8).toUpperCase()} · {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    <div key={b.id} style={{
+                      borderBottom: i < vBk.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      marginBottom: i < vBk.length - 1 ? '0' : '0',
+                    }}>
+                      {/* Main row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>{b.service_name}</div>
+                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
+                            {b.reference || b.id.slice(0, 8).toUpperCase()} · {new Date(b.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          {b.amount_ttc != null && <div style={{ fontSize: '12px', fontWeight: 600, color: '#00DD88', marginBottom: '2px' }}>{b.amount_ttc} MAD</div>}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
+                            <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, background: s.bg, color: s.color }}>{b.status}</span>
+                            {hasDetails && (
+                              <button
+                                onClick={() => setExpandedIntervention(isExp ? null : b.id)}
+                                style={{
+                                  background: isExp ? 'rgba(67,188,201,0.12)' : 'rgba(255,255,255,0.05)',
+                                  border: `1px solid ${isExp ? 'rgba(67,188,201,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                                  borderRadius: '4px', padding: '2px 6px',
+                                  fontSize: '9px', fontWeight: 600, cursor: 'pointer',
+                                  color: isExp ? '#43BCC9' : 'rgba(255,255,255,0.4)',
+                                }}
+                              >
+                                {isExp ? '▲' : '▼'} Détails
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        {b.amount_ttc != null && <div style={{ fontSize: '12px', fontWeight: 600, color: '#00DD88', marginBottom: '2px' }}>{b.amount_ttc} MAD</div>}
-                        <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 600, background: s.bg, color: s.color }}>{b.status}</span>
-                      </div>
+                      {/* Expanded service details */}
+                      {isExp && hasDetails && (
+                        <div style={{
+                          margin: '0 12px 10px',
+                          background: 'rgba(0,0,0,0.4)',
+                          border: '1px solid rgba(67,188,201,0.1)',
+                          borderRadius: '8px',
+                          padding: '10px',
+                        }}>
+                          <div style={{ fontSize: '8px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                            Produits &amp; pièces
+                          </div>
+                          {b.service_details!.map((item, idx) => {
+                            const typeColor = item.type === 'labor' ? '#43BCC9' : item.type === 'part' ? '#A78BFA' : '#F0C040'
+                            const initials  = (item.brand || item.name).slice(0, 2).toUpperCase()
+                            const price     = item.total_price ?? (item.unit_price && item.quantity ? item.unit_price * parseFloat(item.quantity) : item.unit_price)
+                            return (
+                              <div key={idx} style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                padding: '6px 8px',
+                                background: idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
+                                borderRadius: '6px',
+                                marginBottom: idx < b.service_details!.length - 1 ? '2px' : '0',
+                              }}>
+                                <div style={{
+                                  width: '26px', height: '26px', borderRadius: '6px', flexShrink: 0,
+                                  background: `${typeColor}18`, border: `1px solid ${typeColor}30`,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: '8px', fontWeight: 700, color: typeColor,
+                                }}>
+                                  {initials}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {item.name}
+                                  </div>
+                                  {(item.brand || item.quantity) && (
+                                    <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>
+                                      {[item.brand, item.quantity ? `×${item.quantity}` : null].filter(Boolean).join(' · ')}
+                                    </div>
+                                  )}
+                                </div>
+                                {price != null && (
+                                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>
+                                    {price} MAD
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
