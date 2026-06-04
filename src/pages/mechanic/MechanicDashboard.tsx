@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
+import { usePushNotifications } from '../../hooks/usePushNotifications'
 import {
   MapPin, MessageCircle, Navigation,
   Wrench, Star,
@@ -51,6 +52,8 @@ export default function MechanicDashboard() {
   const { user, profile, loading: authLoading, signOut } = useAuth()
   const { t: i18nT } = useTranslation()
   const navigate = useNavigate()
+
+  const { subscribed, supported, subscribe, notify } = usePushNotifications()
 
   const [tab, setTab]               = useState<TabId>('jobs')
   const [bookings, setBookings]     = useState<Booking[]>([])
@@ -111,6 +114,26 @@ export default function MechanicDashboard() {
     if (newStatus === 'in_progress') updates.confirmed_at  = new Date().toISOString()
     if (newStatus === 'completed')   updates.completed_at  = new Date().toISOString()
     await supabase.from('bookings').update(updates).eq('id', bookingId)
+
+    // ── Notify customer on status change ──────────────────────────────────
+    const booking = bookings.find(b => b.id === bookingId)
+    if (booking?.user_id) {
+      const CUSTOMER_MESSAGES: Record<string, { title: string; body: string }> = {
+        on_the_way:  { title: '🚗 Technicien en route',      body: 'Votre technicien arrive. Moins de 90 min.' },
+        in_progress: { title: '🔧 Intervention démarrée',    body: "Le technicien est arrivé et commence l'intervention." },
+        completed:   { title: '✅ Intervention terminée',    body: 'Votre véhicule est prêt ! Évaluez votre expérience.' },
+      }
+      const msg = CUSTOMER_MESSAGES[newStatus]
+      if (msg) {
+        notify({
+          user_id: booking.user_id,
+          title: msg.title,
+          body: msg.body,
+          url: `/booking/${bookingId}`,
+        })
+      }
+    }
+
     await fetchBookings()
     setUpdatingId(null)
   }
@@ -192,6 +215,48 @@ export default function MechanicDashboard() {
             </button>
           </div>
         </div>
+
+        {/* ═══ PUSH NOTIFICATION PROMPT ═══ */}
+        {supported && !subscribed && (
+          <div style={{
+            margin: '12px 16px 0',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            background: 'rgba(67,188,201,0.08)',
+            border: '1px solid rgba(67,188,201,0.2)',
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', gap: '12px',
+          }}>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', marginBottom: '2px' }}>
+                🔔 Activer les notifications
+              </div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
+                Recevez une alerte instantanée quand une nouvelle mission vous est assignée
+              </div>
+            </div>
+            <button
+              onClick={subscribe}
+              style={{
+                padding: '8px 14px', borderRadius: '8px',
+                background: '#43BCC9', border: 'none',
+                color: '#0A0A0A', fontSize: '12px', fontWeight: 700,
+                cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              Activer
+            </button>
+          </div>
+        )}
+        {supported && subscribed && (
+          <div style={{
+            margin: '8px 16px 0',
+            fontSize: '11px', color: 'rgba(255,255,255,0.3)',
+            display: 'flex', alignItems: 'center', gap: '4px',
+          }}>
+            🔔 Notifications activées
+          </div>
+        )}
 
         {/* ═══ CONTENT ═══ */}
         <div style={{ padding: '20px 18px' }}>

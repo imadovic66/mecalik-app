@@ -6,6 +6,7 @@ import { Search } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { type Booking, type ServiceDetail, STATUS_COLORS, STATUS_KEYS, getGuestLabel } from '../adminShared'
 import { serviceIdFromName } from '../../../lib/serviceUtils'
+import { usePushNotifications } from '../../../hooks/usePushNotifications'
 
 interface Props {
   bookings: Booking[]
@@ -49,11 +50,23 @@ const inputStyle: React.CSSProperties = {
 
 export default function ReservationsTab({ bookings, loading, mechanics, onSelectBooking, onRefresh }: Props) {
   const { t, i18n } = useTranslation()
+  const { notify } = usePushNotifications()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null)
   const [localDetails, setLocalDetails] = useState<Record<string, ServiceDetail[]>>({})
   const [saving, setSaving] = useState<string | null>(null)
+
+  const sendPushToMechanic = (mechanicName: string, booking: Booking) => {
+    const mechanic = mechanics.find(m => m.full_name === mechanicName)
+    if (!mechanic?.id) return
+    notify({
+      user_id: mechanic.id,
+      title: '🔧 Nouvelle mission assignée',
+      body: `${booking.service_name} — ${booking.address}`,
+      url: '/mechanic',
+    })
+  }
 
   const filteredBookings = bookings.filter(b => {
     const matchSearch = !searchQuery ||
@@ -197,6 +210,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                         technician_name: name || null,
                         status: booking.status === 'pending' && name ? 'confirmed' : booking.status,
                       }).eq('id', booking.id)
+                      if (name) sendPushToMechanic(name, booking)
                       onRefresh()
                     }}
                     style={{

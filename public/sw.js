@@ -56,15 +56,21 @@ self.addEventListener('push', event => {
       body: data.body,
       icon: '/icons/icon-192x192.png',
       badge: '/icons/icon-72x72.png',
-      data: { url: data.url },
+      data: { url: data.url || '/' },
       requireInteraction: false,
-      vibrate: [100, 50, 100],
+      vibrate: [200, 100, 200],
+      actions: [
+        { action: 'open',  title: 'Voir' },
+        { action: 'close', title: 'Ignorer' },
+      ],
     })
   )
 })
 
 self.addEventListener('notificationclick', event => {
   event.notification.close()
+  if (event.action === 'close') return
+
   const url = event.notification.data?.url || '/'
 
   event.waitUntil(
