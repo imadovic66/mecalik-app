@@ -93,41 +93,48 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
       </head>
       <body>
 
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;padding-bottom:24px;border-bottom:3px solid #43BCC9;">
-          <div>
-            <div style="font-size:28px;font-weight:900;letter-spacing:-0.5px;margin-bottom:4px;">
-              Meca<span style="color:#43BCC9;">LIK</span>
-            </div>
-            <div style="font-size:12px;color:#666;line-height:1.8;">
-              Mécanicien Certifié à Domicile<br>
-              Casablanca, Maroc<br>
-              +212 777 348 065<br>
-              contact@mecalik.com<br>
-              www.mecalik.com
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;padding-bottom:24px;border-bottom:3px solid #43BCC9;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <img src="https://mecalik.com/icons/icon-192x192.png"
+                 style="width:56px;height:56px;border-radius:10px;object-fit:contain;background:#0A0A0A;padding:4px;"
+                 alt="MecaLIK Logo"
+            />
+            <div>
+              <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;line-height:1;">
+                Meca<span style="color:#43BCC9;">LIK</span>
+              </div>
+              <div style="font-size:11px;color:#666;margin-top:2px;letter-spacing:0.03em;">
+                Your car, your place. Our problem.
+              </div>
             </div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:32px;font-weight:800;color:#1a1a1a;margin-bottom:8px;">FACTURE</div>
+          <div></div>
+        </div>
+
+        <!-- Invoice title + client info -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;gap:24px;">
+          <div style="flex:1;padding:16px 20px;background:#f8f9fa;border-radius:8px;border-left:4px solid #43BCC9;">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:8px;">Facturé à</div>
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${invoiceData.clientName || '—'}</div>
+            ${invoiceData.clientAddress ? `<div style="font-size:13px;color:#444;">${invoiceData.clientAddress}</div>` : ''}
+            ${invoiceData.clientPhone ? `<div style="font-size:13px;color:#444;">Tél : ${invoiceData.clientPhone}</div>` : ''}
+            ${invoiceData.clientEmail ? `<div style="font-size:13px;color:#444;">Email : ${invoiceData.clientEmail}</div>` : ''}
+            ${invoiceData.clientICE ? `<div style="font-size:13px;color:#444;">ICE : ${invoiceData.clientICE}</div>` : ''}
+          </div>
+          <div style="text-align:right;min-width:220px;">
+            <div style="font-size:32px;font-weight:800;color:#1a1a1a;margin-bottom:10px;">FACTURE</div>
             <table style="font-size:13px;margin-left:auto;">
               <tr>
-                <td style="color:#666;padding:2px 8px 2px 0;">N° Facture :</td>
+                <td style="color:#666;padding:3px 8px 3px 0;">N° Facture :</td>
                 <td style="font-weight:700;">${invoiceData.invoiceNumber}</td>
               </tr>
               <tr>
-                <td style="color:#666;padding:2px 8px 2px 0;">Date :</td>
+                <td style="color:#666;padding:3px 8px 3px 0;">Date :</td>
                 <td style="font-weight:700;">${invoiceData.invoiceDate}</td>
               </tr>
             </table>
           </div>
-        </div>
-
-        <div style="margin-bottom:32px;padding:16px 20px;background:#f8f9fa;border-radius:8px;border-left:4px solid #43BCC9;">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:8px;">Facturé à</div>
-          <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${invoiceData.clientName || '—'}</div>
-          ${invoiceData.clientAddress ? `<div style="font-size:13px;color:#444;">${invoiceData.clientAddress}</div>` : ''}
-          ${invoiceData.clientPhone   ? `<div style="font-size:13px;color:#444;">Tél : ${invoiceData.clientPhone}</div>` : ''}
-          ${invoiceData.clientEmail   ? `<div style="font-size:13px;color:#444;">Email : ${invoiceData.clientEmail}</div>` : ''}
-          ${invoiceData.clientICE     ? `<div style="font-size:13px;color:#444;">ICE : ${invoiceData.clientICE}</div>` : ''}
         </div>
 
         <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
@@ -171,20 +178,16 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
           </div>` : '<div></div>'}
         </div>
 
-        <div style="border-top:2px solid #f0f0f0;padding-top:20px;text-align:center;">
-          <div style="font-size:12px;color:#444;line-height:2;">
-            <strong style="font-size:14px;">+212 777 348 065</strong>
-            &nbsp;&nbsp;·&nbsp;&nbsp;
-            <strong style="font-size:14px;">hello@mecalik.com</strong>
-            <br>
+        <!-- Footer -->
+        <div style="border-top:2px solid #f0f0f0;padding-top:20px;text-align:center;margin-top:40px;">
+          <div style="font-size:13px;color:#333;font-weight:600;margin-bottom:6px;">
+            +212 777 348 065 &nbsp;·&nbsp; hello@mecalik.com
+          </div>
+          <div style="font-size:12px;color:#555;margin-bottom:4px;">
             82 ANG BD Abdelmoumen et Soumaya, Résidence Shahrazad 1 Etg 4 Appt 17, Casablanca, Maroc
-            <br>
-            <span style="color:#666;">
-              MecaLIK SARL AU
-              &nbsp;·&nbsp; ICE : 003942374000016
-              &nbsp;·&nbsp; RC : 726381
-              &nbsp;·&nbsp; IF : 72071701
-            </span>
+          </div>
+          <div style="font-size:11px;color:#888;">
+            MecaLIK SARL AU &nbsp;·&nbsp; ICE : 003942374000016 &nbsp;·&nbsp; RC : 726381 &nbsp;·&nbsp; IF : 72071701
           </div>
         </div>
 
