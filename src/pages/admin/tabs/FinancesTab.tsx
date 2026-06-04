@@ -172,10 +172,19 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
         </div>
 
         <div style="border-top:2px solid #f0f0f0;padding-top:20px;text-align:center;">
-          <div style="font-size:13px;color:#666;line-height:1.8;">
-            MecaLIK — SARL AU · Casablanca, Maroc<br>
-            contact@mecalik.com · +212 777 348 065 · www.mecalik.com<br>
-            <em style="font-size:12px;">Merci de votre confiance !</em>
+          <div style="font-size:12px;color:#444;line-height:2;">
+            <strong style="font-size:14px;">+212 777 348 065</strong>
+            &nbsp;&nbsp;·&nbsp;&nbsp;
+            <strong style="font-size:14px;">hello@mecalik.com</strong>
+            <br>
+            82 ANG BD Abdelmoumen et Soumaya, Résidence Shahrazad 1 Etg 4 Appt 17, Casablanca, Maroc
+            <br>
+            <span style="color:#666;">
+              MecaLIK SARL AU
+              &nbsp;·&nbsp; ICE : 003942374000016
+              &nbsp;·&nbsp; RC : 726381
+              &nbsp;·&nbsp; IF : 72071701
+            </span>
           </div>
         </div>
 
