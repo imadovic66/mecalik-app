@@ -1,4 +1,4 @@
-/** Finances tab — KPI row, monthly revenue chart, revenue by service, transactions, B2B/B2C split, pricing grid */
+/** Finances tab — KPI row, monthly revenue chart, revenue by service, transactions, B2B/B2C split, pricing grid, invoice generator */
 
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,10 +14,186 @@ interface Props {
   financeLoading: boolean
 }
 
+type InvoiceLine = { description: string; quantity: number; unitPrice: number }
+
 export default function FinancesTab({ financeBookings, financeLoading }: Props) {
   const { t, i18n } = useTranslation()
   const [selectedZone, setSelectedZone] = useState<Zone>('zone1')
 
+  // ── Invoice modal state ───────────────────────────────────────────────────
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false)
+  const [invoiceData, setInvoiceData] = useState({
+    clientName: '',
+    clientAddress: '',
+    clientPhone: '',
+    clientEmail: '',
+    clientICE: '',
+    invoiceNumber: `FAC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+    invoiceDate: new Date().toLocaleDateString('fr-MA'),
+    lines: [{ description: '', quantity: 1, unitPrice: 0 }] as InvoiceLine[],
+    paymentMethod: 'Espèces',
+    notes: '',
+  })
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '9px 12px', borderRadius: '8px',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    color: 'white', fontSize: '13px',
+    fontFamily: 'Outfit, sans-serif', outline: 'none',
+    boxSizing: 'border-box',
+  }
+  const labelStyle: React.CSSProperties = {
+    fontSize: '11px', color: 'rgba(255,255,255,0.4)',
+    textTransform: 'uppercase', letterSpacing: '0.06em',
+    display: 'block', marginBottom: '6px',
+  }
+
+  const totalHT  = invoiceData.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+  const tva      = totalHT * 0.20
+  const totalTTC = totalHT + tva
+
+  const addLine = () => setInvoiceData(prev => ({
+    ...prev, lines: [...prev.lines, { description: '', quantity: 1, unitPrice: 0 }]
+  }))
+  const removeLine = (idx: number) => setInvoiceData(prev => ({
+    ...prev, lines: prev.lines.filter((_, i) => i !== idx)
+  }))
+  const updateLine = (idx: number, field: keyof InvoiceLine, value: string | number) => {
+    setInvoiceData(prev => ({
+      ...prev,
+      lines: prev.lines.map((l, i) => i === idx ? { ...l, [field]: value } : l),
+    }))
+  }
+
+  const handlePrintInvoice = () => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const linesHtml = invoiceData.lines.map(l => `
+      <tr>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;">${l.description || '—'}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:center;">${l.quantity}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;">${l.unitPrice.toFixed(0)} MAD</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;font-weight:600;">${(l.quantity * l.unitPrice).toFixed(0)} MAD</td>
+      </tr>
+    `).join('')
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <title>Facture ${invoiceData.invoiceNumber} — MecaLIK</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; color: #1a1a1a; background: white; padding: 40px; }
+          @media print { body { padding: 20px; } .no-print { display: none; } }
+        </style>
+      </head>
+      <body>
+
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;padding-bottom:24px;border-bottom:3px solid #43BCC9;">
+          <div>
+            <div style="font-size:28px;font-weight:900;letter-spacing:-0.5px;margin-bottom:4px;">
+              Meca<span style="color:#43BCC9;">LIK</span>
+            </div>
+            <div style="font-size:12px;color:#666;line-height:1.8;">
+              Mécanicien Certifié à Domicile<br>
+              Casablanca, Maroc<br>
+              +212 777 348 065<br>
+              contact@mecalik.com<br>
+              www.mecalik.com
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:32px;font-weight:800;color:#1a1a1a;margin-bottom:8px;">FACTURE</div>
+            <table style="font-size:13px;margin-left:auto;">
+              <tr>
+                <td style="color:#666;padding:2px 8px 2px 0;">N° Facture :</td>
+                <td style="font-weight:700;">${invoiceData.invoiceNumber}</td>
+              </tr>
+              <tr>
+                <td style="color:#666;padding:2px 8px 2px 0;">Date :</td>
+                <td style="font-weight:700;">${invoiceData.invoiceDate}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div style="margin-bottom:32px;padding:16px 20px;background:#f8f9fa;border-radius:8px;border-left:4px solid #43BCC9;">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:8px;">Facturé à</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${invoiceData.clientName || '—'}</div>
+          ${invoiceData.clientAddress ? `<div style="font-size:13px;color:#444;">${invoiceData.clientAddress}</div>` : ''}
+          ${invoiceData.clientPhone   ? `<div style="font-size:13px;color:#444;">Tél : ${invoiceData.clientPhone}</div>` : ''}
+          ${invoiceData.clientEmail   ? `<div style="font-size:13px;color:#444;">Email : ${invoiceData.clientEmail}</div>` : ''}
+          ${invoiceData.clientICE     ? `<div style="font-size:13px;color:#444;">ICE : ${invoiceData.clientICE}</div>` : ''}
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+          <thead>
+            <tr style="background:#0A0A0A;color:white;">
+              <th style="padding:12px;font-size:12px;text-align:left;text-transform:uppercase;letter-spacing:0.05em;border-radius:6px 0 0 6px;">Description</th>
+              <th style="padding:12px;font-size:12px;text-align:center;text-transform:uppercase;letter-spacing:0.05em;">Qté</th>
+              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;">P.U. HT</th>
+              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;border-radius:0 6px 6px 0;">Total HT</th>
+            </tr>
+          </thead>
+          <tbody>${linesHtml}</tbody>
+        </table>
+
+        <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
+          <div style="width:280px;">
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
+              <span style="font-size:13px;color:#666;">Total HT</span>
+              <span style="font-size:13px;font-weight:600;">${totalHT.toFixed(0)} MAD</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
+              <span style="font-size:13px;color:#666;">TVA (20%)</span>
+              <span style="font-size:13px;font-weight:600;">${tva.toFixed(0)} MAD</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#f0fafa;border-radius:6px;padding:12px 16px;margin-top:4px;">
+              <span style="font-size:16px;font-weight:800;">Total TTC</span>
+              <span style="font-size:16px;font-weight:800;color:#43BCC9;">${totalTTC.toFixed(0)} MAD</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:40px;">
+          <div style="padding:16px;background:#f8f9fa;border-radius:8px;">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:6px;">Mode de paiement</div>
+            <div style="font-size:14px;font-weight:600;">${invoiceData.paymentMethod}</div>
+          </div>
+          ${invoiceData.notes ? `
+          <div style="padding:16px;background:#f8f9fa;border-radius:8px;">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:6px;">Notes</div>
+            <div style="font-size:13px;color:#444;">${invoiceData.notes}</div>
+          </div>` : '<div></div>'}
+        </div>
+
+        <div style="border-top:2px solid #f0f0f0;padding-top:20px;text-align:center;">
+          <div style="font-size:13px;color:#666;line-height:1.8;">
+            MecaLIK — SARL AU · Casablanca, Maroc<br>
+            contact@mecalik.com · +212 777 348 065 · www.mecalik.com<br>
+            <em style="font-size:12px;">Merci de votre confiance !</em>
+          </div>
+        </div>
+
+        <div class="no-print" style="text-align:center;margin-top:24px;">
+          <button onclick="window.print()" style="padding:12px 32px;background:#43BCC9;color:#0A0A0A;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
+            🖨️ Imprimer / Enregistrer en PDF
+          </button>
+        </div>
+
+      </body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => printWindow.print(), 500)
+  }
+
+  // ── Finance analytics ─────────────────────────────────────────────────────
   const now = new Date()
   const thisMonth = now.getMonth()
   const thisYear  = now.getFullYear()
@@ -53,7 +229,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     }, {})
   ).sort((a, b) => b.revenue - a.revenue)
 
-  const recentTx   = financeBookings.slice(0, 10)
+  const recentTx    = financeBookings.slice(0, 10)
   const b2cBookings = financeBookings.filter(b => !b.company_id)
   const b2bBookings = financeBookings.filter(b => b.company_id)
   const b2cRevenue  = b2cBookings.reduce((s, b) => s + b.amount_ttc, 0)
@@ -61,11 +237,11 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
   const priceChartData = PRICING_SERVICES
     .filter(s => !s.contactOnly)
     .map(s => {
-      const moPrice = s[selectedZone] as number
-      const techCost    = Math.round(moPrice * 0.60)
-      const mecalikMO   = Math.round(moPrice * 0.40)
-      const revenue     = getTotalRevenuePerIntervention(s, selectedZone)
-      const partsAvg    = Math.round((revenue.partsMin + revenue.partsMax) / 2)
+      const moPrice  = s[selectedZone] as number
+      const techCost = Math.round(moPrice * 0.60)
+      const mecalikMO = Math.round(moPrice * 0.40)
+      const revenue  = getTotalRevenuePerIntervention(s, selectedZone)
+      const partsAvg = Math.round((revenue.partsMin + revenue.partsMax) / 2)
       return { name: s.labelShort, 'Part technicien': techCost, 'Marge MO MecaLIK': mecalikMO, 'Marge pièces (5%)': partsAvg }
     })
 
@@ -78,9 +254,24 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
 
   return (
     <>
-      <h2 className="text-lg font-semibold mb-6" style={{ color: 'white' }}>
-        {t('admin.finance.title')}
-      </h2>
+      {/* ── Tab header with invoice CTA ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <h2 className="text-lg font-semibold" style={{ color: 'white', margin: 0 }}>
+          {t('admin.finance.title')}
+        </h2>
+        <button
+          onClick={() => setShowInvoiceModal(true)}
+          style={{
+            padding: '9px 18px', borderRadius: '8px',
+            background: '#43BCC9', border: 'none',
+            color: '#0A0A0A', fontSize: '13px', fontWeight: 700,
+            cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+            display: 'flex', alignItems: 'center', gap: '6px',
+          }}
+        >
+          📄 Nouvelle facture
+        </button>
+      </div>
 
       {financeLoading ? (
         <div className="flex items-center justify-center py-20">
@@ -306,6 +497,203 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
           </div>
         </div>
       </div>
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* INVOICE MODAL                                                */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {showInvoiceModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          padding: '20px', overflowY: 'auto',
+        }}>
+          <div style={{
+            width: '100%', maxWidth: '800px',
+            background: '#111114', borderRadius: '16px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            padding: '32px', marginBottom: '20px',
+          }}>
+
+            {/* Modal header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>
+                  📄 Nouvelle Facture
+                </h2>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+                  Remplissez les informations pour générer la facture
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handlePrintInvoice}
+                  style={{
+                    padding: '9px 18px', borderRadius: '8px',
+                    background: '#43BCC9', border: 'none',
+                    color: '#0A0A0A', fontSize: '13px', fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+                  }}
+                >
+                  🖨️ Imprimer
+                </button>
+                <button
+                  onClick={() => setShowInvoiceModal(false)}
+                  style={{
+                    padding: '9px 14px', borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'rgba(255,255,255,0.6)', fontSize: '13px',
+                    cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Section 1: Invoice meta */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+              <div>
+                <label style={labelStyle}>N° Facture</label>
+                <input value={invoiceData.invoiceNumber} onChange={e => setInvoiceData(p => ({ ...p, invoiceNumber: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Date</label>
+                <input value={invoiceData.invoiceDate} onChange={e => setInvoiceData(p => ({ ...p, invoiceDate: e.target.value }))} style={inputStyle} />
+              </div>
+            </div>
+
+            {/* Section 2: Client info */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#43BCC9', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                Informations Client
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Nom / Société</label>
+                  <input value={invoiceData.clientName} onChange={e => setInvoiceData(p => ({ ...p, clientName: e.target.value }))} placeholder="Transport Express Casablanca" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Téléphone</label>
+                  <input value={invoiceData.clientPhone} onChange={e => setInvoiceData(p => ({ ...p, clientPhone: e.target.value }))} placeholder="06 XX XX XX XX" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Adresse</label>
+                  <input value={invoiceData.clientAddress} onChange={e => setInvoiceData(p => ({ ...p, clientAddress: e.target.value }))} placeholder="Casablanca, Maroc" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Email</label>
+                  <input value={invoiceData.clientEmail} onChange={e => setInvoiceData(p => ({ ...p, clientEmail: e.target.value }))} placeholder="contact@entreprise.ma" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>ICE (optionnel)</label>
+                  <input value={invoiceData.clientICE} onChange={e => setInvoiceData(p => ({ ...p, clientICE: e.target.value }))} placeholder="ICE de l'entreprise" style={inputStyle} />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Service lines */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#43BCC9', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                Prestations
+              </h3>
+
+              {/* Column headers */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px' }}>
+                {['Description', 'Qté', 'P.U. HT (MAD)', 'Total HT', ''].map(h => (
+                  <div key={h} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
+                ))}
+              </div>
+
+              {/* Line items */}
+              {invoiceData.lines.map((line, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <input
+                    value={line.description}
+                    onChange={e => updateLine(i, 'description', e.target.value)}
+                    placeholder="Vidange & Filtres — Toyota Hilux"
+                    style={inputStyle}
+                  />
+                  <input
+                    value={line.quantity}
+                    type="number" min="1"
+                    onChange={e => updateLine(i, 'quantity', parseFloat(e.target.value) || 1)}
+                    style={inputStyle}
+                  />
+                  <input
+                    value={line.unitPrice}
+                    type="number" min="0"
+                    onChange={e => updateLine(i, 'unitPrice', parseFloat(e.target.value) || 0)}
+                    style={inputStyle}
+                  />
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#43BCC9', padding: '0 4px' }}>
+                    {(line.quantity * line.unitPrice).toFixed(0)} MAD
+                  </div>
+                  {invoiceData.lines.length > 1 ? (
+                    <button onClick={() => removeLine(i)} style={{ background: 'none', border: 'none', color: '#FF4444', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: 0 }}>×</button>
+                  ) : <div />}
+                </div>
+              ))}
+
+              <button
+                onClick={addLine}
+                style={{
+                  padding: '8px 14px', borderRadius: '8px', marginTop: '4px',
+                  background: 'rgba(67,188,201,0.08)', border: '1px dashed rgba(67,188,201,0.3)',
+                  color: '#43BCC9', fontSize: '12px', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+                }}
+              >
+                + Ajouter une ligne
+              </button>
+            </div>
+
+            {/* Section 4: Totals */}
+            <div style={{ marginLeft: 'auto', width: '280px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Total HT</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{totalHT.toFixed(0)} MAD</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>TVA (20%)</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{tva.toFixed(0)} MAD</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: 'white' }}>Total TTC</span>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: '#43BCC9' }}>{totalTTC.toFixed(0)} MAD</span>
+              </div>
+            </div>
+
+            {/* Section 5: Payment + notes */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={labelStyle}>Mode de paiement</label>
+                <select
+                  value={invoiceData.paymentMethod}
+                  onChange={e => setInvoiceData(p => ({ ...p, paymentMethod: e.target.value }))}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                >
+                  <option>Espèces</option>
+                  <option>Virement bancaire</option>
+                  <option>Chèque</option>
+                  <option>Carte bancaire</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Notes / Observations</label>
+                <textarea
+                  value={invoiceData.notes}
+                  onChange={e => setInvoiceData(p => ({ ...p, notes: e.target.value }))}
+                  placeholder="Paiement à 30 jours..."
+                  rows={3}
+                  style={{ ...inputStyle, resize: 'vertical' }}
+                />
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </>
   )
 }
