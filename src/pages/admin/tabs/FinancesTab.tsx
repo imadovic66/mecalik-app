@@ -178,6 +178,13 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
           </div>` : '<div></div>'}
         </div>
 
+        <!-- System generated notice -->
+        <div style="text-align:center;margin:24px 0 16px;">
+          <span style="display:inline-block;padding:6px 16px;border-radius:20px;border:1px solid #43BCC9;font-size:11px;color:#43BCC9;letter-spacing:0.05em;">
+            ✦ Document généré électroniquement — Ne nécessite pas de cachet ni de signature
+          </span>
+        </div>
+
         <!-- Footer -->
         <div style="border-top:2px solid #f0f0f0;padding-top:20px;text-align:center;margin-top:40px;">
           <div style="font-size:13px;color:#333;font-weight:600;margin-bottom:6px;">
