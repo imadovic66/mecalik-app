@@ -133,6 +133,12 @@ export default function BookingModal() {
     }
     openWhatsApp(buildWhatsAppMessage(reference ?? ''))
     setBookingReference(reference ?? '')
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      ;(window as any).fbq('track', 'Lead', {
+        content_name: SERVICE_LABELS[selectedService] || selectedService,
+        content_category: 'Booking',
+      })
+    }
     setStep(3)
   }
 

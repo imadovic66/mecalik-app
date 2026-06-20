@@ -6,7 +6,12 @@ import ReviewsSection from '../components/home/ReviewsSection'
 import CtaSection from '../components/home/CtaSection'
 
 export default function Home() {
-  const handleBookNow = () => window.dispatchEvent(new CustomEvent('openBooking'))
+  const handleBookNow = () => {
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      ;(window as any).fbq('track', 'InitiateCheckout')
+    }
+    window.dispatchEvent(new CustomEvent('openBooking'))
+  }
 
   return (
     <main>
