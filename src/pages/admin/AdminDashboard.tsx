@@ -50,7 +50,7 @@ export default function AdminDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     const [{ data: bookingData }, { data: customerData }] = await Promise.all([
-      supabase.from('bookings').select('*, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100),
+      supabase.from('bookings').select('*, service_details, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100),
       supabase.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
     ])
     setBookings(bookingData ?? [])
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
   }, [])
 
   const fetchBookings = useCallback(async () => {
-    const { data } = await supabase.from('bookings').select('*, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100)
+    const { data } = await supabase.from('bookings').select('*, service_details, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100)
     if (data) setBookings(data)
   }, [])
 
