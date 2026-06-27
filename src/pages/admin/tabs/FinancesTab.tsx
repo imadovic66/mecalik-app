@@ -299,14 +299,16 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
   const platformRevenueTTC = platformBookings.reduce((s, b) => s + (b.amount_ttc || 0), 0)
   const platformRevenueHT  = platformRevenueTTC / 1.2
   const platformTVA        = platformRevenueTTC - platformRevenueHT
-  const platformMaterials  = platformBookings.reduce((s, b) => {
-    const details: any[] = b.service_details || []
-    return s + details
+  const platformMaterials = platformBookings.reduce((s: number, b: any) => {
+    const details: any[] = Array.isArray(b.service_details) ? b.service_details : []
+    const matCost = details
       .filter((d: any) => d.type === 'product' || d.type === 'part')
       .reduce((sum: number, d: any) => {
         const qty = parseFloat(String(d.quantity || '1')) || 1
-        return sum + ((d.unit_price || 0) * qty)
+        const price = Number(d.unit_price) || 0
+        return sum + (price * qty)
       }, 0)
+    return s + matCost
   }, 0)
   const platformLabourBase     = Math.max(0, platformRevenueHT - platformMaterials)
   const platformMechanicPayout = platformLabourBase * 0.65
