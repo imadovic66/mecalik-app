@@ -64,11 +64,12 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center gap-8">
             {[
-              { to: '/',         label: t('nav.home') },
-              { to: '/services', label: t('nav.services') },
-              { to: '/devis',    label: t('nav.pricing') },
-              { to: '/fleet',    label: t('nav.fleet') },
-              { to: '/about',    label: t('nav.about') },
+              { to: '/',                    label: t('nav.home') },
+              { to: '/services',            label: t('nav.services') },
+              { to: '/comment-ca-marche',   label: t('nav.howItWorks') },
+              { to: '/devis',               label: t('nav.pricing') },
+              { to: '/fleet',               label: t('nav.fleet') },
+              { to: '/about',               label: t('nav.about') },
             ].map(item => (
               <Link key={item.to} to={item.to}
                 className="text-sm transition-colors"
@@ -108,11 +109,12 @@ export default function Navbar() {
           <div className="md:hidden border-t px-6 py-4 space-y-3"
             style={{ background: 'rgba(8,8,8,0.98)', borderColor: 'rgba(255,255,255,0.06)' }}>
             {[
-              { to: '/',         label: t('nav.home') },
-              { to: '/services', label: t('nav.services') },
-              { to: '/devis',    label: t('nav.pricing') },
-              { to: '/fleet',    label: t('nav.fleet') },
-              { to: '/about',    label: t('nav.about') },
+              { to: '/',                    label: t('nav.home') },
+              { to: '/services',            label: t('nav.services') },
+              { to: '/comment-ca-marche',   label: t('nav.howItWorks') },
+              { to: '/devis',               label: t('nav.pricing') },
+              { to: '/fleet',               label: t('nav.fleet') },
+              { to: '/about',               label: t('nav.about') },
             ].map(item => (
               <Link key={item.to} to={item.to} className="block text-sm py-2"
                 style={{ color: 'rgba(255,255,255,0.7)' }}>
