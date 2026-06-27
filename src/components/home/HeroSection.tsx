@@ -1,7 +1,7 @@
 /** Hero section — landing page headline, CTA buttons, mechanic photo, and company trust strip */
 
 import { useTranslation } from 'react-i18next'
-import { Clock, ShieldCheck, ArrowRight, Phone, Wallet } from 'lucide-react'
+import { Clock, ShieldCheck, ArrowRight, Wallet } from 'lucide-react'
 
 interface Props {
   onBookNow: () => void
@@ -103,16 +103,6 @@ export default function HeroSection({ onBookNow }: Props) {
                 {t('landing.heroCta')}
                 <ArrowRight size={16} className="group-hover:translate-x-0.5" style={{ transition: 'transform 0.2s' }} />
               </button>
-              <a
-                href="tel:+212777348065"
-                className="flex items-center gap-2 px-6 py-4 rounded-full text-sm font-medium transition-colors"
-                style={{ color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.02)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
-              >
-                <Phone size={15} />
-                07 77 34 80 65
-              </a>
             </div>
 
             {/* Trust micro-row */}

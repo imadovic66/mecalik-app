@@ -5,7 +5,7 @@ import {
   getServiceLabel, getServiceIncludes, getPriceLocale, getPriceNumber,
   type Zone,
 } from '../data/pricing'
-import { MapPin, Clock, ChevronRight, Phone, Info } from 'lucide-react'
+import { MapPin, Clock, ChevronRight, Info } from 'lucide-react'
 
 export default function QuoteCalculator() {
   const { t, i18n } = useTranslation()
@@ -235,14 +235,6 @@ export default function QuoteCalculator() {
                 {t('devis.bookBtn')}
                 <ChevronRight size={16} />
               </button>
-              <a
-                href="tel:+212777348065"
-                className="flex items-center justify-center gap-2 py-4 px-6 rounded-full font-semibold text-sm"
-                style={{ border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}
-              >
-                <Phone size={15} />
-                {t('devis.callBtn')}
-              </a>
             </div>
           </div>
         )}

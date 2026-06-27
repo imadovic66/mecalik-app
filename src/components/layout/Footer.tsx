@@ -55,14 +55,6 @@ export default function Footer() {
               >
                 <AtSign size={16} color="rgba(255,255,255,0.55)" />
               </a>
-              <a
-                href="tel:+212777348065"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200"
-                style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-                aria-label="Appeler MecaLIK"
-              >
-                <Phone size={16} color="rgba(255,255,255,0.55)" />
-              </a>
             </div>
           </div>
 
@@ -113,12 +105,9 @@ export default function Footer() {
               </div>
               <div className="flex items-start gap-3">
                 <Phone size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
-                <a
-                  href="tel:+212777348065"
-                  className="text-[rgba(255,255,255,0.45)] text-sm hover:text-white transition-colors"
-                >
+                <span className="text-[rgba(255,255,255,0.45)] text-sm">
                   +212 777 348 065
-                </a>
+                </span>
               </div>
               <div className="flex items-start gap-3">
                 <Mail size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />

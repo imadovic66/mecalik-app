@@ -426,14 +426,13 @@ export default function Fleet() {
                   className="mt-6 pt-6 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm"
                   style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
                 >
-                  <a
-                    href="tel:+212777348065"
-                    className="flex items-center gap-2 transition-colors"
+                  <span
+                    className="flex items-center gap-2"
                     style={{ color: 'rgba(255,255,255,0.45)' }}
                   >
                     <Phone size={15} color="#43BCC9" />
                     +212 777 348 065
-                  </a>
+                  </span>
                   <a
                     href="mailto:contact@mecalik.com"
                     className="flex items-center gap-2 transition-colors"
