@@ -59,6 +59,7 @@ export type FinanceBooking = {
   service_name: string
   created_at: string
   company_id: string | null
+  service_details?: ServiceDetail[] | null
 }
 
 export type Tab = 'overview' | 'bookings' | 'customers' | 'finances' | 'reviews' | 'notifications'

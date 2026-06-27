@@ -73,7 +73,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (activeTab !== 'finances') return
     setFinanceLoading(true)
-    supabase.from('bookings').select('id, amount_ttc, service_name, created_at, company_id')
+    supabase.from('bookings').select('id, amount_ttc, service_name, created_at, company_id, service_details')
       .eq('status', 'completed').gt('amount_ttc', 0).order('created_at', { ascending: false })
       .then(({ data }) => {
         setFinanceBookings((data as FinanceBooking[]) ?? [])

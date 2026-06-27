@@ -300,12 +300,15 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
   const platformRevenueHT  = platformRevenueTTC / 1.2
   const platformTVA        = platformRevenueTTC - platformRevenueHT
   const platformMaterials  = platformBookings.reduce((s, b) => {
-    const details = (b as any).service_details || []
+    const details: any[] = b.service_details || []
     return s + details
-      .filter((d: any) => d.type !== 'labor')
-      .reduce((sum: number, d: any) => sum + ((d.unit_price || 0) * parseFloat(d.quantity || '1')), 0)
+      .filter((d: any) => d.type === 'product' || d.type === 'part')
+      .reduce((sum: number, d: any) => {
+        const qty = parseFloat(String(d.quantity || '1')) || 1
+        return sum + ((d.unit_price || 0) * qty)
+      }, 0)
   }, 0)
-  const platformLabourBase     = platformRevenueHT - platformMaterials
+  const platformLabourBase     = Math.max(0, platformRevenueHT - platformMaterials)
   const platformMechanicPayout = platformLabourBase * 0.65
   const platformProfit         = platformLabourBase * 0.35
 
