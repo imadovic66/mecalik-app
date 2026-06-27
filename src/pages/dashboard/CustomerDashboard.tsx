@@ -288,18 +288,15 @@ export default function CustomerDashboard() {
                         </div>
                       </div>
                       {activeBooking.technician_phone && (
-                        <a
-                          href={`tel:${activeBooking.technician_phone}`}
-                          onClick={e => e.stopPropagation()}
+                        <span
                           style={{
                             width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
                             background: '#00DD88', color: '#000000',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            textDecoration: 'none',
                           }}
                         >
                           <Phone size={15} />
-                        </a>
+                        </span>
                       )}
                     </div>
                   )}

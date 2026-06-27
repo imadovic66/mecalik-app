@@ -349,9 +349,9 @@ export default function AdminDashboard() {
                 <Phone size={16} style={{ color: '#43BCC9', marginTop: '2px', flexShrink: 0 }} />
                 <div>
                   <div className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Téléphone</div>
-                  <a href={`tel:${selectedBooking.profiles.phone}`} className="text-sm font-medium mt-0.5 block" style={{ color: '#43BCC9' }}>
+                  <span className="text-sm font-medium mt-0.5 block" style={{ color: '#43BCC9' }}>
                     {selectedBooking.profiles.phone}
-                  </a>
+                  </span>
                 </div>
               </div>
             )}

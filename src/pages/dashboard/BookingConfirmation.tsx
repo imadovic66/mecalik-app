@@ -349,14 +349,13 @@ export default function BookingConfirmation() {
                 {/* Actions */}
                 {booking.technician_phone && (
                   <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                    <a href={`tel:${booking.technician_phone}`} style={{
+                    <span style={{
                       width: '40px', height: '40px', borderRadius: '12px',
                       background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      textDecoration: 'none',
                     }}>
                       <Phone size={15} color="rgba(255,255,255,0.7)" />
-                    </a>
+                    </span>
                     <a
                       href={`https://wa.me/${booking.technician_phone.replace(/\D/g, '')}`}
                       target="_blank" rel="noopener noreferrer"
