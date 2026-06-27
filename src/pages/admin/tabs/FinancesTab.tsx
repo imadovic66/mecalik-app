@@ -16,9 +16,32 @@ interface Props {
 
 type InvoiceLine = { description: string; quantity: number; unitPrice: number }
 
+interface OfflineEntry {
+  id: string
+  description: string
+  client_name: string
+  service_name: string
+  amount_ttc: number
+  mechanic_cost: number
+  date: string
+  created_at: string
+}
+
 export default function FinancesTab({ financeBookings, financeLoading }: Props) {
   const { t, i18n } = useTranslation()
   const [selectedZone, setSelectedZone] = useState<Zone>('zone1')
+
+  // ── Profit calculator state ───────────────────────────────────────────────
+  const [offlineEntries, setOfflineEntries] = useState<OfflineEntry[]>([])
+  const [showAddOffline, setShowAddOffline] = useState(false)
+  const [newEntry, setNewEntry] = useState({
+    description: '',
+    client_name: '',
+    service_name: '',
+    amount_ttc: 0,
+    mechanic_cost: 200,
+    date: new Date().toISOString().substring(0, 10),
+  })
 
   // ── Invoice modal state ───────────────────────────────────────────────────
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
@@ -271,8 +294,238 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
 
   const cardStyle = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '24px' }
 
+  // ── Profit calculator ─────────────────────────────────────────────────────
+  const platformBookings = financeBookings
+  const platformRevenueTTC  = platformBookings.reduce((s, b) => s + (b.amount_ttc || 0), 0)
+  const platformRevenueHT   = platformRevenueTTC / 1.2
+  const platformTVA         = platformRevenueTTC - platformRevenueHT
+  const platformMechanicCost = platformBookings.length * 200
+  const platformProfit      = platformRevenueHT - platformMechanicCost
+
+  const offlineRevenueTTC   = offlineEntries.reduce((s, e) => s + e.amount_ttc, 0)
+  const offlineRevenueHT    = offlineRevenueTTC / 1.2
+  const offlineTVA          = offlineRevenueTTC - offlineRevenueHT
+  const offlineMechanicCost = offlineEntries.reduce((s, e) => s + e.mechanic_cost, 0)
+  const offlineProfit       = offlineRevenueHT - offlineMechanicCost
+
+  const totalRevenueTTC  = platformRevenueTTC + offlineRevenueTTC
+  const totalRevenueHT   = platformRevenueHT + offlineRevenueHT
+  const totalTVA         = platformTVA + offlineTVA
+  const totalMechanicCost = platformMechanicCost + offlineMechanicCost
+  const totalProfit      = platformProfit + offlineProfit
+  const profitMargin     = totalRevenueHT > 0 ? (totalProfit / totalRevenueHT * 100) : 0
+
   return (
     <>
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* PROFIT CALCULATOR                                             */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+
+      {/* Section header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'white', margin: 0 }}>
+          💰 Calculateur de Profit
+        </h2>
+        <button
+          onClick={() => setShowAddOffline(true)}
+          style={{
+            padding: '9px 16px', borderRadius: '8px',
+            background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.3)',
+            color: '#43BCC9', fontSize: '13px', fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+          }}
+        >
+          + Intervention offline
+        </button>
+      </div>
+
+      {/* 5 KPI cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '24px' }}>
+        {[
+          { label: 'CA Total TTC',    value: `${totalRevenueTTC.toFixed(0)} MAD`,   color: 'white',    border: 'rgba(255,255,255,0.2)' },
+          { label: 'CA Total HT',     value: `${totalRevenueHT.toFixed(0)} MAD`,    color: 'white',    border: 'rgba(255,255,255,0.1)' },
+          { label: 'TVA (20%)',       value: `${totalTVA.toFixed(0)} MAD`,           color: '#F0C040',  border: 'rgba(240,192,64,0.2)',  highlight: false },
+          { label: 'Coût Mécaniciens',value: `${totalMechanicCost.toFixed(0)} MAD`, color: '#FF6B6B',  border: 'rgba(255,107,107,0.2)', highlight: false },
+          { label: 'Profit Net',      value: `${totalProfit.toFixed(0)} MAD`,        color: '#43BCC9',  border: 'rgba(67,188,201,0.3)',  highlight: true,
+            sublabel: `${profitMargin.toFixed(1)}% marge` },
+        ].map((kpi, i) => (
+          <div key={i} style={{
+            padding: '16px',
+            background: kpi.highlight ? 'rgba(67,188,201,0.08)' : 'rgba(255,255,255,0.04)',
+            border: `1px solid ${kpi.border}`,
+            borderRadius: '10px',
+          }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+              {kpi.label}
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: kpi.color }}>
+              {kpi.value}
+            </div>
+            {kpi.sublabel && (
+              <div style={{ fontSize: '11px', color: 'rgba(67,188,201,0.7)', marginTop: '4px' }}>{kpi.sublabel}</div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Platform vs Offline breakdown */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+        {[
+          {
+            label: '🌐 Réservations Plateforme', sublabel: 'Calculé automatiquement',
+            count: platformBookings.length, ttc: platformRevenueTTC, ht: platformRevenueHT,
+            mechanic: platformMechanicCost, profit: platformProfit, color: '#43BCC9',
+          },
+          {
+            label: '📞 Interventions Offline', sublabel: 'Saisie manuelle',
+            count: offlineEntries.length, ttc: offlineRevenueTTC, ht: offlineRevenueHT,
+            mechanic: offlineMechanicCost, profit: offlineProfit, color: '#F0C040',
+          },
+        ].map((col, i) => (
+          <div key={i} style={{ padding: '16px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>{col.label}</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{col.sublabel}</div>
+              </div>
+              <span style={{ fontSize: '20px', fontWeight: 800, color: col.color }}>{col.count}</span>
+            </div>
+            {([
+              { label: 'CA TTC',     value: col.ttc,     color: 'white',                   bold: false },
+              { label: 'CA HT',      value: col.ht,      color: 'rgba(255,255,255,0.6)',   bold: false },
+              { label: 'Mécaniciens',value: col.mechanic, color: '#FF6B6B',                bold: false },
+              { label: 'Profit',     value: col.profit,  color: col.color,                 bold: true  },
+            ] as { label: string; value: number; color: string; bold: boolean }[]).map((row, j) => (
+              <div key={j} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: j < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{row.label}</span>
+                <span style={{ fontSize: '13px', fontWeight: row.bold ? 700 : 500, color: row.color }}>
+                  {row.value.toFixed(0)} MAD
+                </span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Offline entries table */}
+      {offlineEntries.length > 0 && (
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Détail des interventions offline
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 90px 100px 90px 32px', gap: '8px', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}>
+              {['Date', 'Client', 'Service', 'TTC', 'Mécanicien', 'Profit', ''].map(h => (
+                <div key={h} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
+              ))}
+            </div>
+            {offlineEntries.map(entry => {
+              const ht = entry.amount_ttc / 1.2
+              const profit = ht - entry.mechanic_cost
+              return (
+                <div key={entry.id} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 90px 100px 90px 32px', gap: '8px', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{entry.date}</span>
+                  <span style={{ fontSize: '13px', color: 'white', fontWeight: 500 }}>{entry.client_name || '—'}</span>
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{entry.service_name}</span>
+                  <span style={{ fontSize: '13px', color: 'white', fontWeight: 600 }}>{entry.amount_ttc} MAD</span>
+                  <span style={{ fontSize: '12px', color: '#FF6B6B' }}>{entry.mechanic_cost} MAD</span>
+                  <span style={{ fontSize: '13px', color: '#43BCC9', fontWeight: 700 }}>{profit.toFixed(0)} MAD</span>
+                  <button
+                    onClick={() => setOfflineEntries(prev => prev.filter(e => e.id !== entry.id))}
+                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '16px' }}
+                  >×</button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Add offline modal */}
+      {showAddOffline && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#111114', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'white', margin: 0 }}>📞 Ajouter une intervention offline</h3>
+              <button onClick={() => setShowAddOffline(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer' }}>×</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {([
+                { label: 'Date',              field: 'date',         type: 'date' },
+                { label: 'Nom du client',     field: 'client_name',  type: 'text',  placeholder: 'Ex: Khalid Sekkaki' },
+                { label: 'Service effectué',  field: 'service_name', type: 'text',  placeholder: 'Ex: Vidange & Filtres' },
+              ] as { label: string; field: string; type: string; placeholder?: string }[]).map(({ label, field, type, placeholder }) => (
+                <div key={field}>
+                  <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>{label}</label>
+                  <input
+                    type={type}
+                    value={(newEntry as Record<string, string | number>)[field] as string}
+                    placeholder={placeholder}
+                    onChange={e => setNewEntry(prev => ({ ...prev, [field]: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '13px', fontFamily: 'Outfit, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+              ))}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>Montant TTC (MAD)</label>
+                  <input
+                    type="number"
+                    value={newEntry.amount_ttc || ''}
+                    placeholder="Ex: 450"
+                    onChange={e => setNewEntry(prev => ({ ...prev, amount_ttc: parseFloat(e.target.value) || 0 }))}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '13px', fontFamily: 'Outfit, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>Coût mécanicien (MAD)</label>
+                  <input
+                    type="number"
+                    value={newEntry.mechanic_cost}
+                    onChange={e => setNewEntry(prev => ({ ...prev, mechanic_cost: parseFloat(e.target.value) || 0 }))}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '13px', fontFamily: 'Outfit, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              {newEntry.amount_ttc > 0 && (
+                <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(67,188,201,0.06)', border: '1px solid rgba(67,188,201,0.15)' }}>
+                  <div style={{ fontSize: '11px', color: '#43BCC9', fontWeight: 700, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aperçu</div>
+                  {([
+                    { label: 'CA HT',           value: (newEntry.amount_ttc / 1.2).toFixed(0) + ' MAD',                                     bold: false },
+                    { label: 'TVA (20%)',        value: (newEntry.amount_ttc - newEntry.amount_ttc / 1.2).toFixed(0) + ' MAD',               bold: false },
+                    { label: 'Coût mécanicien', value: newEntry.mechanic_cost + ' MAD',                                                      bold: false },
+                    { label: '→ Profit net',    value: (newEntry.amount_ttc / 1.2 - newEntry.mechanic_cost).toFixed(0) + ' MAD',             bold: true  },
+                  ] as { label: string; value: string; bold: boolean }[]).map((row, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
+                      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{row.label}</span>
+                      <span style={{ fontSize: '12px', fontWeight: row.bold ? 700 : 500, color: row.bold ? '#43BCC9' : 'white' }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={() => {
+                  if (!newEntry.service_name || !newEntry.amount_ttc) return
+                  setOfflineEntries(prev => [...prev, { ...newEntry, id: Date.now().toString(), created_at: new Date().toISOString() }])
+                  setNewEntry({ description: '', client_name: '', service_name: '', amount_ttc: 0, mechanic_cost: 200, date: new Date().toISOString().substring(0, 10) })
+                  setShowAddOffline(false)
+                }}
+                style={{ padding: '12px', borderRadius: '8px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', marginTop: '4px' }}
+              >
+                Ajouter à la comptabilité
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Divider */}
+      <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '32px 0' }} />
+
       {/* ── Tab header with invoice CTA ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <h2 className="text-lg font-semibold" style={{ color: 'white', margin: 0 }}>
