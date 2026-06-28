@@ -1,6 +1,6 @@
 /** Finances tab — KPI row, monthly revenue chart, revenue by service, transactions, B2B/B2C split, pricing grid, invoice generator */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -8,6 +8,7 @@ import {
 } from 'recharts'
 import { SERVICES as PRICING_SERVICES, getTotalRevenuePerIntervention, type Zone } from '../../../data/pricing'
 import { type FinanceBooking } from '../adminShared'
+import { supabase } from '../../../lib/supabase'
 
 interface Props {
   financeBookings: FinanceBooking[]
@@ -18,8 +19,7 @@ type InvoiceLine = { description: string; quantity: number; unitPrice: number }
 
 interface OfflineEntry {
   id: string
-  description: string
-  client_name: string
+  client_name: string | null
   service_name: string
   amount_ttc: number
   materials_cost: number
@@ -33,15 +33,26 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
 
   // ── Profit calculator state ───────────────────────────────────────────────
   const [offlineEntries, setOfflineEntries] = useState<OfflineEntry[]>([])
+  const [_offlineLoading, setOfflineLoading] = useState(false)
   const [showAddOffline, setShowAddOffline] = useState(false)
   const [newEntry, setNewEntry] = useState({
-    description: '',
     client_name: '',
     service_name: '',
     amount_ttc: 0,
     materials_cost: 0,
     date: new Date().toISOString().substring(0, 10),
   })
+
+  useEffect(() => {
+    setOfflineLoading(true)
+    supabase.from('offline_interventions')
+      .select('*')
+      .order('date', { ascending: false })
+      .then(({ data }) => {
+        setOfflineEntries((data as OfflineEntry[]) ?? [])
+        setOfflineLoading(false)
+      })
+  }, [])
 
   // ── Invoice modal state ───────────────────────────────────────────────────
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
@@ -459,7 +470,10 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
                   <span style={{ fontSize: '12px', color: '#FF6B6B' }}>{mechanicPayout.toFixed(0)} MAD</span>
                   <span style={{ fontSize: '13px', color: '#43BCC9', fontWeight: 700 }}>{profit.toFixed(0)} MAD</span>
                   <button
-                    onClick={() => setOfflineEntries(prev => prev.filter(e => e.id !== entry.id))}
+                    onClick={async () => {
+                      await supabase.from('offline_interventions').delete().eq('id', entry.id)
+                      setOfflineEntries(prev => prev.filter(e => e.id !== entry.id))
+                    }}
                     style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: '16px' }}
                   >×</button>
                 </div>
@@ -546,11 +560,20 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
               })()}
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (!newEntry.service_name || !newEntry.amount_ttc) return
-                  setOfflineEntries(prev => [...prev, { ...newEntry, id: Date.now().toString(), created_at: new Date().toISOString() }])
-                  setNewEntry({ description: '', client_name: '', service_name: '', amount_ttc: 0, materials_cost: 0, date: new Date().toISOString().substring(0, 10) })
-                  setShowAddOffline(false)
+                  const { data, error } = await supabase.from('offline_interventions').insert({
+                    date: newEntry.date,
+                    client_name: newEntry.client_name || null,
+                    service_name: newEntry.service_name,
+                    amount_ttc: newEntry.amount_ttc,
+                    materials_cost: newEntry.materials_cost || 0,
+                  }).select().single()
+                  if (!error && data) {
+                    setOfflineEntries(prev => [data as OfflineEntry, ...prev])
+                    setNewEntry({ client_name: '', service_name: '', amount_ttc: 0, materials_cost: 0, date: new Date().toISOString().substring(0, 10) })
+                    setShowAddOffline(false)
+                  }
                 }}
                 style={{ padding: '12px', borderRadius: '8px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', marginTop: '4px' }}
               >
