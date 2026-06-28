@@ -53,38 +53,34 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [{ data: bookingData }, { data: customerData }] = await Promise.all([
+    const [{ data: bookingData }, { data: customerData }, { data: offlineData, error: offlineError }] = await Promise.all([
       supabase.from('bookings').select('*, service_details, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100),
       supabase.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
+      supabase.from('offline_interventions').select('*').order('date', { ascending: false }),
     ])
+    if (offlineError) console.error('[offline_interventions] fetch error:', offlineError)
+    const offline = offlineData ?? []
+    setOfflineCount(offline.length)
+    setOfflineRevenue(offline.reduce((s, e) => s + (Number(e.amount_ttc) || 0), 0))
+    const byMonth: { month: string; amount: number }[] = []
+    offline.forEach(e => {
+      if (!e.date) return
+      const d = new Date(e.date)
+      const key = `${d.getFullYear()}-${d.getMonth()}`
+      const existing = byMonth.find(m => m.month === key)
+      if (existing) existing.amount += Number(e.amount_ttc) || 0
+      else byMonth.push({ month: key, amount: Number(e.amount_ttc) || 0 })
+    })
+    setOfflineByMonth(byMonth)
+    setOfflineActivities(offline.map(e => ({
+      id: e.id,
+      service_name: e.service_name || '',
+      client_name: e.client_name || 'Client',
+      amount_ttc: Number(e.amount_ttc) || 0,
+      created_at: (e.date || '') + 'T12:00:00.000Z',
+    })))
     setBookings(bookingData ?? [])
     setCustomers(customerData ?? [])
-    const { data: offlineData, error: offlineError } = await supabase
-      .from('offline_interventions')
-      .select('id, amount_ttc, date, service_name, client_name')
-      .order('date', { ascending: false })
-    if (offlineError) console.error('[offline_interventions] fetch error:', offlineError)
-    if (offlineData) {
-      setOfflineCount(offlineData.length)
-      setOfflineRevenue(offlineData.reduce((s, e) => s + (Number(e.amount_ttc) || 0), 0))
-      const byMonth: { month: string; amount: number }[] = []
-      offlineData.forEach(e => {
-        if (!e.date) return
-        const d = new Date(e.date)
-        const key = `${d.getFullYear()}-${d.getMonth()}`
-        const existing = byMonth.find(m => m.month === key)
-        if (existing) existing.amount += Number(e.amount_ttc) || 0
-        else byMonth.push({ month: key, amount: Number(e.amount_ttc) || 0 })
-      })
-      setOfflineByMonth(byMonth)
-      setOfflineActivities(offlineData.map(e => ({
-        id: e.id,
-        service_name: (e as any).service_name || '',
-        client_name: (e as any).client_name || 'Client',
-        amount_ttc: Number(e.amount_ttc) || 0,
-        created_at: (e.date || '') + 'T12:00:00Z',
-      })))
-    }
     setLoading(false)
   }, [])
 
