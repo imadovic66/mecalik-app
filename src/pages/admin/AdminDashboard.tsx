@@ -41,6 +41,9 @@ export default function AdminDashboard() {
   const [mechanics, setMechanics]             = useState<{ id: string; full_name: string | null }[]>([])
   const [financeBookings, setFinanceBookings] = useState<FinanceBooking[]>([])
   const [financeLoading, setFinanceLoading]   = useState(false)
+  const [offlineCount, setOfflineCount]       = useState(0)
+  const [offlineRevenue, setOfflineRevenue]   = useState(0)
+  const [offlineByMonth, setOfflineByMonth]   = useState<{ month: string; amount: number }[]>([])
 
   const { permission, subscribed, supported, subscribe, unsubscribe, notify } = usePushNotifications()
 
@@ -49,13 +52,28 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [{ data: bookingData }, { data: customerData }] = await Promise.all([
+    const [{ data: bookingData }, { data: customerData }, { data: offlineData }] = await Promise.all([
       supabase.from('bookings').select('*, service_details, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100),
       supabase.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
+      supabase.from('offline_interventions').select('id, amount_ttc, date'),
     ])
     setBookings(bookingData ?? [])
     setCustomers(customerData ?? [])
     setLoading(false)
+    if (offlineData) {
+      setOfflineCount(offlineData.length)
+      setOfflineRevenue(offlineData.reduce((s, e) => s + (e.amount_ttc || 0), 0))
+      const byMonth: { month: string; amount: number }[] = []
+      offlineData.forEach(e => {
+        if (!e.date) return
+        const d = new Date(e.date)
+        const key = `${d.getFullYear()}-${d.getMonth()}`
+        const existing = byMonth.find(m => m.month === key)
+        if (existing) existing.amount += e.amount_ttc || 0
+        else byMonth.push({ month: key, amount: e.amount_ttc || 0 })
+      })
+      setOfflineByMonth(byMonth)
+    }
   }, [])
 
   const fetchBookings = useCallback(async () => {
@@ -131,21 +149,23 @@ export default function AdminDashboard() {
 
   // ── Derived data for Overview tab ──
   const stats = {
-    total:      bookings.length,
+    total:      bookings.length + offlineCount,
     pending:    bookings.filter(b => b.status === 'pending').length,
     inProgress: bookings.filter(b => b.status === 'in_progress').length,
     completed:  bookings.filter(b => b.status === 'completed').length,
-    revenue:    bookings.filter(b => b.status === 'completed' && b.amount_ttc).reduce((sum, b) => sum + (b.amount_ttc ?? 0), 0),
+    revenue:    bookings.filter(b => b.status === 'completed' && b.amount_ttc).reduce((sum, b) => sum + (b.amount_ttc ?? 0), 0) + offlineRevenue,
   }
 
   const now = new Date()
   const revenueData = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
     const monthLabel = d.toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { month: 'short' })
-    const revenue = bookings
+    const platformRevenue = bookings
       .filter(b => { const bDate = new Date(b.created_at); return bDate.getMonth() === d.getMonth() && bDate.getFullYear() === d.getFullYear() && b.status === 'completed' })
       .reduce((sum, b) => sum + (b.amount_ttc || 0), 0)
-    return { month: monthLabel, revenue }
+    const key = `${d.getFullYear()}-${d.getMonth()}`
+    const offlineMonthRevenue = offlineByMonth.find(m => m.month === key)?.amount ?? 0
+    return { month: monthLabel, revenue: platformRevenue + offlineMonthRevenue }
   })
 
   const bookingStatusData = [
