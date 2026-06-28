@@ -59,21 +59,21 @@ export default function AdminDashboard() {
     ])
     setBookings(bookingData ?? [])
     setCustomers(customerData ?? [])
-    setLoading(false)
     if (offlineData) {
       setOfflineCount(offlineData.length)
-      setOfflineRevenue(offlineData.reduce((s, e) => s + (e.amount_ttc || 0), 0))
+      setOfflineRevenue(offlineData.reduce((s, e) => s + (Number(e.amount_ttc) || 0), 0))
       const byMonth: { month: string; amount: number }[] = []
       offlineData.forEach(e => {
         if (!e.date) return
         const d = new Date(e.date)
         const key = `${d.getFullYear()}-${d.getMonth()}`
         const existing = byMonth.find(m => m.month === key)
-        if (existing) existing.amount += e.amount_ttc || 0
-        else byMonth.push({ month: key, amount: e.amount_ttc || 0 })
+        if (existing) existing.amount += Number(e.amount_ttc) || 0
+        else byMonth.push({ month: key, amount: Number(e.amount_ttc) || 0 })
       })
       setOfflineByMonth(byMonth)
     }
+    setLoading(false)
   }, [])
 
   const fetchBookings = useCallback(async () => {
