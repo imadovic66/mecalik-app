@@ -551,35 +551,6 @@ export default function CustomerDashboard() {
             </div>
           </section>
 
-          {/* ── SERVICE HISTORY ENTRY ───────────────────────────── */}
-          <section style={{ marginBottom: '28px' }}>
-            <button
-              onClick={() => navigate('/dashboard/service-historique')}
-              style={{
-                width: '100%', padding: '16px 18px', borderRadius: '16px',
-                background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.07)',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px',
-                textAlign: 'left',
-              }}
-            >
-              <div style={{
-                width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0,
-                background: 'rgba(67,188,201,0.08)', border: '1px solid rgba(67,188,201,0.15)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Wrench size={18} color="#43BCC9" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: 'white', marginBottom: '2px' }}>
-                  Historique service
-                </div>
-                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.4 }}>
-                  Tous vos services — MecaLIK et autres garages
-                </div>
-              </div>
-              <ArrowRight size={16} color="rgba(255,255,255,0.3)" />
-            </button>
-          </section>
 
           {/* ── BOOK AGAIN / SERVICE HISTORY ─────────────────────── */}
           {recentCompleted.length > 0 && (
