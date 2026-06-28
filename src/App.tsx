@@ -19,6 +19,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import MyCars from './pages/dashboard/MyCars'
 import MyHistory from './pages/dashboard/MyHistory'
 import MyProfile from './pages/dashboard/MyProfile'
+import ServiceHistory from './pages/dashboard/ServiceHistory'
 import MechanicDashboard from './pages/mechanic/MechanicDashboard'
 import HowItWorksPage from './pages/HowItWorksPage'
 import Tarifs from './pages/Tarifs'
@@ -69,6 +70,9 @@ function AppShell() {
           } />
           <Route path="/dashboard/profil" element={
             <ProtectedRoute requiredRole="customer"><MyProfile /></ProtectedRoute>
+          } />
+          <Route path="/dashboard/service-historique" element={
+            <ProtectedRoute requiredRole="customer"><ServiceHistory /></ProtectedRoute>
           } />
           <Route path="/fleet-dashboard" element={
             <ProtectedRoute><FleetDashboard /></ProtectedRoute>
