@@ -9,17 +9,26 @@ import {
 import { type Booking, getGuestLabel, StatusPill } from '../adminShared'
 import { serviceIdFromName } from '../../../lib/serviceUtils'
 
+interface OfflineActivity {
+  id: string
+  service_name: string
+  client_name: string
+  amount_ttc: number
+  created_at: string
+}
+
 interface Props {
   bookings: Booking[]
   loading: boolean
   stats: { total: number; pending: number; inProgress: number; revenue: number }
   revenueData: { month: string; revenue: number }[]
   bookingStatusData: { name: string; value: number; color: string }[]
+  offlineActivities: OfflineActivity[]
   onViewAll: () => void
   onSelectBooking: (b: Booking) => void
 }
 
-export default function OverviewTab({ bookings, loading, stats, revenueData, bookingStatusData, onViewAll, onSelectBooking }: Props) {
+export default function OverviewTab({ bookings, loading, stats, revenueData, bookingStatusData, offlineActivities, onViewAll, onSelectBooking }: Props) {
   const { t, i18n } = useTranslation()
 
   return (
@@ -125,17 +134,47 @@ export default function OverviewTab({ bookings, loading, stats, revenueData, boo
               <div key={i} className="h-12 rounded-xl animate-pulse" style={{ background: '#141414' }} />
             ))}
           </div>
-        ) : bookings.length === 0 ? (
+        ) : bookings.length === 0 && offlineActivities.length === 0 ? (
           <div className="text-center py-8 text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
             {t('admin.noReservationsPeriod')}
           </div>
-        ) : (
-          bookings.slice(0, 5).map(booking => (
+        ) : (() => {
+          const platformItems = bookings.map(b => ({ type: 'platform' as const, date: new Date(b.created_at).getTime(), booking: b }))
+          const offlineItems  = offlineActivities.map(e => ({ type: 'offline' as const, date: new Date(e.created_at).getTime(), offline: e }))
+          const merged = [...platformItems, ...offlineItems]
+            .sort((a, b) => b.date - a.date)
+            .slice(0, 10)
+          return merged.map(item => item.type === 'offline' ? (
             <div
-              key={booking.id}
+              key={item.offline.id}
+              className="flex items-center justify-between py-2.5 border-b last:border-0"
+              style={{ borderColor: 'rgba(255,255,255,0.04)' }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(240,192,64,0.08)' }}>
+                  <Wrench size={14} style={{ color: '#F0C040' }} />
+                </div>
+                <div>
+                  <div className="text-sm font-medium" style={{ color: 'white' }}>{item.offline.service_name}</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{item.offline.client_name}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'rgba(240,192,64,0.12)', color: '#F0C040', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  📞 Offline
+                </span>
+                <div className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>{item.offline.amount_ttc} MAD</div>
+                <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  {new Date(item.offline.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR')}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div
+              key={item.booking.id}
               className="flex items-center justify-between py-2.5 border-b last:border-0 cursor-pointer"
               style={{ borderColor: 'rgba(255,255,255,0.04)' }}
-              onClick={() => onSelectBooking(booking)}
+              onClick={() => onSelectBooking(item.booking)}
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(67,188,201,0.08)' }}>
@@ -143,27 +182,27 @@ export default function OverviewTab({ bookings, loading, stats, revenueData, boo
                 </div>
                 <div>
                   <div className="text-sm font-medium" style={{ color: 'white' }}>
-                    {t('services.' + serviceIdFromName(booking.service_name))}
+                    {t('services.' + serviceIdFromName(item.booking.service_name))}
                   </div>
                   <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                    {!booking.user_id && (
+                    {!item.booking.user_id && (
                       <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Guest
                       </span>
                     )}
-                    {getGuestLabel(booking)}
+                    {getGuestLabel(item.booking)}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <StatusPill status={booking.status} />
+                <StatusPill status={item.booking.status} />
                 <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                  {new Date(booking.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR')}
+                  {new Date(item.booking.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR')}
                 </div>
               </div>
             </div>
           ))
-        )}
+        })()}
       </div>
     </>
   )

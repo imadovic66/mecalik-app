@@ -83,6 +83,44 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     display: 'block', marginBottom: '6px',
   }
 
+  const downloadReport = () => {
+    const dateStr = new Date().toLocaleDateString('fr-MA').replace(/\//g, '-')
+    const rows: string[][] = [
+      ['Type', 'Date', 'Référence', 'Client', 'Service', 'TTC (MAD)', 'HT (MAD)', 'TVA (MAD)', 'Matériaux (MAD)', 'Base MO (MAD)', 'Mécanicien 65% (MAD)', 'Profit MecaLIK 35% (MAD)'],
+    ]
+    platformBookings.forEach(b => {
+      const ttc = b.amount_ttc || 0
+      const ht = ttc / 1.2
+      const tvaAmt = ttc - ht
+      const mats = (b.service_details || [])
+        .filter((d: any) => d.type === 'product' || d.type === 'part')
+        .reduce((s: number, d: any) => s + ((d.unit_price || 0) * (parseFloat(String(d.quantity)) || 1)), 0)
+      const labour = Math.max(0, ht - mats)
+      rows.push(['Plateforme', new Date(b.created_at).toLocaleDateString('fr-MA'), (b as any).reference || '', (b as any).profiles?.full_name || '', b.service_name || '', ttc.toFixed(2), ht.toFixed(2), tvaAmt.toFixed(2), mats.toFixed(2), labour.toFixed(2), (labour * 0.65).toFixed(2), (labour * 0.35).toFixed(2)])
+    })
+    offlineEntries.forEach(e => {
+      const ttc = e.amount_ttc || 0
+      const ht = ttc / 1.2
+      const tvaAmt = ttc - ht
+      const mats = e.materials_cost || 0
+      const labour = Math.max(0, ht - mats)
+      rows.push(['Offline (Téléphone)', e.date, 'OFFLINE', e.client_name || 'Client', e.service_name || '', ttc.toFixed(2), ht.toFixed(2), tvaAmt.toFixed(2), mats.toFixed(2), labour.toFixed(2), (labour * 0.65).toFixed(2), (labour * 0.35).toFixed(2)])
+    })
+    const grandTTC = [...platformBookings.map(b => b.amount_ttc || 0), ...offlineEntries.map(e => e.amount_ttc || 0)].reduce((s, v) => s + v, 0)
+    const grandHT = grandTTC / 1.2
+    rows.push(['TOTAL', '', '', '', '', grandTTC.toFixed(2), grandHT.toFixed(2), (grandTTC - grandHT).toFixed(2), '', '', '', ''])
+    const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `rapport-mecalik-${dateStr}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const totalHT  = invoiceData.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
   const tva      = totalHT * 0.20
   const totalTTC = totalHT + tva
@@ -592,18 +630,32 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
         <h2 className="text-lg font-semibold" style={{ color: 'white', margin: 0 }}>
           {t('admin.finance.title')}
         </h2>
-        <button
-          onClick={() => setShowInvoiceModal(true)}
-          style={{
-            padding: '9px 18px', borderRadius: '8px',
-            background: '#43BCC9', border: 'none',
-            color: '#0A0A0A', fontSize: '13px', fontWeight: 700,
-            cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
-            display: 'flex', alignItems: 'center', gap: '6px',
-          }}
-        >
-          📄 Nouvelle facture
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={downloadReport}
+            style={{
+              padding: '9px 16px', borderRadius: '8px',
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+              color: 'white', fontSize: '13px', fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}
+          >
+            📊 Rapport CSV
+          </button>
+          <button
+            onClick={() => setShowInvoiceModal(true)}
+            style={{
+              padding: '9px 18px', borderRadius: '8px',
+              background: '#43BCC9', border: 'none',
+              color: '#0A0A0A', fontSize: '13px', fontWeight: 700,
+              cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}
+          >
+            📄 Nouvelle facture
+          </button>
+        </div>
       </div>
 
       {financeLoading ? (

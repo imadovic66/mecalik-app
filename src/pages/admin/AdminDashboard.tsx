@@ -44,6 +44,7 @@ export default function AdminDashboard() {
   const [offlineCount, setOfflineCount]       = useState(0)
   const [offlineRevenue, setOfflineRevenue]   = useState(0)
   const [offlineByMonth, setOfflineByMonth]   = useState<{ month: string; amount: number }[]>([])
+  const [offlineActivities, setOfflineActivities] = useState<{ id: string; service_name: string; client_name: string; amount_ttc: number; created_at: string }[]>([])
 
   const { permission, subscribed, supported, subscribe, unsubscribe, notify } = usePushNotifications()
 
@@ -55,7 +56,7 @@ export default function AdminDashboard() {
     const [{ data: bookingData }, { data: customerData }, { data: offlineData }] = await Promise.all([
       supabase.from('bookings').select('*, service_details, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100),
       supabase.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
-      supabase.from('offline_interventions').select('id, amount_ttc, date'),
+      supabase.from('offline_interventions').select('id, amount_ttc, date, service_name, client_name'),
     ])
     setBookings(bookingData ?? [])
     setCustomers(customerData ?? [])
@@ -72,6 +73,13 @@ export default function AdminDashboard() {
         else byMonth.push({ month: key, amount: Number(e.amount_ttc) || 0 })
       })
       setOfflineByMonth(byMonth)
+      setOfflineActivities(offlineData.map(e => ({
+        id: e.id,
+        service_name: (e as any).service_name || '',
+        client_name: (e as any).client_name || 'Client',
+        amount_ttc: Number(e.amount_ttc) || 0,
+        created_at: (e.date || '') + 'T12:00:00Z',
+      })))
     }
     setLoading(false)
   }, [])
@@ -294,6 +302,7 @@ export default function AdminDashboard() {
               stats={stats}
               revenueData={revenueData}
               bookingStatusData={bookingStatusData}
+              offlineActivities={offlineActivities}
               onViewAll={() => setActiveTab('bookings')}
               onSelectBooking={setSelectedBooking}
             />
