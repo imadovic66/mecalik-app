@@ -164,9 +164,9 @@ export default function MyHistory() {
   })
   const sortedYears = Object.keys(grouped).sort((a, b) => Number(b) - Number(a))
 
-  // Stats (MecaLIK completed only for $ spent)
-  const completedMecalik = bookings.filter(b => b.status === 'completed')
-  const totalSpent = completedMecalik.reduce((s, b) => s + (b.amount_ttc ?? 0), 0)
+  const totalSpent =
+    bookings.reduce((s, b) => s + (b.amount_ttc ?? 0), 0) +
+    services.reduce((s, e) => s + (Number(e.cost) || 0), 0)
   const totalEntries = allItems.length
 
   const isEmpty = !loading && allItems.length === 0
