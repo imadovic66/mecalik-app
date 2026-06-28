@@ -53,13 +53,17 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [{ data: bookingData }, { data: customerData }, { data: offlineData }] = await Promise.all([
+    const [{ data: bookingData }, { data: customerData }] = await Promise.all([
       supabase.from('bookings').select('*, service_details, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100),
       supabase.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
-      supabase.from('offline_interventions').select('id, amount_ttc, date, service_name, client_name'),
     ])
     setBookings(bookingData ?? [])
     setCustomers(customerData ?? [])
+    const { data: offlineData, error: offlineError } = await supabase
+      .from('offline_interventions')
+      .select('id, amount_ttc, date, service_name, client_name')
+      .order('date', { ascending: false })
+    if (offlineError) console.error('[offline_interventions] fetch error:', offlineError)
     if (offlineData) {
       setOfflineCount(offlineData.length)
       setOfflineRevenue(offlineData.reduce((s, e) => s + (Number(e.amount_ttc) || 0), 0))
