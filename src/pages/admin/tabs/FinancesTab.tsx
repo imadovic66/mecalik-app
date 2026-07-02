@@ -54,6 +54,21 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
       })
   }, [])
 
+  // ── Quote modal state ────────────────────────────────────────────────────
+  const [showQuoteModal, setShowQuoteModal] = useState(false)
+  const [quoteData, setQuoteData] = useState({
+    clientName: '',
+    clientAddress: '',
+    clientPhone: '',
+    clientEmail: '',
+    clientICE: '',
+    quoteNumber: `DEV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Date.now()).slice(-4)}`,
+    quoteDate: new Date().toLocaleDateString('fr-MA'),
+    validityDays: 30,
+    lines: [{ description: '', quantity: 1, unitPrice: 0 }] as InvoiceLine[],
+    notes: '',
+  })
+
   // ── Invoice modal state ───────────────────────────────────────────────────
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
   const [invoiceData, setInvoiceData] = useState({
@@ -136,6 +151,200 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
       ...prev,
       lines: prev.lines.map((l, i) => i === idx ? { ...l, [field]: value } : l),
     }))
+  }
+
+  // ── Quote computed values + helpers ───────────────────────────────────────
+  const quoteTotalHT  = quoteData.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+  const quoteTva      = quoteTotalHT * 0.20
+  const quoteTotalTTC = quoteTotalHT + quoteTva
+
+  const addQuoteLine = () => setQuoteData(prev => ({
+    ...prev, lines: [...prev.lines, { description: '', quantity: 1, unitPrice: 0 }]
+  }))
+  const removeQuoteLine = (idx: number) => setQuoteData(prev => ({
+    ...prev, lines: prev.lines.filter((_, i) => i !== idx)
+  }))
+  const updateQuoteLine = (idx: number, field: keyof InvoiceLine, value: string | number) => {
+    setQuoteData(prev => ({
+      ...prev,
+      lines: prev.lines.map((l, i) => i === idx ? { ...l, [field]: value } : l),
+    }))
+  }
+
+  const handlePrintQuote = () => {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    const validityDate = new Date()
+    validityDate.setDate(validityDate.getDate() + quoteData.validityDays)
+    const validityStr = validityDate.toLocaleDateString('fr-MA')
+
+    const linesHtml = quoteData.lines.map(l => `
+      <tr>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;">${l.description || '—'}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:center;">${l.quantity}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;">${l.unitPrice.toFixed(0)} MAD</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;font-weight:600;">${(l.quantity * l.unitPrice).toFixed(0)} MAD</td>
+      </tr>
+    `).join('')
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <title>Devis ${quoteData.quoteNumber} — MecaLIK</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; color: #1a1a1a; background: white; padding: 40px; }
+          @media print { body { padding: 20px; } .no-print { display: none; } }
+        </style>
+      </head>
+      <body>
+
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #43BCC9;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <img src="https://mecalik.com/icons/icon-192x192.png"
+                 style="width:56px;height:56px;border-radius:10px;object-fit:contain;background:#0A0A0A;padding:4px;"
+                 alt="MecaLIK Logo"
+            />
+            <div>
+              <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;line-height:1;">
+                Meca<span style="color:#43BCC9;">LIK</span>
+              </div>
+              <div style="font-size:11px;color:#666;margin-top:2px;letter-spacing:0.03em;">
+                Your car, your place. Our problem.
+              </div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:32px;font-weight:800;color:#1a1a1a;margin-bottom:6px;">DEVIS</div>
+            <div style="font-size:12px;color:#888;font-style:italic;">Estimation — non contractuel jusqu'à acceptation</div>
+          </div>
+        </div>
+
+        <!-- Quote meta + client info -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;gap:24px;">
+          <div style="flex:1;padding:16px 20px;background:#f8f9fa;border-radius:8px;border-left:4px solid #43BCC9;">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:8px;">Devis établi pour</div>
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${quoteData.clientName || '—'}</div>
+            ${quoteData.clientAddress ? `<div style="font-size:13px;color:#444;">${quoteData.clientAddress}</div>` : ''}
+            ${quoteData.clientPhone ? `<div style="font-size:13px;color:#444;">Tél : ${quoteData.clientPhone}</div>` : ''}
+            ${quoteData.clientEmail ? `<div style="font-size:13px;color:#444;">Email : ${quoteData.clientEmail}</div>` : ''}
+            ${quoteData.clientICE ? `<div style="font-size:13px;color:#444;">ICE : ${quoteData.clientICE}</div>` : ''}
+          </div>
+          <div style="min-width:220px;">
+            <table style="font-size:13px;margin-left:auto;">
+              <tr>
+                <td style="color:#666;padding:4px 8px 4px 0;">N° Devis :</td>
+                <td style="font-weight:700;">${quoteData.quoteNumber}</td>
+              </tr>
+              <tr>
+                <td style="color:#666;padding:4px 8px 4px 0;">Date d'émission :</td>
+                <td style="font-weight:700;">${quoteData.quoteDate}</td>
+              </tr>
+              <tr>
+                <td style="color:#666;padding:4px 8px 4px 0;">Valable jusqu'au :</td>
+                <td style="font-weight:700;color:#43BCC9;">${validityStr}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- Line items table -->
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+          <thead>
+            <tr style="background:#0A0A0A;color:white;">
+              <th style="padding:12px;font-size:12px;text-align:left;text-transform:uppercase;letter-spacing:0.05em;border-radius:6px 0 0 6px;">Description</th>
+              <th style="padding:12px;font-size:12px;text-align:center;text-transform:uppercase;letter-spacing:0.05em;">Qté</th>
+              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;">P.U. HT</th>
+              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;border-radius:0 6px 6px 0;">Total HT</th>
+            </tr>
+          </thead>
+          <tbody>${linesHtml}</tbody>
+        </table>
+
+        <!-- Totals -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
+          <div style="width:280px;">
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
+              <span style="font-size:13px;color:#666;">Sous-total HT</span>
+              <span style="font-size:13px;font-weight:600;">${quoteTotalHT.toFixed(0)} MAD</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
+              <span style="font-size:13px;color:#666;">TVA (20%)</span>
+              <span style="font-size:13px;font-weight:600;">${quoteTva.toFixed(0)} MAD</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#f0fafa;border-radius:6px;padding:12px 16px;margin-top:4px;">
+              <span style="font-size:16px;font-weight:800;">Total TTC</span>
+              <span style="font-size:16px;font-weight:800;color:#43BCC9;">${quoteTotalTTC.toFixed(0)} MAD</span>
+            </div>
+          </div>
+        </div>
+
+        ${quoteData.notes ? `
+        <!-- Notes -->
+        <div style="padding:14px 18px;background:#f8f9fa;border-radius:8px;margin-bottom:32px;">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:6px;">Notes</div>
+          <div style="font-size:13px;color:#444;">${quoteData.notes}</div>
+        </div>` : ''}
+
+        <!-- Approval section -->
+        <div style="border:1px solid #ddd;border-radius:8px;padding:20px 24px;margin-bottom:32px;">
+          <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:16px;">BON POUR ACCORD — Signature client</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+            <div>
+              <div style="font-size:12px;color:#666;margin-bottom:8px;">Date :</div>
+              <div style="border-bottom:1px solid #999;padding-bottom:4px;min-height:28px;"></div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:#666;margin-bottom:8px;">Signature :</div>
+              <div style="border-bottom:1px solid #999;padding-bottom:4px;min-height:28px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Validity notice -->
+        <div style="background:#fffbea;border:1px solid #f0c040;border-radius:6px;padding:12px 16px;margin-bottom:24px;">
+          <div style="font-size:12px;color:#7a6200;">
+            ⚠️ Ce devis est valable <strong>${quoteData.validityDays} jours</strong> à compter de sa date d'émission (${quoteData.quoteDate}).
+            Une fois accepté, ce devis servira de base à l'établissement de la facture.
+          </div>
+        </div>
+
+        <!-- System generated notice -->
+        <div style="text-align:center;margin:20px 0 16px;">
+          <span style="display:inline-block;padding:6px 16px;border-radius:20px;border:1px solid #43BCC9;font-size:11px;color:#43BCC9;letter-spacing:0.05em;">
+            ✦ Document généré électroniquement — Ne nécessite pas de cachet ni de signature
+          </span>
+        </div>
+
+        <!-- Footer -->
+        <div style="border-top:2px solid #f0f0f0;padding-top:20px;text-align:center;margin-top:32px;">
+          <div style="font-size:13px;color:#333;font-weight:600;margin-bottom:6px;">
+            +212 777 348 065 &nbsp;·&nbsp; hello@mecalik.com
+          </div>
+          <div style="font-size:12px;color:#555;margin-bottom:4px;">
+            82 ANG BD Abdelmoumen et Soumaya, Résidence Shahrazad 1 Etg 4 Appt 17, Casablanca, Maroc
+          </div>
+          <div style="font-size:11px;color:#888;">
+            MecaLIK SARL AU &nbsp;·&nbsp; ICE : 003942374000016 &nbsp;·&nbsp; RC : 726381 &nbsp;·&nbsp; IF : 72071701
+          </div>
+        </div>
+
+        <div class="no-print" style="text-align:center;margin-top:24px;">
+          <button onclick="window.print()" style="padding:12px 32px;background:#43BCC9;color:#0A0A0A;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
+            🖨️ Imprimer / Enregistrer en PDF
+          </button>
+        </div>
+
+      </body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => printWindow.print(), 500)
   }
 
   const handlePrintInvoice = () => {
@@ -644,6 +853,19 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
             📊 Rapport CSV
           </button>
           <button
+            onClick={() => setShowQuoteModal(true)}
+            style={{
+              padding: '9px 16px', borderRadius: '8px',
+              background: 'rgba(240,192,64,0.1)',
+              border: '1px solid rgba(240,192,64,0.3)',
+              color: '#F0C040', fontSize: '13px', fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}
+          >
+            📋 Nouveau devis
+          </button>
+          <button
             onClick={() => setShowInvoiceModal(true)}
             style={{
               padding: '9px 18px', borderRadius: '8px',
@@ -882,6 +1104,199 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
           </div>
         </div>
       </div>
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* QUOTE MODAL                                                  */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {showQuoteModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          padding: '20px', overflowY: 'auto',
+        }}>
+          <div style={{
+            width: '100%', maxWidth: '800px',
+            background: '#111114', borderRadius: '16px',
+            border: '1px solid rgba(240,192,64,0.15)',
+            padding: '32px', marginBottom: '20px',
+          }}>
+
+            {/* Modal header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>
+                  📋 Nouveau Devis
+                </h2>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+                  Estimation avant travaux — non contractuel jusqu'à acceptation
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handlePrintQuote}
+                  style={{
+                    padding: '9px 18px', borderRadius: '8px',
+                    background: '#F0C040', border: 'none',
+                    color: '#0A0A0A', fontSize: '13px', fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+                  }}
+                >
+                  🖨️ Générer PDF
+                </button>
+                <button
+                  onClick={() => setShowQuoteModal(false)}
+                  style={{
+                    padding: '9px 14px', borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'rgba(255,255,255,0.6)', fontSize: '13px',
+                    cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Section 1: Quote meta */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+              <div>
+                <label style={labelStyle}>N° Devis</label>
+                <input value={quoteData.quoteNumber} onChange={e => setQuoteData(p => ({ ...p, quoteNumber: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Date d'émission</label>
+                <input value={quoteData.quoteDate} onChange={e => setQuoteData(p => ({ ...p, quoteDate: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Validité</label>
+                <select
+                  value={quoteData.validityDays}
+                  onChange={e => setQuoteData(p => ({ ...p, validityDays: parseInt(e.target.value) }))}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                >
+                  <option value={15}>15 jours</option>
+                  <option value={30}>30 jours</option>
+                  <option value={60}>60 jours</option>
+                  <option value={90}>90 jours</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Section 2: Client info */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#F0C040', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                Informations Client
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={labelStyle}>Nom / Société</label>
+                  <input value={quoteData.clientName} onChange={e => setQuoteData(p => ({ ...p, clientName: e.target.value }))} placeholder="Transport Express Casablanca" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Téléphone</label>
+                  <input value={quoteData.clientPhone} onChange={e => setQuoteData(p => ({ ...p, clientPhone: e.target.value }))} placeholder="06 XX XX XX XX" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Adresse</label>
+                  <input value={quoteData.clientAddress} onChange={e => setQuoteData(p => ({ ...p, clientAddress: e.target.value }))} placeholder="Casablanca, Maroc" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Email</label>
+                  <input value={quoteData.clientEmail} onChange={e => setQuoteData(p => ({ ...p, clientEmail: e.target.value }))} placeholder="contact@entreprise.ma" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>ICE (optionnel)</label>
+                  <input value={quoteData.clientICE} onChange={e => setQuoteData(p => ({ ...p, clientICE: e.target.value }))} placeholder="ICE de l'entreprise" style={inputStyle} />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Line items */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#F0C040', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                Prestations estimées
+              </h3>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px' }}>
+                {['Description', 'Qté', 'P.U. HT (MAD)', 'Total HT', ''].map(h => (
+                  <div key={h} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
+                ))}
+              </div>
+
+              {quoteData.lines.map((line, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <input
+                    value={line.description}
+                    onChange={e => updateQuoteLine(i, 'description', e.target.value)}
+                    placeholder="Vidange & Filtres — Toyota Hilux"
+                    style={inputStyle}
+                  />
+                  <input
+                    value={line.quantity}
+                    type="number" min="1"
+                    onChange={e => updateQuoteLine(i, 'quantity', parseFloat(e.target.value) || 1)}
+                    style={inputStyle}
+                  />
+                  <input
+                    value={line.unitPrice}
+                    type="number" min="0"
+                    onChange={e => updateQuoteLine(i, 'unitPrice', parseFloat(e.target.value) || 0)}
+                    style={inputStyle}
+                  />
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#F0C040', padding: '0 4px' }}>
+                    {(line.quantity * line.unitPrice).toFixed(0)} MAD
+                  </div>
+                  {quoteData.lines.length > 1 ? (
+                    <button onClick={() => removeQuoteLine(i)} style={{ background: 'none', border: 'none', color: '#FF4444', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: 0 }}>×</button>
+                  ) : <div />}
+                </div>
+              ))}
+
+              <button
+                onClick={addQuoteLine}
+                style={{
+                  padding: '8px 14px', borderRadius: '8px', marginTop: '4px',
+                  background: 'rgba(240,192,64,0.06)', border: '1px dashed rgba(240,192,64,0.3)',
+                  color: '#F0C040', fontSize: '12px', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
+                }}
+              >
+                + Ajouter une ligne
+              </button>
+            </div>
+
+            {/* Section 4: Totals preview */}
+            <div style={{ marginLeft: 'auto', width: '280px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Sous-total HT</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{quoteTotalHT.toFixed(0)} MAD</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>TVA (20%)</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{quoteTva.toFixed(0)} MAD</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: 'white' }}>Total TTC</span>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: '#F0C040' }}>{quoteTotalTTC.toFixed(0)} MAD</span>
+              </div>
+            </div>
+
+            {/* Section 5: Notes */}
+            <div>
+              <label style={labelStyle}>Notes / Observations (optionnel)</label>
+              <textarea
+                value={quoteData.notes}
+                onChange={e => setQuoteData(p => ({ ...p, notes: e.target.value }))}
+                placeholder="Délai d'intervention estimé, conditions particulières..."
+                rows={3}
+                style={{ ...inputStyle, resize: 'vertical' }}
+              />
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* INVOICE MODAL                                                */}
