@@ -4,8 +4,16 @@ import { useTranslation } from 'react-i18next'
 
 export type BookingStatus = 'pending' | 'confirmed' | 'on_the_way' | 'in_progress' | 'completed' | 'cancelled'
 
+export type ServiceDetailType = 'material' | 'labor' | 'vat' | 'discount'
+
+export function normalizeDetailType(raw: string): ServiceDetailType {
+  if (raw === 'product' || raw === 'part') return 'material'
+  if (raw === 'material' || raw === 'labor' || raw === 'vat' || raw === 'discount') return raw as ServiceDetailType
+  return 'material'
+}
+
 export type ServiceDetail = {
-  type: 'product' | 'part' | 'labor'
+  type: 'material' | 'labor' | 'vat' | 'discount' | 'product' | 'part'
   name: string
   brand?: string
   reference?: string

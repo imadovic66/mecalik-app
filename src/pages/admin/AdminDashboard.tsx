@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const [offlineRevenue, setOfflineRevenue]   = useState(0)
   const [offlineByMonth, setOfflineByMonth]   = useState<{ month: string; amount: number }[]>([])
   const [offlineActivities, setOfflineActivities] = useState<{ id: string; service_name: string; client_name: string; amount_ttc: number; created_at: string }[]>([])
+  const [newBookingToast, setNewBookingToast] = useState<{ reference: string | null; service: string | null } | null>(null)
 
   const { permission, subscribed, supported, subscribe, unsubscribe, notify } = usePushNotifications()
 
@@ -110,7 +111,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     const channel = supabase
       .channel('admin-bookings-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => { fetchBookings() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, (payload) => { console.log('🔴 REALTIME:', payload.eventType, payload);
+        fetchBookings()
+        if (payload.eventType === 'INSERT') {
+          setNewBookingToast({ reference: payload.new?.reference ?? null, service: payload.new?.service_name ?? null })
+          setTimeout(() => setNewBookingToast(null), 5000)
+        }
+      })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [fetchBookings])
@@ -479,6 +486,29 @@ export default function AdminDashboard() {
               Fermer
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ── NEW BOOKING TOAST ─────────────────────────────────────────── */}
+      {newBookingToast && (
+        <div
+          style={{
+            position: 'fixed', top: '20px', right: '20px', zIndex: 1000,
+            background: '#43BCC9', color: '#0A0A0A',
+            padding: '14px 20px', borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(67,188,201,0.4)',
+            fontFamily: 'Outfit, sans-serif', fontWeight: 700,
+            display: 'flex', alignItems: 'center', gap: '10px',
+            animation: 'slideIn 0.3s ease-out',
+          }}
+        >
+          🔔 Nouvelle demande{newBookingToast.reference ? ` — ${newBookingToast.reference}` : ''}{newBookingToast.service ? ` — ${newBookingToast.service}` : ''}
+          <button
+            onClick={() => setNewBookingToast(null)}
+            style={{ background: 'rgba(0,0,0,0.15)', border: 'none', borderRadius: '6px', cursor: 'pointer', padding: '2px 6px', color: '#0A0A0A', fontWeight: 700, fontSize: '12px' }}
+          >
+            ✕
+          </button>
         </div>
       )}
 
