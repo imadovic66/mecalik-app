@@ -183,7 +183,6 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
           {filteredBookings.map((booking, i) => {
             const isExpanded = expandedBooking === booking.id
             const details = getDetails(booking.id, booking.service_details)
-            const detailsTotal = details.reduce((s, item) => s + ((item.unit_price || 0) * parseFloat(item.quantity || '1')), 0)
             const isSaving = saving === booking.id
 
             return (
