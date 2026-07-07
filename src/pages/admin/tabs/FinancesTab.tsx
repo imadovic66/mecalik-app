@@ -17,7 +17,7 @@ interface Props {
 
 type InvoiceLine = { description: string; quantity: number; unitPrice: number }
 type Period = 'month' | 'quarter' | 'year' | 'all'
-type ExpenseCategory = 'loyer' | 'salaires' | 'marketing' | 'transport' | 'tech' | 'autre'
+type ExpenseCategory = 'loyer' | 'salaires' | 'marketing' | 'transport' | 'tech' | 'admin' | 'insurance' | 'autre'
 
 interface Expense {
   id: string
@@ -51,12 +51,14 @@ const PERIOD_OPTS: { key: Period; label: string }[] = [
 ]
 
 const EXP_CATS: { key: ExpenseCategory; label: string; emoji: string; color: string }[] = [
-  { key: 'loyer',     label: 'Loyer',       emoji: '🏢', color: '#43BCC9' },
-  { key: 'salaires',  label: 'Salaires',    emoji: '👤', color: '#F0C040' },
-  { key: 'marketing', label: 'Marketing',   emoji: '📣', color: '#A78BFA' },
-  { key: 'transport', label: 'Transport',   emoji: '🚗', color: '#34D399' },
-  { key: 'tech',      label: 'Tech / SaaS', emoji: '💻', color: '#60A5FA' },
-  { key: 'autre',     label: 'Autre',       emoji: '📦', color: 'rgba(255,255,255,0.5)' },
+  { key: 'loyer',     label: 'Loyer',        emoji: '🏢', color: '#43BCC9' },
+  { key: 'salaires',  label: 'Salaires',     emoji: '👤', color: '#F0C040' },
+  { key: 'marketing', label: 'Marketing',    emoji: '📣', color: '#A78BFA' },
+  { key: 'transport', label: 'Transport',    emoji: '🚗', color: '#34D399' },
+  { key: 'tech',      label: 'Tech / SaaS',  emoji: '💻', color: '#60A5FA' },
+  { key: 'admin',     label: 'Admin',        emoji: '📋', color: '#FB923C' },
+  { key: 'insurance', label: 'Assurance',    emoji: '🛡️', color: '#E879F9' },
+  { key: 'autre',     label: 'Autre',        emoji: '📦', color: 'rgba(255,255,255,0.5)' },
 ]
 
 const LEGACY_TYPE: Record<string, string> = { product: 'material', part: 'material' }
@@ -814,7 +816,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
           <button
             onClick={() => setShowAddExpense(true)}
             style={{ padding: '7px 14px', borderRadius: '8px', background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.3)', color: '#43BCC9', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-          >+ Charge</button>
+          >+ Ajouter une dépense</button>
         </div>
       </div>
 
@@ -872,7 +874,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={labelStyle}>Catégorie</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                   {EXP_CATS.map(c => (
                     <button
                       key={c.key}

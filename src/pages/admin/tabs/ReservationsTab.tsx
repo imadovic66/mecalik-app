@@ -330,25 +330,33 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                         const cat = normalizeDetailType(item.type)
                         const cfg = CATEGORY_CONFIG[cat]
                         const lineTotal = (item.unit_price || 0) * (parseFloat(item.quantity || '1') || 1)
+                        const isLegacy = item.type === 'product' || item.type === 'part'
                         return (
                           <div key={idx} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 110px 70px 70px 90px 32px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                             {/* Segmented category control */}
-                            <div style={{ display: 'flex', gap: '3px', background: 'rgba(255,255,255,0.04)', borderRadius: '7px', padding: '3px' }}>
-                              {(Object.entries(CATEGORY_CONFIG) as [ServiceDetailType, typeof CATEGORY_CONFIG[ServiceDetailType]][]).map(([key, c]) => (
-                                <button
-                                  key={key}
-                                  title={c.label}
-                                  onClick={() => updateServiceDetail(booking.id, booking, idx, 'type', key)}
-                                  style={{
-                                    flex: 1, padding: '4px 2px', borderRadius: '5px', border: 'none', cursor: 'pointer',
-                                    background: cat === key ? c.bg : 'transparent',
-                                    color: cat === key ? c.color : 'rgba(255,255,255,0.25)',
-                                    fontSize: '13px', lineHeight: 1, transition: 'all 0.15s',
-                                  }}
-                                >
-                                  {c.emoji}
-                                </button>
-                              ))}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                              <div style={{ display: 'flex', gap: '3px', background: isLegacy ? 'rgba(240,192,64,0.08)' : 'rgba(255,255,255,0.04)', borderRadius: '7px', padding: '3px', border: isLegacy ? '1px solid rgba(240,192,64,0.25)' : '1px solid transparent' }}>
+                                {(Object.entries(CATEGORY_CONFIG) as [ServiceDetailType, typeof CATEGORY_CONFIG[ServiceDetailType]][]).map(([key, c]) => (
+                                  <button
+                                    key={key}
+                                    title={c.label}
+                                    onClick={() => updateServiceDetail(booking.id, booking, idx, 'type', key)}
+                                    style={{
+                                      flex: 1, padding: '4px 2px', borderRadius: '5px', border: 'none', cursor: 'pointer',
+                                      background: cat === key ? c.bg : 'transparent',
+                                      color: cat === key ? c.color : 'rgba(255,255,255,0.25)',
+                                      fontSize: '13px', lineHeight: 1, transition: 'all 0.15s',
+                                    }}
+                                  >
+                                    {c.emoji}
+                                  </button>
+                                ))}
+                              </div>
+                              {isLegacy && (
+                                <div style={{ fontSize: '9px', color: '#F0C040', opacity: 0.8, paddingLeft: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                  ✏️ <span>recatégoriser</span>
+                                </div>
+                              )}
                             </div>
                             {/* Category badge + name input */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
