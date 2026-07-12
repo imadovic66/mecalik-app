@@ -106,10 +106,26 @@ function inPeriod(dateStr: string, period: Period): boolean {
   return true
 }
 
+function getPeriodLabel(p: Period): string {
+  const now = new Date()
+  if (p === 'month')   return now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  if (p === 'quarter') return `T${Math.floor(now.getMonth() / 3) + 1} ${now.getFullYear()}`
+  if (p === 'year')    return `Année ${now.getFullYear()}`
+  return 'Toutes périodes'
+}
+
 export default function FinancesTab({ financeBookings, financeLoading }: Props) {
   const { i18n } = useTranslation()
   const [selectedZone, setSelectedZone] = useState<Zone>('zone1')
   const [period, setPeriod] = useState<Period>('month')
+
+  // ── Report state ──────────────────────────────────────────────────────────
+  const [showTvaModal, setShowTvaModal] = useState(false)
+  const [tvaQuarter, setTvaQuarter] = useState<'Q1'|'Q2'|'Q3'|'Q4'>(() => {
+    const q = Math.floor(new Date().getMonth() / 3) + 1
+    return `Q${q}` as 'Q1'|'Q2'|'Q3'|'Q4'
+  })
+  const [tvaYear, setTvaYear] = useState(new Date().getFullYear())
 
   // ── Expenses state ────────────────────────────────────────────────────────
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -253,6 +269,46 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     document.body.removeChild(a); URL.revokeObjectURL(url)
   }
 
+  // ── Report handlers ───────────────────────────────────────────────────────
+  const handlePLReport = async () => {
+    const { generatePLReport } = await import('../../../utils/generatePLReport')
+    generatePLReport({
+      periodLabel:     getPeriodLabel(period),
+      platformRevTTC,
+      offlineRevTTC,
+      revTTC, revHT, tvaCollected,
+      totalMats, mechanicPayout,
+      grossProfit, grossMargin,
+      opexByCategory: EXP_CATS.map(c => ({
+        label:  `${c.emoji} ${c.label}`,
+        amount: filteredExpenses.filter(e => e.category === c.key).reduce((s, e) => s + (e.amount_ttc || 0), 0),
+      })),
+      totalOpex, netProfit, netMargin,
+    })
+  }
+
+  const handleLedger = async () => {
+    const { generateLedger } = await import('../../../utils/generateLedger')
+    generateLedger({
+      periodLabel: getPeriodLabel(period),
+      bookings:    filteredBookings as any[],
+      offline:     filteredOffline,
+      expenses:    filteredExpenses,
+    })
+  }
+
+  const handleVatDeclaration = async () => {
+    const { generateVatDeclaration } = await import('../../../utils/generateVatDeclaration')
+    generateVatDeclaration({
+      quarter:  tvaQuarter,
+      year:     tvaYear,
+      bookings: financeBookings as any[],
+      offline:  offlineEntries,
+      expenses,
+    })
+    setShowTvaModal(false)
+  }
+
   // ── Invoice helpers ───────────────────────────────────────────────────────
   const totalHT  = invoiceData.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
   const tva      = totalHT * 0.20
@@ -277,8 +333,9 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
   const filteredOffline  = offlineEntries.filter(e => inPeriod(e.date, period))
   const filteredExpenses = expenses.filter(e => inPeriod(e.date, period))
 
-  const revTTC       = filteredBookings.reduce((s, b) => s + (b.amount_ttc || 0), 0)
-                     + filteredOffline.reduce((s, e) => s + (e.amount_ttc || 0), 0)
+  const platformRevTTC = filteredBookings.reduce((s, b) => s + (b.amount_ttc || 0), 0)
+  const offlineRevTTC  = filteredOffline.reduce((s, e) => s + (e.amount_ttc || 0), 0)
+  const revTTC       = platformRevTTC + offlineRevTTC
   const revHT        = revTTC / 1.2
   const tvaCollected = revTTC - revHT
 
@@ -792,6 +849,86 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
           </div>
         </>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* RAPPORTS                                                      */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+
+      <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '24px 0' }} />
+
+      <div style={{ marginBottom: '8px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'white', margin: '0 0 12px 0' }}>📊 Rapports</h2>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+
+          {/* P&L PDF */}
+          <button
+            onClick={handlePLReport}
+            style={{ padding: '9px 16px', borderRadius: '8px', background: 'rgba(67,188,201,0.08)', border: '1px solid rgba(67,188,201,0.3)', color: '#43BCC9', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >📄 Rapport P&L (PDF)</button>
+
+          {/* Grand Livre Excel */}
+          <button
+            onClick={handleLedger}
+            style={{ padding: '9px 16px', borderRadius: '8px', background: 'rgba(67,188,201,0.08)', border: '1px solid rgba(67,188,201,0.3)', color: '#43BCC9', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >📊 Grand Livre (Excel)</button>
+
+          {/* TVA Declaration */}
+          <button
+            onClick={() => setShowTvaModal(true)}
+            style={{ padding: '9px 16px', borderRadius: '8px', background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.3)', color: '#F0C040', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >🧾 Déclaration TVA (PDF)</button>
+
+          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', marginLeft: '4px' }}>
+            Période active : {getPeriodLabel(period)}
+          </span>
+        </div>
+
+        {/* TVA quarter selector */}
+        {showTvaModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: '#121212', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '28px 28px 24px', width: '340px', maxWidth: '90vw' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'white', margin: '0 0 18px 0' }}>🧾 Déclaration TVA</h3>
+
+              {/* Quarter selector */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>Trimestre</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['Q1','Q2','Q3','Q4'] as const).map(q => (
+                    <button
+                      key={q}
+                      onClick={() => setTvaQuarter(q)}
+                      style={{ flex: 1, padding: '8px 0', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 700, fontFamily: 'Outfit, sans-serif', background: tvaQuarter === q ? '#F0C040' : 'rgba(255,255,255,0.07)', color: tvaQuarter === q ? '#0A0A0A' : 'rgba(255,255,255,0.5)' }}
+                    >{q}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Year input */}
+              <div style={{ marginBottom: '22px' }}>
+                <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>Année</label>
+                <input
+                  type="number"
+                  value={tvaYear}
+                  onChange={e => setTvaYear(Number(e.target.value))}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '14px', fontFamily: 'Outfit, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setShowTvaModal(false)}
+                  style={{ padding: '9px 18px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                >Annuler</button>
+                <button
+                  onClick={handleVatDeclaration}
+                  style={{ padding: '9px 18px', borderRadius: '8px', background: '#F0C040', border: 'none', color: '#0A0A0A', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                >Générer</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* CHARGES D'EXPLOITATION                                        */}
