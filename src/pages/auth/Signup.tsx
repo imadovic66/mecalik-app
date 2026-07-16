@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
+import { analytics } from '../../lib/analytics'
 import { Eye, EyeOff, ChevronRight } from 'lucide-react'
 
 export default function Signup() {
@@ -58,6 +59,8 @@ export default function Signup() {
       }
 
       if (data?.user) {
+        analytics.signUp('email')
+
         const raw = sessionStorage.getItem('pendingBooking')
         if (raw) {
           try {

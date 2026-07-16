@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
+import { analytics } from '../../lib/analytics'
 import { Eye, EyeOff, ChevronRight } from 'lucide-react'
 
 export default function Login() {
@@ -34,6 +35,8 @@ export default function Login() {
       .select('role')
       .eq('id', data.user.id)
       .single()
+
+    analytics.login('email', profile?.role ?? 'customer')
 
     if (profile?.role === 'admin')          navigate('/admin')
     else if (profile?.role === 'fleet_manager') navigate('/fleet-dashboard')

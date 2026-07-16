@@ -4,7 +4,8 @@ import { X, ArrowLeft, Phone, MapPin, User, Car as CarIcon, MessageCircle, Check
 import { useTranslation } from 'react-i18next'
 import { supabase, type Car } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
-import { SERVICES, getPrice } from '../../data/pricing'
+import { analytics } from '../../lib/analytics'
+import { SERVICES, getPrice, getPriceNumber } from '../../data/pricing'
 
 const SERVICE_OPTIONS = [
   { id: 'lavage',     duration: '~45 min' },
@@ -86,6 +87,11 @@ export default function BookingModal() {
 
   if (!isOpen) return null
 
+  const selectedPricingService = SERVICES.find(s => s.id === selectedService)
+  const selectedServicePrice = selectedPricingService && !selectedPricingService.contactOnly
+    ? (getPriceNumber(selectedPricingService, 'zone1') ?? 0)
+    : 0
+
   const close = () => {
     setIsOpen(false)
     setStep(1)
@@ -94,6 +100,7 @@ export default function BookingModal() {
   }
 
   const openWhatsApp = (message: string) => {
+    analytics.whatsappClick('success_screen')
     const url = `https://wa.me/212777348065?text=${encodeURIComponent(message)}`
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
       window.location.href = url
@@ -131,6 +138,7 @@ export default function BookingModal() {
     } catch (err) {
       if (import.meta.env.DEV) console.error('Failed to save guest booking', err)
     }
+    analytics.bookingCompleted(reference ?? '', resolveServiceName(selectedService), selectedServicePrice)
     openWhatsApp(buildWhatsAppMessage(reference ?? ''))
     setBookingReference(reference ?? '')
     if (typeof window !== 'undefined' && (window as any).fbq) {
@@ -194,7 +202,9 @@ export default function BookingModal() {
       return
     }
 
-    openWhatsApp(buildWhatsAppMessage((booking as { reference?: string } | null)?.reference ?? ''))
+    const bookingRef = (booking as { reference?: string } | null)?.reference ?? ''
+    analytics.bookingCompleted(bookingRef, resolveServiceName(selectedService), selectedServicePrice)
+    openWhatsApp(buildWhatsAppMessage(bookingRef))
 
     setSubmitting(false)
     close()
@@ -331,7 +341,10 @@ export default function BookingModal() {
                 return (
                   <button
                     key={svc.id}
-                    onClick={() => setSelectedService(svc.id)}
+                    onClick={() => {
+                      setSelectedService(svc.id)
+                      analytics.selectService(resolveServiceName(svc.id), price ? (getPriceNumber(pricingService!, 'zone1') ?? 0) : 0)
+                    }}
                     style={{
                       width: '100%', padding: '16px',
                       background: isSelected ? 'rgba(67,188,201,0.08)' : '#0F0F0F',

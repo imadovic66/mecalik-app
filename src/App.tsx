@@ -26,6 +26,7 @@ import Flottes from './pages/Flottes'
 import TrackBooking from './pages/TrackBooking'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
+import { trackPageView } from './lib/analytics'
 
 // AppShell lives inside <BrowserRouter> so it can call useLocation
 function AppShell() {
@@ -37,6 +38,10 @@ function AppShell() {
       ? 'MecaLIK — Mobile Mechanic Casablanca | Your car, your location.'
       : 'MecaLIK — Mécanicien à Domicile Casablanca | Votre voiture, votre lieu.'
   }, [i18n.language])
+
+  useEffect(() => {
+    trackPageView(location.pathname)
+  }, [location.pathname])
   const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/booking') || location.pathname.startsWith('/fleet-dashboard') || location.pathname.startsWith('/mechanic')
 
   return (

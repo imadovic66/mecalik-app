@@ -102,6 +102,18 @@
     />
   </noscript>
   <!-- End Meta Pixel -->
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PXH9CW2XYF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-PXH9CW2XYF", {
+      page_path: window.location.pathname,
+      cookie_flags: "SameSite=None;Secure"
+    });
+  </script>
+  <!-- End Google Analytics -->
 </head>
   <body>
     <div id="root"></div>
