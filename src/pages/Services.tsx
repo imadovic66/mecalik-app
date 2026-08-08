@@ -2,13 +2,12 @@ import { Droplets, Battery, Wrench, Search, AlertTriangle, Clock, CheckCircle, C
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import SEO from '../components/SEO'
+import { WHATSAPP_NUMBER } from '../lib/constants'
+import { isServiceComingSoon } from '../data/serviceStatus'
 
+// Only the 4 active services get Service schema — advertising Pneus/Lavage here while they're
+// not bookable would misrepresent availability to search engines.
 const SERVICE_SCHEMAS = [
-  {
-    serviceType: 'Lavage Auto à Domicile',
-    description: "Notre technicien se déplace avec tout le matériel nécessaire pour un lavage extérieur et intérieur complet. Produits professionnels, résultat showroom — sans que vous bougiez votre voiture.",
-    minPrice: 150,
-  },
   {
     serviceType: 'Vidange à Domicile',
     description: 'Vidange moteur complète avec remplacement du filtre à huile d\'origine. Vérification des niveaux incluse. Prix confirmé selon votre modèle avant intervention.',
@@ -20,19 +19,14 @@ const SERVICE_SCHEMAS = [
     minPrice: 210,
   },
   {
-    serviceType: 'Changement Pneus à Domicile',
-    description: "Changement, équilibrage et contrôle de pression. Notre technicien intervient sur place avec l'équipement adapté. Crevaison, usure, ou renouvellement complet.",
-    minPrice: 200,
-  },
-  {
     serviceType: 'Diagnostic Auto à Domicile',
     description: "Lecture complète des codes erreur OBD, bilan de l'état général du véhicule. Rapport détaillé fourni. Idéal avant un achat de voiture d'occasion ou en cas de voyant allumé.",
     minPrice: 220,
   },
   {
-    serviceType: 'Dépannage Urgence 24/7',
-    description: 'Panne sur route, batterie à plat en plein parking, crevaison un dimanche matin — notre technicien est disponible 24h/24, 7j/7. Intervention en moins de 90 minutes partout à Casablanca.',
-    minPrice: 239,
+    serviceType: 'Urgence & Dépannage à Domicile',
+    description: "Panne sur route, batterie à plat en plein parking, démarrage impossible — nous intervenons en priorité selon disponibilité. Contactez-nous pour un créneau rapide.",
+    minPrice: undefined,
   },
 ].map(s => ({
   '@context': 'https://schema.org',
@@ -41,11 +35,13 @@ const SERVICE_SCHEMAS = [
   provider: { '@type': 'LocalBusiness', name: 'MecaLIK', '@id': 'https://mecalik.com/#business' },
   areaServed: { '@type': 'City', name: 'Casablanca' },
   description: s.description,
-  offers: {
-    '@type': 'Offer',
-    priceCurrency: 'MAD',
-    priceSpecification: { '@type': 'PriceSpecification', minPrice: s.minPrice, priceCurrency: 'MAD' },
-  },
+  ...(s.minPrice != null ? {
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'MAD',
+      priceSpecification: { '@type': 'PriceSpecification', minPrice: s.minPrice, priceCurrency: 'MAD' },
+    },
+  } : {}),
 }))
 
 const BREADCRUMB_SCHEMA = {
@@ -73,22 +69,18 @@ type ServiceDef = {
   color: string
   duration: string
   includesKeys: string[]
+  isComingSoon: boolean
 }
 
+// Active services first, coming-soon last
 const serviceDefs: ServiceDef[] = [
-  {
-    id: 'lavage',
-    icon: 'Droplets',
-    color: 'var(--mk-action)',
-    duration: '~45 min',
-    includesKeys: ['lavageI1', 'lavageI2', 'lavageI3', 'lavageI4', 'lavageI5'],
-  },
   {
     id: 'vidange',
     icon: 'Droplets',
     color: 'var(--mk-action)',
     duration: '~60 min',
     includesKeys: ['vidangeI1', 'vidangeI2', 'vidangeI3', 'vidangeI4', 'vidangeI5'],
+    isComingSoon: isServiceComingSoon('vidange'),
   },
   {
     id: 'batterie',
@@ -96,13 +88,7 @@ const serviceDefs: ServiceDef[] = [
     color: 'var(--mk-action)',
     duration: '~30 min',
     includesKeys: ['batterieI1', 'batterieI2', 'batterieI3', 'batterieI4', 'batterieI5'],
-  },
-  {
-    id: 'pneus',
-    icon: 'Wrench',
-    color: 'var(--mk-action)',
-    duration: '~45 min',
-    includesKeys: ['pneusI1', 'pneusI2', 'pneusI3', 'pneusI4', 'pneusI5'],
+    isComingSoon: isServiceComingSoon('batterie'),
   },
   {
     id: 'diagnostic',
@@ -110,13 +96,31 @@ const serviceDefs: ServiceDef[] = [
     color: 'var(--mk-action)',
     duration: '~30 min',
     includesKeys: ['diagnosticI1', 'diagnosticI2', 'diagnosticI3', 'diagnosticI4', 'diagnosticI5'],
+    isComingSoon: isServiceComingSoon('diagnostic'),
   },
   {
     id: 'urgence',
     icon: 'AlertTriangle',
     color: 'var(--mk-premium)',
-    duration: 'ASAP',
+    duration: 'Selon disponibilité',
     includesKeys: ['urgenceI1', 'urgenceI2', 'urgenceI3', 'urgenceI4', 'urgenceI5'],
+    isComingSoon: isServiceComingSoon('urgence'),
+  },
+  {
+    id: 'pneus',
+    icon: 'Wrench',
+    color: 'var(--mk-action)',
+    duration: '~45 min',
+    includesKeys: ['pneusI1', 'pneusI2', 'pneusI3', 'pneusI4', 'pneusI5'],
+    isComingSoon: isServiceComingSoon('pneus'),
+  },
+  {
+    id: 'lavage',
+    icon: 'Droplets',
+    color: 'var(--mk-action)',
+    duration: '~45 min',
+    includesKeys: ['lavageI1', 'lavageI2', 'lavageI3', 'lavageI4', 'lavageI5'],
+    isComingSoon: isServiceComingSoon('lavage'),
   },
 ]
 
@@ -126,8 +130,8 @@ export default function Services() {
   return (
     <main>
       <SEO
-        title="Nos Services — Vidange, Batterie, Pneus, Diagnostic à Domicile | MecaLIK"
-        description="Six services auto à domicile à Casablanca : lavage, vidange & filtres, batterie, pneus, diagnostic et urgence 24/7. Technicien certifié, prix confirmé avant intervention."
+        title="Nos Services — Vidange, Batterie, Diagnostic à Domicile | MecaLIK"
+        description="Quatre services auto à domicile à Casablanca : vidange & filtres, batterie, diagnostic et urgence. Technicien certifié, prix confirmé avant intervention."
         path="/services"
         jsonLd={[...SERVICE_SCHEMAS, BREADCRUMB_SCHEMA]}
       />
@@ -162,6 +166,7 @@ export default function Services() {
             const isUrgence = def.id === 'urgence'
             const titleKey = `services.${def.id}Title` as const
             const descKey  = `services.${def.id}Desc`  as const
+            const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Bonjour, je suis intéressé(e) par le service ${t('services.' + def.id)} (bientôt disponible).`)}`
 
             return (
               <div
@@ -172,6 +177,7 @@ export default function Services() {
                   border: isUrgence
                     ? '1px solid rgba(240,192,64,0.15)'
                     : '1px solid rgba(255,255,255,0.06)',
+                  opacity: def.isComingSoon ? 0.55 : 1,
                 }}
               >
                 <div className="grid grid-cols-1 lg:grid-cols-3">
@@ -300,17 +306,41 @@ export default function Services() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-                      className="w-full mt-6 py-4 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-colors duration-200"
-                      style={{
-                        background: isUrgence ? 'var(--mk-premium)' : 'var(--mk-action)',
-                        color: '#080808',
-                      }}
-                    >
-                      {t('services.getQuote')}
-                      <ChevronRight size={16} />
-                    </button>
+                    {def.isComingSoon ? (
+                      <div className="mt-6">
+                        <div
+                          className="w-full py-4 rounded-full font-semibold text-sm flex items-center justify-center gap-2"
+                          style={{
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'var(--mk-text-muted)',
+                          }}
+                        >
+                          🔜 Bientôt disponible
+                        </div>
+                        <a
+                          href={waHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center mt-3 text-xs"
+                          style={{ color: 'var(--mk-action)', textDecoration: 'none' }}
+                        >
+                          Vous êtes intéressé ? Dites-le nous sur WhatsApp
+                        </a>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+                        className="w-full mt-6 py-4 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-colors duration-200"
+                        style={{
+                          background: isUrgence ? 'var(--mk-premium)' : 'var(--mk-action)',
+                          color: '#080808',
+                        }}
+                      >
+                        {t('services.getQuote')}
+                        <ChevronRight size={16} />
+                      </button>
+                    )}
                   </div>
 
                 </div>

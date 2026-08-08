@@ -39,7 +39,7 @@ export default function Home() {
     <main>
       <SEO
         title="Mécanicien à Domicile Casablanca | MecaLIK — Votre voiture, votre lieu"
-        description="Mécanicien certifié qui vient à vous à Casablanca. Vidange, batterie, pneus, diagnostic. Devis en 5 min, intervention en 90 min, paiement après service."
+        description="Mécanicien certifié qui vient à vous à Casablanca. Vidange, batterie, diagnostic, urgence. Devis en 5 min, intervention en 90 min, paiement après service."
         path="/"
         jsonLd={aggregateRatingJsonLd}
       />

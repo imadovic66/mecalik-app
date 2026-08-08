@@ -6,15 +6,15 @@ import { supabase, type Car } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { analytics } from '../../lib/analytics'
 import { SERVICES, getPrice, getPriceNumber } from '../../data/pricing'
+import { isServiceComingSoon } from '../../data/serviceStatus'
 
+// Active services first; Pneus and Lavage Auto are excluded entirely — not bookable while "coming soon"
 const SERVICE_OPTIONS = [
-  { id: 'lavage',     duration: '~45 min' },
   { id: 'vidange',    duration: '~60 min' },
   { id: 'batterie',   duration: '~30 min' },
-  { id: 'pneus',      duration: '~45 min' },
   { id: 'diagnostic', duration: '~30 min' },
-  { id: 'urgence',    duration: 'ASAP' },
-]
+  { id: 'urgence',    duration: 'Sur devis' },
+].filter(svc => !isServiceComingSoon(svc.id))
 
 const SERVICE_LABELS: Record<string, string> = {
   lavage:     'Lavage Auto',
@@ -22,7 +22,7 @@ const SERVICE_LABELS: Record<string, string> = {
   batterie:   'Batterie',
   pneus:      'Pneus',
   diagnostic: 'Diagnostic',
-  urgence:    'Urgence 24/7',
+  urgence:    'Urgence & Dépannage',
 }
 
 const resolveServiceName = (id: string): string =>

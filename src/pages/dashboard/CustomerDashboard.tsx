@@ -6,11 +6,12 @@ import { supabase, type Car } from '../../lib/supabase'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   ChevronRight, MapPin, Plus, Phone, Bell,
-  Droplet, Battery, Disc, Search, AlertTriangle, Sparkles,
+  Droplet, Battery, Search, AlertTriangle,
   Home, Clock as ClockIcon, Car as CarIcon, User, Wrench, ArrowRight, ChevronDown,
 } from 'lucide-react'
 import AddCarModal from '../../components/ui/AddCarModal'
 import { serviceIdFromName } from '../../lib/serviceUtils'
+import { isServiceComingSoon } from '../../data/serviceStatus'
 
 type ServiceDetail = {
   type: 'product' | 'part' | 'labor'
@@ -69,8 +70,6 @@ export default function CustomerDashboard() {
     { id: 'vidange',    label: t('services.vidange'),    icon: Droplet,       price: 250, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
     { id: 'batterie',   label: t('services.batterie'),   icon: Battery,       price: 210, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
     { id: 'diagnostic', label: t('services.diagnostic'), icon: Search,        price: 220, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
-    { id: 'pneus',      label: t('services.pneus'),      icon: Disc,          price: 200, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
-    { id: 'lavage',     label: t('services.lavage'),     icon: Sparkles,      price: 150, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
     { id: 'urgence',    label: t('services.urgence'),    icon: AlertTriangle, price: 239, gradient: 'linear-gradient(135deg, #1A0A0A 0%, #1F0D0D 100%)', dot: '#FF4444', urgent: true },
   ]
 
@@ -119,8 +118,12 @@ export default function CustomerDashboard() {
   const recentCompleted = bookings.filter(b => b.status === 'completed').slice(0, 3)
   const firstName       = getFirstName(profile?.full_name, user?.email)
 
-  const openBookingWithService = (serviceId: string) =>
-    window.dispatchEvent(new CustomEvent('openBooking', { detail: { service: serviceId } }))
+  const openBookingWithService = (serviceId: string) => {
+    // Coming-soon services (e.g. from a past Pneus/Lavage booking) aren't bookable —
+    // fall back to the plain picker instead of presetting an unavailable service.
+    const detail = isServiceComingSoon(serviceIdFromName(serviceId)) ? undefined : { service: serviceId }
+    window.dispatchEvent(new CustomEvent('openBooking', { detail }))
+  }
 
   // silence unused import warning — Wrench is used in Book Again section
   void Wrench

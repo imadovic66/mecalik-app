@@ -8,7 +8,7 @@ type StatusMessage = {
 
 const SERVICE_LABELS: Record<string, string> = {
   lavage: 'Lavage Auto', vidange: 'Vidange & Filtres', batterie: 'Batterie',
-  pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
+  pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence & Dépannage',
 }
 
 const STATUS_MESSAGES: Record<string, (data: StatusMessage) => string> = {

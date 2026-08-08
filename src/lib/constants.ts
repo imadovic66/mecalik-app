@@ -21,9 +21,12 @@ export const SERVICE_PRICES: Record<string, { fr: string; en: string }> = {
   'tyres':                { fr: 'À partir de 200 MAD', en: 'From 200 MAD' },
   'diagnostic':           { fr: 'À partir de 220 MAD', en: 'From 220 MAD' },
   'diagnostic simple':    { fr: 'À partir de 220 MAD', en: 'From 220 MAD' },
-  'urgence':              { fr: 'À partir de 239 MAD', en: 'From 239 MAD' },
-  'urgence 24/7':         { fr: 'À partir de 239 MAD', en: 'From 239 MAD' },
-  'emergency 24/7':       { fr: 'À partir de 239 MAD', en: 'From 239 MAD' },
+  'urgence':              { fr: 'Sur devis', en: 'On quote' },
+  'urgence & dépannage':  { fr: 'Sur devis', en: 'On quote' },
+  'emergency & roadside': { fr: 'Sur devis', en: 'On quote' },
+  // Legacy keys kept for bookings placed before the "Urgence 24/7" → "Urgence & Dépannage" rename
+  'urgence 24/7':         { fr: 'Sur devis', en: 'On quote' },
+  'emergency 24/7':       { fr: 'Sur devis', en: 'On quote' },
 }
 
 export const BOOKING_STATUSES = [

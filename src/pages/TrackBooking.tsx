@@ -21,9 +21,12 @@ const SERVICE_PRICES: Record<string, string> = {
   'tyres':                'From 200 MAD',
   'diagnostic':           'À partir de 220 MAD',
   'diagnostic simple':    'À partir de 220 MAD',
-  'urgence':              'À partir de 239 MAD',
-  'urgence 24/7':         'À partir de 239 MAD',
-  'emergency 24/7':       'From 239 MAD',
+  'urgence':              'Sur devis',
+  'urgence & dépannage':  'Sur devis',
+  'emergency & roadside': 'On quote',
+  // Legacy keys kept for bookings placed before the "Urgence 24/7" → "Urgence & Dépannage" rename
+  'urgence 24/7':         'Sur devis',
+  'emergency 24/7':       'On quote',
 }
 
 export default function TrackBooking() {

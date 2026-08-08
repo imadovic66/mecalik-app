@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { X, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { isServiceComingSoon } from '../../data/serviceStatus'
 
 const localizer = dateFnsLocalizer({
   format, parse, startOfWeek, getDay,
@@ -85,11 +86,10 @@ export default function FleetCalendar() {
 
   const SERVICE_TYPES = [
     { value: 'vidange',    label: t('services.vidange') },
-    { value: 'pneus',      label: t('services.pneus') },
     { value: 'batterie',   label: t('services.batterie') },
     { value: 'diagnostic', label: t('services.diagnostic') },
-    { value: 'lavage',     label: t('services.lavage') },
-  ]
+    { value: 'urgence',    label: t('services.urgence') },
+  ].filter(s => !isServiceComingSoon(s.value))
 
   return (
     <div className="h-full">

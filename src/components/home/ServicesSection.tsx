@@ -1,4 +1,6 @@
-/** Services section — asymmetric 6-card grid for Lavage, Vidange, Batterie, Pneus, Diagnostic, Urgence */
+/** Services section — asymmetric 6-card grid. Active services (Vidange, Batterie, Diagnostic,
+ *  Urgence) come first and are bookable; Pneus and Lavage Auto are shown last, dimmed, and
+ *  marked "coming soon" — visible for roadmap/anticipation but not clickable. */
 
 import { useTranslation } from 'react-i18next'
 
@@ -16,6 +18,12 @@ export default function ServicesSection({ onBookNow }: Props) {
   }
   const accentBorder = '1px solid rgba(67,188,201,0.25)'
   const defaultBorder = '1px solid rgba(255,255,255,0.06)'
+
+  const ComingSoonBadge = () => (
+    <div className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--mk-text-muted)' }}>
+      🔜 Bientôt disponible
+    </div>
+  )
 
   return (
     <section id="services" className="relative py-16 lg:py-20" style={{ background: '#080808' }}>
@@ -42,39 +50,41 @@ export default function ServicesSection({ onBookNow }: Props) {
           </div>
         </div>
 
-        {/* Row 1: large (5) + medium (4) + small accent (3) */}
+        {/* Row 1: Urgence (large accent) + Vidange (medium) + Batterie (small accent) — all active */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
 
-          {/* SERVICE 1 — Lavage Auto */}
+          {/* SERVICE 1 — Urgence & Dépannage (red accent, repositioned) */}
           <div
             className="lg:col-span-5 group relative rounded-xl p-8 overflow-hidden cursor-pointer transition-all duration-300"
-            style={cardBase}
-            onMouseEnter={e => { e.currentTarget.style.border = accentBorder; e.currentTarget.style.transform = 'translateY(-2px)' }}
-            onMouseLeave={e => { e.currentTarget.style.border = defaultBorder; e.currentTarget.style.transform = 'translateY(0)' }}
-            onClick={onBookNow}
+            style={{ background: 'linear-gradient(135deg, rgba(255,68,68,0.06) 0%, rgba(255,68,68,0.02) 100%)', border: '1px solid rgba(255,68,68,0.18)', minHeight: '220px' }}
+            onMouseEnter={e => { e.currentTarget.style.border = '1px solid rgba(255,68,68,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+            onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(255,68,68,0.18)'; e.currentTarget.style.transform = 'translateY(0)' }}
+            onClick={() => window.dispatchEvent(new CustomEvent('openBooking', { detail: { service: 'urgence' } }))}
           >
             <div className="relative">
-              <div className="flex items-start justify-between mb-8">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--mk-action)" strokeWidth="1.5">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-                    <path d="M12 6v6l4 2" />
-                  </svg>
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex w-2.5 h-2.5">
+                    <span className="absolute inset-0 rounded-full animate-ping" style={{ background: 'var(--mk-urgent)', opacity: 0.5 }} />
+                    <span className="relative rounded-full w-2.5 h-2.5" style={{ background: 'var(--mk-urgent)' }} />
+                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--mk-urgent)' }}>
+                    {t('landing.serviceAvailable')}
+                  </span>
                 </div>
                 <span className="text-xs font-medium px-3 py-1 rounded-full"
-                  style={{ background: 'rgba(67,188,201,0.08)', color: 'var(--mk-action)', border: '1px solid rgba(67,188,201,0.15)' }}>
-                  ~45 min
+                  style={{ background: 'rgba(255,68,68,0.1)', color: 'var(--mk-urgent)', border: '1px solid rgba(255,68,68,0.2)' }}>
+                  Sur devis
                 </span>
               </div>
-              <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '26px', fontWeight: 600, color: 'white', marginBottom: '12px', letterSpacing: '-0.015em' }}>
-                {t('services.lavage')}
+              <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '26px', fontWeight: 700, color: 'white', marginBottom: '12px', letterSpacing: '-0.015em' }}>
+                {t('services.urgence')}
               </h3>
-              <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.5)', maxWidth: '280px' }}>
-                {t('landing.lavageDesc')}
+              <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.55)', maxWidth: '280px' }}>
+                {t('landing.urgenceDesc')}
               </p>
-              <div className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--mk-action)' }}>
-                {t('landing.servicesBook')}
+              <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--mk-action)' }}>
+                {t('landing.serviceCallNow')}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </div>
             </div>
@@ -138,33 +148,10 @@ export default function ServicesSection({ onBookNow }: Props) {
           </div>
         </div>
 
-        {/* Row 2: small (3) + medium (4) + large urgence accent (5) */}
+        {/* Row 2: Diagnostic (active) + Pneus + Lavage (coming soon, dimmed, last) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-          {/* SERVICE 4 — Pneus */}
-          <div
-            className="lg:col-span-3 group relative rounded-xl p-6 overflow-hidden cursor-pointer transition-all duration-300"
-            style={cardBase}
-            onMouseEnter={e => { e.currentTarget.style.border = accentBorder; e.currentTarget.style.transform = 'translateY(-2px)' }}
-            onMouseLeave={e => { e.currentTarget.style.border = defaultBorder; e.currentTarget.style.transform = 'translateY(0)' }}
-            onClick={onBookNow}
-          >
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-6"
-              style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mk-action)" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" />
-              </svg>
-            </div>
-            <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '20px', fontWeight: 600, color: 'white', marginBottom: '8px', letterSpacing: '-0.015em' }}>
-              {t('services.pneus')}
-            </h3>
-            <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              {t('landing.pneusDesc')}
-            </p>
-            <div className="text-xs font-medium" style={{ color: 'var(--mk-action)' }}>~45 min</div>
-          </div>
-
-          {/* SERVICE 5 — Diagnostic */}
+          {/* SERVICE 4 — Diagnostic */}
           <div
             className="lg:col-span-4 group relative rounded-xl p-7 overflow-hidden cursor-pointer transition-all duration-300"
             style={cardBase}
@@ -196,40 +183,52 @@ export default function ServicesSection({ onBookNow }: Props) {
             </div>
           </div>
 
-          {/* SERVICE 6 — Urgence (red accent) */}
+          {/* SERVICE 5 — Pneus (coming soon) */}
           <div
-            className="lg:col-span-5 group relative rounded-xl p-8 overflow-hidden cursor-pointer transition-all duration-300"
-            style={{ background: 'linear-gradient(135deg, rgba(255,68,68,0.06) 0%, rgba(255,68,68,0.02) 100%)', border: '1px solid rgba(255,68,68,0.18)', minHeight: '220px' }}
-            onMouseEnter={e => { e.currentTarget.style.border = '1px solid rgba(255,68,68,0.4)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-            onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(255,68,68,0.18)'; e.currentTarget.style.transform = 'translateY(0)' }}
-            onClick={() => window.dispatchEvent(new CustomEvent('openBooking', { detail: { service: 'urgence' } }))}
+            className="lg:col-span-3 relative rounded-xl p-6 overflow-hidden transition-all duration-300"
+            style={{ ...cardBase, opacity: 0.5, cursor: 'default' }}
+          >
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-6"
+              style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mk-action)" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '20px', fontWeight: 600, color: 'white', marginBottom: '8px', letterSpacing: '-0.015em' }}>
+              {t('services.pneus')}
+            </h3>
+            <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              {t('landing.pneusDesc')}
+            </p>
+            <ComingSoonBadge />
+          </div>
+
+          {/* SERVICE 6 — Lavage Auto (coming soon, last) */}
+          <div
+            className="lg:col-span-5 relative rounded-xl p-8 overflow-hidden transition-all duration-300"
+            style={{ ...cardBase, opacity: 0.5, cursor: 'default' }}
           >
             <div className="relative">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex w-2.5 h-2.5">
-                    <span className="absolute inset-0 rounded-full animate-ping" style={{ background: 'var(--mk-urgent)', opacity: 0.5 }} />
-                    <span className="relative rounded-full w-2.5 h-2.5" style={{ background: 'var(--mk-urgent)' }} />
-                  </span>
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--mk-urgent)' }}>
-                    {t('landing.serviceAvailable')}
-                  </span>
+              <div className="flex items-start justify-between mb-8">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.15)' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--mk-action)" strokeWidth="1.5">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
                 </div>
                 <span className="text-xs font-medium px-3 py-1 rounded-full"
-                  style={{ background: 'rgba(255,68,68,0.1)', color: 'var(--mk-urgent)', border: '1px solid rgba(255,68,68,0.2)' }}>
-                  ASAP
+                  style={{ background: 'rgba(67,188,201,0.08)', color: 'var(--mk-action)', border: '1px solid rgba(67,188,201,0.15)' }}>
+                  ~45 min
                 </span>
               </div>
-              <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '26px', fontWeight: 700, color: 'white', marginBottom: '12px', letterSpacing: '-0.015em' }}>
-                {t('services.urgence')}
+              <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '26px', fontWeight: 600, color: 'white', marginBottom: '12px', letterSpacing: '-0.015em' }}>
+                {t('services.lavage')}
               </h3>
-              <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.55)', maxWidth: '280px' }}>
-                {t('landing.urgenceDesc')}
+              <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.5)', maxWidth: '280px' }}>
+                {t('landing.lavageDesc')}
               </p>
-              <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--mk-action)' }}>
-                {t('landing.serviceCallNow')}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-              </div>
+              <ComingSoonBadge />
             </div>
           </div>
         </div>

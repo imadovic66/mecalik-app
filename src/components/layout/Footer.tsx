@@ -1,7 +1,9 @@
 import { MapPin, Phone, Mail, AtSign } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { isServiceComingSoon } from '../../data/serviceStatus'
 
-const SERVICE_IDS = ['lavage', 'vidange', 'batterie', 'pneus', 'diagnostic', 'urgence'] as const
+// Active services first, coming-soon last
+const SERVICE_IDS = ['vidange', 'batterie', 'diagnostic', 'urgence', 'pneus', 'lavage'] as const
 
 const companyLinksBase = [
   { labelKey: 'landing.footerAbout',  href: '/a-propos' },
@@ -13,7 +15,7 @@ const companyLinksBase = [
 
 export default function Footer() {
   const { t } = useTranslation()
-  const serviceLinks = SERVICE_IDS.map(id => t(`services.${id}`))
+  const serviceLinks = SERVICE_IDS.map(id => ({ id, label: t(`services.${id}`), comingSoon: isServiceComingSoon(id) }))
   const companyLinks = companyLinksBase.map(item =>
     item.labelKey ? { label: t(item.labelKey), href: item.href } : { label: item.label, href: item.href }
   )
@@ -65,10 +67,13 @@ export default function Footer() {
               Services
             </p>
             <ul className="flex flex-col gap-3">
-              {serviceLinks.map((label) => (
-                <li key={label}>
+              {serviceLinks.map(({ id, label, comingSoon }) => (
+                <li key={id}>
                   <span className="text-[rgba(255,255,255,0.45)] text-sm hover:text-white transition-colors cursor-pointer">
                     {label}
+                    {comingSoon && (
+                      <span className="text-xs" style={{ color: 'var(--mk-text-muted)' }}> (bientôt)</span>
+                    )}
                   </span>
                 </li>
               ))}
