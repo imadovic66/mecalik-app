@@ -23,6 +23,7 @@ import MechanicDashboard from './pages/mechanic/MechanicDashboard'
 import HowItWorksPage from './pages/HowItWorksPage'
 import Tarifs from './pages/Tarifs'
 import Flottes from './pages/Flottes'
+import FAQ from './pages/FAQ'
 import TrackBooking from './pages/TrackBooking'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
@@ -33,6 +34,14 @@ function AppShell() {
   const location    = useLocation()
   const { i18n }    = useTranslation()
 
+  // Plain (non-Helmet) fallback title for routes with no <SEO> of their own (e.g. /devis,
+  // /dashboard). Deliberately NOT rendered via <Helmet>/<SEO>: react-helmet-async does not
+  // dedupe tags across sibling <Helmet> instances (only parent/child nesting), so a second
+  // always-mounted <SEO> here would leave two <meta name="description"> / <link rel="canonical">
+  // elements in the DOM whenever a page also renders its own <SEO> — silently reintroducing the
+  // "duplicate canonical" bug this overhaul fixes. document.title has no such downside: the
+  // setter updates the document's single title element in place, and a page's own <SEO> mounting
+  // later simply takes over cleanly.
   useEffect(() => {
     document.title = i18n.language === 'en'
       ? 'MecaLIK — Mobile Mechanic Casablanca | Your car, your location.'
@@ -60,6 +69,7 @@ function AppShell() {
           <Route path="/comment-ca-marche" element={<PublicRoute><HowItWorksPage /></PublicRoute>} />
           <Route path="/tarifs"   element={<PublicRoute><Tarifs /></PublicRoute>} />
           <Route path="/flottes"  element={<PublicRoute><Flottes /></PublicRoute>} />
+          <Route path="/faq"      element={<PublicRoute><FAQ /></PublicRoute>} />
           <Route path="/devis"    element={<QuoteCalculator />} />
           <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup"   element={<PublicRoute><Signup /></PublicRoute>} />

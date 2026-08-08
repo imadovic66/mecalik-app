@@ -1,5 +1,15 @@
 import { ChevronRight, Target, Zap, Heart, TrendingUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import SEO from '../components/SEO'
+
+const BREADCRUMB_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://mecalik.com/' },
+    { '@type': 'ListItem', position: 2, name: 'À Propos', item: 'https://mecalik.com/a-propos' },
+  ],
+}
 
 export default function About() {
   const { t } = useTranslation()
@@ -29,6 +39,12 @@ export default function About() {
 
   return (
     <main>
+      <SEO
+        title="À Propos — Le Garage Vient à Vous | MecaLIK Casablanca"
+        description="MecaLIK est né d'une conviction simple : le service doit venir au client. Technicien certifié, prix transparent, paiement après service. Découvrez notre histoire."
+        path="/a-propos"
+        jsonLd={BREADCRUMB_SCHEMA}
+      />
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section

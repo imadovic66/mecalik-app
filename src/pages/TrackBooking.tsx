@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { GOOGLE_REVIEW_URL } from '../lib/constants'
+import SEO from '../components/SEO'
 
 const SUPABASE_URL = 'https://nggvlwiisvvjczpyccfj.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nZ3Zsd2lpc3Z2amN6cHljY2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTA3ODksImV4cCI6MjA5MDYyNjc4OX0.qjYAD4YVjEMANIVXfvfbj5O6VvkXqagwZIo_6sbrQ6Y'
@@ -116,6 +117,7 @@ export default function TrackBooking() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0A0A0A', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px', fontFamily: 'Outfit, sans-serif' }}>
+      <SEO title="Suivi de réservation | MecaLIK" description="Suivez l'état de votre intervention MecaLIK en temps réel." path={`/track${urlRef ? `/${urlRef}` : ''}`} noindex />
 
       {/* Logo */}
       <div style={{ marginBottom: '40px', textAlign: 'center' }}>

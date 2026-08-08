@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next'
 const SERVICE_IDS = ['lavage', 'vidange', 'batterie', 'pneus', 'diagnostic', 'urgence'] as const
 
 const companyLinksBase = [
-  { labelKey: 'landing.footerAbout',  href: '/about' },
+  { labelKey: 'landing.footerAbout',  href: '/a-propos' },
   { labelKey: 'landing.footerFleets', href: '/fleet' },
+  { labelKey: 'landing.footerFaq',    href: '/faq' },
   { labelKey: 'landing.footerContact2', href: '/contact' },
   { labelKey: null, label: 'WhatsApp', href: 'https://wa.me/212777348065' },
 ] as const

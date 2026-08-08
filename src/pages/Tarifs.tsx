@@ -1,4 +1,14 @@
 import { useTranslation } from 'react-i18next'
+import SEO from '../components/SEO'
+
+const BREADCRUMB_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://mecalik.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Tarifs', item: 'https://mecalik.com/tarifs' },
+  ],
+}
 
 export default function Tarifs() {
   const { t } = useTranslation()
@@ -14,6 +24,12 @@ export default function Tarifs() {
 
   return (
     <main style={{ background: '#0A0A0A', color: 'white', fontFamily: 'Outfit, sans-serif', minHeight: '100vh', paddingTop: '80px' }}>
+      <SEO
+        title="Tarifs & Devis Gratuit — Prix Mécanicien à Domicile Casablanca | MecaLIK"
+        description="Prix transparents confirmés avant chaque intervention. Devis gratuit envoyé sur WhatsApp en moins de 5 minutes. Aucune facturation surprise. 0 MAD de frais de déplacement."
+        path="/tarifs"
+        jsonLd={BREADCRUMB_SCHEMA}
+      />
 
       {/* Hero */}
       <section style={{ padding: '80px 5% 60px', maxWidth: '1200px', margin: '0 auto' }}>

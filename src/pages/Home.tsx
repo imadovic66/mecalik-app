@@ -3,6 +3,7 @@ import StatsBar from '../components/home/StatsBar'
 import ServicesSection from '../components/home/ServicesSection'
 import ReviewsSection from '../components/home/ReviewsSection'
 import CtaSection from '../components/home/CtaSection'
+import SEO from '../components/SEO'
 
 export default function Home() {
   const handleBookNow = () => {
@@ -14,6 +15,11 @@ export default function Home() {
 
   return (
     <main>
+      <SEO
+        title="Mécanicien à Domicile Casablanca | MecaLIK — Votre voiture, votre lieu"
+        description="Mécanicien certifié qui vient à vous à Casablanca. Vidange, batterie, pneus, diagnostic. Devis en 5 min, intervention en 90 min, paiement après service."
+        path="/"
+      />
       <HeroSection onBookNow={handleBookNow} />
       <StatsBar />
       <ServicesSection onBookNow={handleBookNow} />

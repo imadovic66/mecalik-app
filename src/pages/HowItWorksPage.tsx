@@ -1,12 +1,18 @@
 import { Link } from 'react-router-dom'
 import HowItWorksSection from '../components/home/HowItWorksSection'
 import HowItWorksAccountSection from '../components/home/HowItWorksAccountSection'
+import SEO from '../components/SEO'
 
 export default function HowItWorksPage() {
   const handleBookNow = () => window.dispatchEvent(new CustomEvent('openBooking'))
 
   return (
     <div style={{ background: '#0A0A0A', minHeight: '100vh' }}>
+      <SEO
+        title="Comment Ça Marche — 3 Étapes | MecaLIK Casablanca"
+        description="De la demande à l'intervention terminée en moins de 90 minutes. Décrivez votre besoin, recevez un devis exact, le technicien vient à vous. Simple et transparent."
+        path="/comment-ca-marche"
+      />
 
       {/* Page header */}
       <div style={{ padding: '64px 40px 32px', maxWidth: '1200px', margin: '0 auto' }}>

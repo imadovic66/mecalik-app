@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
 import { analytics } from '../../lib/analytics'
+import SEO from '../../components/SEO'
 import { Eye, EyeOff, ChevronRight } from 'lucide-react'
 
 export default function Signup() {
@@ -96,6 +97,7 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-[#080808] flex items-center justify-center px-4 py-12">
+      <SEO title="Créer un compte | MecaLIK" description="Créez votre compte MecaLIK pour suivre vos interventions et gérer vos véhicules." path="/signup" noindex />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div style={{
           position: 'absolute', width: '500px', height: '500px',

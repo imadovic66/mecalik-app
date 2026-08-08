@@ -1,6 +1,61 @@
 import { Droplets, Battery, Wrench, Search, AlertTriangle, Clock, CheckCircle, ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import SEO from '../components/SEO'
+
+const SERVICE_SCHEMAS = [
+  {
+    serviceType: 'Lavage Auto à Domicile',
+    description: "Notre technicien se déplace avec tout le matériel nécessaire pour un lavage extérieur et intérieur complet. Produits professionnels, résultat showroom — sans que vous bougiez votre voiture.",
+    minPrice: 150,
+  },
+  {
+    serviceType: 'Vidange à Domicile',
+    description: 'Vidange moteur complète avec remplacement du filtre à huile d\'origine. Vérification des niveaux incluse. Prix confirmé selon votre modèle avant intervention.',
+    minPrice: 250,
+  },
+  {
+    serviceType: 'Remplacement Batterie à Domicile',
+    description: 'Diagnostic complet de votre batterie, remplacement si nécessaire. Toutes marques, tous gabarits. Notre technicien vient avec les batteries les plus courantes en stock.',
+    minPrice: 210,
+  },
+  {
+    serviceType: 'Changement Pneus à Domicile',
+    description: "Changement, équilibrage et contrôle de pression. Notre technicien intervient sur place avec l'équipement adapté. Crevaison, usure, ou renouvellement complet.",
+    minPrice: 200,
+  },
+  {
+    serviceType: 'Diagnostic Auto à Domicile',
+    description: "Lecture complète des codes erreur OBD, bilan de l'état général du véhicule. Rapport détaillé fourni. Idéal avant un achat de voiture d'occasion ou en cas de voyant allumé.",
+    minPrice: 220,
+  },
+  {
+    serviceType: 'Dépannage Urgence 24/7',
+    description: 'Panne sur route, batterie à plat en plein parking, crevaison un dimanche matin — notre technicien est disponible 24h/24, 7j/7. Intervention en moins de 90 minutes partout à Casablanca.',
+    minPrice: 239,
+  },
+].map(s => ({
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  serviceType: s.serviceType,
+  provider: { '@type': 'LocalBusiness', name: 'MecaLIK', '@id': 'https://mecalik.com/#business' },
+  areaServed: { '@type': 'City', name: 'Casablanca' },
+  description: s.description,
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: 'MAD',
+    priceSpecification: { '@type': 'PriceSpecification', minPrice: s.minPrice, priceCurrency: 'MAD' },
+  },
+}))
+
+const BREADCRUMB_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://mecalik.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Services', item: 'https://mecalik.com/services' },
+  ],
+}
 
 type ServiceId = 'lavage' | 'vidange' | 'batterie' | 'pneus' | 'diagnostic' | 'urgence'
 
@@ -70,6 +125,12 @@ export default function Services() {
 
   return (
     <main>
+      <SEO
+        title="Nos Services — Vidange, Batterie, Pneus, Diagnostic à Domicile | MecaLIK"
+        description="Six services auto à domicile à Casablanca : lavage, vidange & filtres, batterie, pneus, diagnostic et urgence 24/7. Technicien certifié, prix confirmé avant intervention."
+        path="/services"
+        jsonLd={[...SERVICE_SCHEMAS, BREADCRUMB_SCHEMA]}
+      />
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="py-20 px-6 text-center" style={{ background: '#080808' }}>

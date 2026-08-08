@@ -1,10 +1,26 @@
 import { useTranslation } from 'react-i18next'
+import SEO from '../components/SEO'
+
+const BREADCRUMB_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://mecalik.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Flottes', item: 'https://mecalik.com/flottes' },
+  ],
+}
 
 export default function Flottes() {
   const { t } = useTranslation()
 
   return (
     <main style={{ background: '#0A0A0A', color: 'white', fontFamily: 'Outfit, sans-serif', minHeight: '100vh', paddingTop: '80px' }}>
+      <SEO
+        title="Solutions Flottes & Entreprises — Maintenance Auto sur Site | MecaLIK"
+        description="Maintenance de flotte sans interruption à Casablanca. Interventions sur site, facturation centralisée, tableau de bord dédié. Parlez à un expert MecaLIK."
+        path="/flottes"
+        jsonLd={BREADCRUMB_SCHEMA}
+      />
 
       {/* Hero */}
       <section style={{ padding: '80px 5% 60px', maxWidth: '1200px', margin: '0 auto' }}>
