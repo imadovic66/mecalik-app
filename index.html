@@ -25,7 +25,10 @@
   <meta property="og:title" content="MecaLIK — Mécanicien à Domicile Casablanca" />
   <meta property="og:description" content="Un technicien certifié vient à votre voiture. Devis gratuit sur WhatsApp. Paiement après service." />
   <meta property="og:image" content="https://mecalik.com/hero-photo.png" />
-  <meta property="og:locale" content="fr_MA" />
+  <!-- og:locale intentionally NOT set here — it's owned by <SEO> (dynamic per current language,
+       fr_MA/en_US). A static value here would duplicate it once Helmet mounts, and since the
+       static tag is always first in the DOM, document.querySelector would keep returning the
+       stale locale even after switching language. -->
   <meta property="og:site_name" content="MecaLIK" />
 
   <meta name="twitter:card" content="summary_large_image" />

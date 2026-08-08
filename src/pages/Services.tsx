@@ -67,7 +67,7 @@ type ServiceDef = {
   id: ServiceId
   icon: string
   color: string
-  duration: string
+  duration: string | null
   includesKeys: string[]
   isComingSoon: boolean
 }
@@ -102,7 +102,7 @@ const serviceDefs: ServiceDef[] = [
     id: 'urgence',
     icon: 'AlertTriangle',
     color: 'var(--mk-premium)',
-    duration: 'Selon disponibilité',
+    duration: null,
     includesKeys: ['urgenceI1', 'urgenceI2', 'urgenceI3', 'urgenceI4', 'urgenceI5'],
     isComingSoon: isServiceComingSoon('urgence'),
   },
@@ -166,7 +166,7 @@ export default function Services() {
             const isUrgence = def.id === 'urgence'
             const titleKey = `services.${def.id}Title` as const
             const descKey  = `services.${def.id}Desc`  as const
-            const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Bonjour, je suis intéressé(e) par le service ${t('services.' + def.id)} (bientôt disponible).`)}`
+            const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(t('services.interestedMessage', { service: t('services.' + def.id) }))}`
 
             return (
               <div
@@ -215,7 +215,7 @@ export default function Services() {
                     <div className="flex items-center gap-4 mt-6">
                       <Clock size={14} color="rgba(255,255,255,0.35)" />
                       <span className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                        {def.duration}
+                        {def.duration ?? t('services.basedOnAvailability')}
                       </span>
                       <div
                         className="w-1 h-1 rounded-full"
@@ -316,7 +316,8 @@ export default function Services() {
                             color: 'var(--mk-text-muted)',
                           }}
                         >
-                          🔜 Bientôt disponible
+                          <Clock size={12} />
+                          {t('services.comingSoon')}
                         </div>
                         <a
                           href={waHref}
@@ -325,7 +326,7 @@ export default function Services() {
                           className="block text-center mt-3 text-xs"
                           style={{ color: 'var(--mk-action)', textDecoration: 'none' }}
                         >
-                          Vous êtes intéressé ? Dites-le nous sur WhatsApp
+                          {t('services.interestedWhatsapp')}
                         </a>
                       </div>
                     ) : (

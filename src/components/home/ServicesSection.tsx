@@ -3,6 +3,7 @@
  *  marked "coming soon" — visible for roadmap/anticipation but not clickable. */
 
 import { useTranslation } from 'react-i18next'
+import { Clock } from 'lucide-react'
 
 interface Props {
   onBookNow: () => void
@@ -20,8 +21,9 @@ export default function ServicesSection({ onBookNow }: Props) {
   const defaultBorder = '1px solid rgba(255,255,255,0.06)'
 
   const ComingSoonBadge = () => (
-    <div className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--mk-text-muted)' }}>
-      🔜 Bientôt disponible
+    <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--mk-text-muted)' }}>
+      <Clock size={12} />
+      {t('services.comingSoon')}
     </div>
   )
 
@@ -74,7 +76,7 @@ export default function ServicesSection({ onBookNow }: Props) {
                 </div>
                 <span className="text-xs font-medium px-3 py-1 rounded-full"
                   style={{ background: 'rgba(255,68,68,0.1)', color: 'var(--mk-urgent)', border: '1px solid rgba(255,68,68,0.2)' }}>
-                  Sur devis
+                  {t('services.onQuote')}
                 </span>
               </div>
               <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '26px', fontWeight: 700, color: 'white', marginBottom: '12px', letterSpacing: '-0.015em' }}>

@@ -52,6 +52,13 @@ function AppShell() {
   useEffect(() => {
     trackPageView(location.pathname)
   }, [location.pathname])
+
+  // Keep <html lang> in sync with i18next — covers initial load too, since i18next may
+  // initialize straight into 'en' (from localStorage) while the static index.html always
+  // ships with lang="fr".
+  useEffect(() => {
+    document.documentElement.lang = i18n.language || 'fr'
+  }, [i18n.language])
   const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/booking') || location.pathname.startsWith('/fleet-dashboard') || location.pathname.startsWith('/mechanic')
 
   return (

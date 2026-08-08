@@ -13,7 +13,7 @@ const SERVICE_OPTIONS = [
   { id: 'vidange',    duration: '~60 min' },
   { id: 'batterie',   duration: '~30 min' },
   { id: 'diagnostic', duration: '~30 min' },
-  { id: 'urgence',    duration: 'Sur devis' },
+  { id: 'urgence',    duration: null },
 ].filter(svc => !isServiceComingSoon(svc.id))
 
 const SERVICE_LABELS: Record<string, string> = {
@@ -378,7 +378,7 @@ export default function BookingModal() {
                         {t('services.' + svc.id)}
                       </div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', display: 'flex', gap: '8px' }}>
-                        <span>{svc.duration}</span>
+                        <span>{svc.duration ?? t('services.onQuote')}</span>
                         {price && !isUrgent && (
                           <>
                             <span>·</span>
