@@ -22,6 +22,24 @@ export interface Booking {
   created_at: string
   confirmed_at: string | null
   completed_at: string | null
+  review_token: string | null
+  review_requested_at: string | null
+  review_submitted_at: string | null
+  reviewer_name: string | null
+  admin_response: string | null
+  is_hidden: boolean | null
+}
+
+/** A row from the `public_reviews` view — the public-safe, non-hidden subset of reviewed bookings */
+export interface PublicReview {
+  id: string
+  reference: string | null
+  service_name: string | null
+  rating: number
+  rating_comment: string | null
+  reviewer_name: string | null
+  review_submitted_at: string
+  admin_response: string | null
 }
 
 /** A user profile from the profiles table */

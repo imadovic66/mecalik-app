@@ -25,6 +25,7 @@ import Tarifs from './pages/Tarifs'
 import Flottes from './pages/Flottes'
 import FAQ from './pages/FAQ'
 import TrackBooking from './pages/TrackBooking'
+import ReviewPage from './pages/ReviewPage'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
 import { trackPageView } from './lib/analytics'
@@ -91,6 +92,7 @@ function AppShell() {
           } />
           <Route path="/track/:reference?" element={<TrackBooking />} />
           <Route path="/suivi/:reference?" element={<TrackBooking />} />
+          <Route path="/avis/:token" element={<ReviewPage />} />
           <Route path="/mechanic" element={<MechanicDashboard />} />
           <Route path="/admin" element={
             <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>

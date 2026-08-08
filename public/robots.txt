@@ -9,5 +9,6 @@ Disallow: /signup
 Disallow: /track
 Disallow: /suivi
 Disallow: /booking
+Disallow: /avis
 
 Sitemap: https://mecalik.com/sitemap.xml

@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import HeroSection from '../components/home/HeroSection'
 import StatsBar from '../components/home/StatsBar'
 import ServicesSection from '../components/home/ServicesSection'
 import ReviewsSection from '../components/home/ReviewsSection'
 import CtaSection from '../components/home/CtaSection'
 import SEO from '../components/SEO'
+import type { PublicReview } from '../lib/types'
 
 export default function Home() {
+  const [reviewStats, setReviewStats] = useState<{ avg: number; count: number } | null>(null)
+
   const handleBookNow = () => {
     if (typeof window !== 'undefined' && (window as any).fbq) {
       ;(window as any).fbq('track', 'InitiateCheckout')
@@ -13,16 +17,37 @@ export default function Home() {
     window.dispatchEvent(new CustomEvent('openBooking'))
   }
 
+  const handleReviewsLoaded = (reviews: PublicReview[]) => {
+    if (reviews.length === 0) return
+    setReviewStats({
+      avg: reviews.reduce((s, r) => s + r.rating, 0) / reviews.length,
+      count: reviews.length,
+    })
+  }
+
+  const aggregateRatingJsonLd = reviewStats ? {
+    '@context': 'https://schema.org',
+    '@type': 'AggregateRating',
+    itemReviewed: { '@type': 'LocalBusiness', '@id': 'https://mecalik.com/#business' },
+    ratingValue: reviewStats.avg,
+    reviewCount: reviewStats.count,
+    bestRating: 5,
+    worstRating: 1,
+  } : undefined
+
   return (
     <main>
       <SEO
         title="Mécanicien à Domicile Casablanca | MecaLIK — Votre voiture, votre lieu"
         description="Mécanicien certifié qui vient à vous à Casablanca. Vidange, batterie, pneus, diagnostic. Devis en 5 min, intervention en 90 min, paiement après service."
         path="/"
+        jsonLd={aggregateRatingJsonLd}
       />
       <HeroSection onBookNow={handleBookNow} />
       <StatsBar />
       <ServicesSection onBookNow={handleBookNow} />
+
+      <ReviewsSection onLoaded={handleReviewsLoaded} />
 
       {/* Slim "Comment ça marche" teaser */}
       <div style={{
@@ -59,7 +84,6 @@ export default function Home() {
         </a>
       </div>
 
-      <ReviewsSection />
       <CtaSection onBookNow={handleBookNow} />
     </main>
   )
