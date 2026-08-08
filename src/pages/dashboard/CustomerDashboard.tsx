@@ -284,7 +284,7 @@ export default function CustomerDashboard() {
                           {activeBooking.technician_name}
                         </div>
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                          4.9 · {t('customer.certifiedTech')}
+                          {t('customer.certifiedTech')}
                         </div>
                       </div>
                       {activeBooking.technician_phone && (

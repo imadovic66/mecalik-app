@@ -7,6 +7,11 @@ interface Props {
   onBookNow: () => void
 }
 
+const ZONES = [
+  'Maârif', 'Gauthier', 'Bourgogne', 'Ain Diab', 'Sidi Maârouf',
+  'Bouskoura', 'Lissasfa', 'Californie', 'Anfa', 'Racine',
+]
+
 export default function HeroSection({ onBookNow }: Props) {
   const { t } = useTranslation()
   const techCount = 6
@@ -147,17 +152,22 @@ export default function HeroSection({ onBookNow }: Props) {
           </div>
         </div>
 
-        {/* Company trust strip */}
+        {/* Service-area coverage strip */}
         <div className="mt-8 lg:mt-10 pt-8 border-t flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
           style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-          <div className="text-xs uppercase tracking-widest flex-shrink-0" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            {t('landing.trustTitle')}
+          <div className="text-xs uppercase tracking-widest flex-shrink-0" style={{ color: 'var(--mk-text-muted)' }}>
+            {t('landing.zonesTitle')}
           </div>
-          <div className="lg:hidden text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            Casablanca Finance City · Royal Air Maroc · OCP Group · BMCE Bank · Inwi
+          <div
+            className="flex lg:hidden items-center gap-x-6 overflow-x-auto scrollbar-hide"
+            style={{ color: 'var(--mk-text)' }}
+          >
+            {ZONES.map(name => (
+              <span key={name} className="text-sm font-medium tracking-wide flex-shrink-0">{name}</span>
+            ))}
           </div>
-          <div className="hidden lg:flex items-center gap-x-10 gap-y-3 flex-wrap" style={{ color: 'rgba(255,255,255,0.6)' }}>
-            {['Casablanca Finance City', 'Royal Air Maroc', 'OCP Group', 'BMCE Bank', 'Inwi'].map(name => (
+          <div className="hidden lg:flex items-center gap-x-10 gap-y-3 flex-wrap" style={{ color: 'var(--mk-text)' }}>
+            {ZONES.map(name => (
               <span key={name} className="text-sm font-medium tracking-wide">{name}</span>
             ))}
           </div>

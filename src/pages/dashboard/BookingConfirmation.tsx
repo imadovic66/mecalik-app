@@ -343,7 +343,7 @@ export default function BookingConfirmation() {
                     {booking.technician_name}
                   </div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>
-                    {t('booking.certifiedTech')} · 4.9
+                    {t('booking.certifiedTech')}
                   </div>
                 </div>
                 {/* Actions */}
