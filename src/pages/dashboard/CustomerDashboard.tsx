@@ -14,7 +14,7 @@ import { serviceIdFromName } from '../../lib/serviceUtils'
 import { isServiceComingSoon } from '../../data/serviceStatus'
 
 type ServiceDetail = {
-  type: 'product' | 'part' | 'labor'
+  type: 'product' | 'part' | 'labor' | 'material' | 'vat' | 'discount'
   name: string
   brand?: string
   reference?: string
@@ -37,15 +37,18 @@ type Booking = {
   created_at: string
   completed_at: string | null
   service_details?: ServiceDetail[] | null
+  quote_reference?: string | null
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; eta: string }> = {
-  pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Confirmation en cours'  },
-  confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Technicien assigné'      },
-  on_the_way:  { label: 'on_the_way',  color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Arrive sous 90 min'      },
-  in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Arrive sous 30 min'      },
-  completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88', eta: ''                        },
-  cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444', eta: ''                        },
+  pending:       { label: 'pending',       color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Confirmation en cours'  },
+  confirmed:     { label: 'confirmed',     color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Technicien assigné'      },
+  on_the_way:    { label: 'on_the_way',    color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Arrive sous 90 min'      },
+  quote_pending: { label: 'quote_pending', color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Devis en préparation'    },
+  quote_sent:    { label: 'quote_sent',    color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Devis à valider'         },
+  in_progress:   { label: 'in_progress',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Arrive sous 30 min'      },
+  completed:     { label: 'completed',     color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88', eta: ''                        },
+  cancelled:     { label: 'cancelled',     color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444', eta: ''                        },
 }
 
 
@@ -114,7 +117,7 @@ export default function CustomerDashboard() {
     setLoading(false)
   }
 
-  const activeBooking   = bookings.find(b => ['pending', 'confirmed', 'on_the_way', 'in_progress'].includes(b.status))
+  const activeBooking   = bookings.find(b => ['pending', 'confirmed', 'on_the_way', 'quote_pending', 'quote_sent', 'in_progress'].includes(b.status))
   const recentCompleted = bookings.filter(b => b.status === 'completed').slice(0, 3)
   const firstName       = getFirstName(profile?.full_name, user?.email)
 
@@ -123,6 +126,14 @@ export default function CustomerDashboard() {
     // fall back to the plain picker instead of presetting an unavailable service.
     const detail = isServiceComingSoon(serviceIdFromName(serviceId)) ? undefined : { service: serviceId }
     window.dispatchEvent(new CustomEvent('openBooking', { detail }))
+  }
+
+  const [acceptingQuote, setAcceptingQuote] = useState(false)
+  const handleAcceptQuote = async (bookingId: string) => {
+    setAcceptingQuote(true)
+    await supabase.from('bookings').update({ status: 'in_progress' }).eq('id', bookingId)
+    setAcceptingQuote(false)
+    fetchAll()
   }
 
   // silence unused import warning — Wrench is used in Book Again section
@@ -301,6 +312,70 @@ export default function CustomerDashboard() {
                           <Phone size={15} />
                         </span>
                       )}
+                    </div>
+                  )}
+
+                  {/* ── Quote review (status: quote_sent) ── */}
+                  {activeBooking.status === 'quote_sent' && (
+                    <div onClick={e => e.stopPropagation()} style={{ marginTop: '14px' }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                        padding: '4px 10px', borderRadius: '6px', marginBottom: '10px',
+                        background: 'rgba(240,192,64,0.12)', border: '1px solid rgba(240,192,64,0.3)',
+                      }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#F0C040' }}>📄 Devis reçu</span>
+                      </div>
+
+                      {activeBooking.service_details && activeBooking.service_details.length > 0 && (
+                        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '12px 14px', marginBottom: '12px' }}>
+                          {activeBooking.service_details.map((item, idx) => {
+                            const qty = parseFloat(item.quantity || '1') || 1
+                            const lineTotal = (item.unit_price || 0) * qty
+                            const isDiscount = item.type === 'discount'
+                            return (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '4px 0', fontSize: '12px' }}>
+                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>{item.name} <span style={{ color: 'rgba(255,255,255,0.3)' }}>× {qty}</span></span>
+                                <span style={{ color: isDiscount ? '#FF6B6B' : 'white', fontWeight: 600, flexShrink: 0 }}>
+                                  {isDiscount ? '-' : ''}{Math.round(lineTotal)} MAD
+                                </span>
+                              </div>
+                            )
+                          })}
+                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>Total TTC</span>
+                            <span style={{ fontSize: '15px', fontWeight: 800, color: '#F0C040' }}>{activeBooking.amount_ttc} MAD</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => handleAcceptQuote(activeBooking.id)}
+                          disabled={acceptingQuote}
+                          style={{
+                            flex: 1, padding: '12px', borderRadius: '10px', border: 'none',
+                            background: '#00DD88', color: '#0A0A0A',
+                            fontSize: '13px', fontWeight: 700, cursor: acceptingQuote ? 'wait' : 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          ✅ J'accepte
+                        </button>
+                        <a
+                          href={`https://wa.me/212777348065?text=${encodeURIComponent(`Bonjour, j'ai une question sur mon devis ${activeBooking.reference || ''}`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            flex: 1, padding: '12px', borderRadius: '10px',
+                            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                            color: 'white', fontSize: '13px', fontWeight: 600, textDecoration: 'none',
+                            textAlign: 'center', fontFamily: 'inherit',
+                          }}
+                        >
+                          💬 J'ai une question
+                        </a>
+                      </div>
                     </div>
                   )}
 

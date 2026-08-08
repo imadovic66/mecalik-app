@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     const [{ data: bookingData }, { data: customerData }, { data: offlineData, error: offlineError }] = await Promise.all([
-      supabase.from('bookings').select('*, service_details, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100),
+      supabase.from('bookings').select('*, service_details, profiles!bookings_user_id_fkey(full_name, phone)').order('created_at', { ascending: false }).limit(100),
       supabase.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false }),
       supabase.from('offline_interventions').select('*').order('date', { ascending: false }),
     ])
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
   }, [])
 
   const fetchBookings = useCallback(async () => {
-    const { data } = await supabase.from('bookings').select('*, service_details, profiles(full_name, phone)').order('created_at', { ascending: false }).limit(100)
+    const { data } = await supabase.from('bookings').select('*, service_details, profiles!bookings_user_id_fkey(full_name, phone)').order('created_at', { ascending: false }).limit(100)
     if (data) setBookings(data)
   }, [])
 

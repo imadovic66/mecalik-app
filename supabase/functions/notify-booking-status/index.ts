@@ -11,6 +11,7 @@ interface BookingRow {
   preferred_date: string | null
   review_token: string | null
   review_requested_at: string | null
+  amount_ttc: number | null
 }
 
 interface WebhookPayload {
@@ -59,6 +60,7 @@ async function sendWhatsApp(text: string) {
 const CUSTOMER_PUSH: Record<string, { title: string; body: (b: BookingRow) => string }> = {
   confirmed: { title: '✅ Demande confirmée', body: (b) => `${b.service_name} · Réf ${b.reference}. Un technicien vous a été assigné.` },
   on_the_way: { title: '🚗 Mécanicien en route', body: (b) => `Votre technicien est en chemin pour ${b.service_name}.` },
+  quote_sent: { title: '📄 Votre devis est prêt', body: (b) => `${b.service_name} · ${b.amount_ttc} MAD TTC. Consultez et confirmez.` },
   in_progress: { title: '🔧 Intervention en cours', body: (b) => `Votre ${b.service_name} vient de démarrer.` },
   completed: { title: '✨ Intervention terminée', body: (b) => `${b.service_name} terminé. Votre avis nous aiderait beaucoup !` },
   cancelled: { title: '❌ Réservation annulée', body: (b) => `Votre réservation ${b.reference} a été annulée.` },
@@ -137,6 +139,19 @@ Deno.serve(async (req) => {
         method: 'PATCH', headers: H,
         body: JSON.stringify({ review_requested_at: new Date().toISOString() }),
       })
+    }
+
+    // 4) ADMIN ALERT — mechanic submitted a quote, awaiting approval
+    if (statusChanged && b.status === 'quote_pending') {
+      const adminMsg =
+        `⏳ DEVIS À VALIDER\n\n` +
+        `Réf: ${b.reference}\n` +
+        `Service: ${b.service_name}\n` +
+        `Mécanicien: ${b.technician_name}\n` +
+        `Montant: ${b.amount_ttc} MAD TTC\n\n` +
+        `Valider: https://mecalik.com/admin`
+      const waRes = await sendWhatsApp(adminMsg)
+      results.push({ target: 'quote_pending_admin_alert', res: waRes })
     }
 
     return new Response(JSON.stringify({ ok: true, results }), {

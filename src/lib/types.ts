@@ -28,6 +28,13 @@ export interface Booking {
   reviewer_name: string | null
   admin_response: string | null
   is_hidden: boolean | null
+  quote_submitted_at: string | null
+  quote_submitted_by: string | null
+  quote_approved_at: string | null
+  quote_approved_by: string | null
+  quote_sent_at: string | null
+  quote_feedback: string | null
+  quote_reference: string | null
 }
 
 /** A row from the `public_reviews` view — the public-safe, non-hidden subset of reviewed bookings */

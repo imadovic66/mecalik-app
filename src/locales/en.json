@@ -60,6 +60,8 @@
     "pending": "Pending",
     "confirmed": "Confirmed",
     "on_the_way": "Mechanic on the way",
+    "quote_pending": "Quote pending approval",
+    "quote_sent": "Quote sent",
     "in_progress": "In progress",
     "completed": "Completed",
     "cancelled": "Cancelled",

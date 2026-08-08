@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
+import QuoteEditor from './QuoteEditor'
+import type { ServiceDetail } from '../admin/adminShared'
 import {
   MapPin, MessageCircle, Navigation,
   Wrench, Star,
@@ -29,21 +31,28 @@ type Booking = {
   confirmed_at: string | null
   completed_at: string | null
   user_id: string | null
+  notes_admin: string | null
+  service_details?: ServiceDetail[] | null
+  quote_feedback: string | null
+  quote_submitted_at: string | null
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
-  confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
-  on_the_way:  { label: 'on_the_way',  color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
-  in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
-  completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88' },
-  cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444' },
+  pending:       { label: 'pending',       color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
+  confirmed:     { label: 'confirmed',     color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
+  on_the_way:    { label: 'on_the_way',    color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
+  quote_pending: { label: 'quote_pending', color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
+  quote_sent:    { label: 'quote_sent',    color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
+  in_progress:   { label: 'in_progress',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
+  completed:     { label: 'completed',     color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88' },
+  cancelled:     { label: 'cancelled',     color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444' },
 }
 
+// quote_pending has no direct action here — see the read-only panel in the job card instead
 const NEXT_STATUS: Record<string, { label: string; next: string; color: string; icon: string }> = {
-  confirmed:   { label: "🚗 Je suis en route / I'm on my way",          next: 'on_the_way',  color: '#F0C040' , icon: 'car'   },
-  on_the_way:  { label: "🔧 Je suis arrivé — Démarrer / I've arrived — Start service", next: 'in_progress', color: '#43BCC9', icon: 'wrench' },
-  in_progress: { label: '✅ Intervention terminée / Service completed',  next: 'completed',   color: '#00DD88', icon: 'check'  },
+  confirmed:   { label: '🚗 Je suis en route',            next: 'on_the_way',  color: '#F0C040', icon: 'car'    },
+  quote_sent:  { label: '🔧 Démarrer l\'intervention',     next: 'in_progress', color: '#43BCC9', icon: 'wrench' },
+  in_progress: { label: '✅ Terminer l\'intervention',     next: 'completed',   color: '#00DD88', icon: 'check'  },
 }
 
 type TabId = 'jobs' | 'history' | 'gains' | 'profil'
@@ -61,6 +70,7 @@ export default function MechanicDashboard() {
   const [isOnline, setIsOnline]     = useState(true)
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [quoteEditorJob, setQuoteEditorJob] = useState<Booking | null>(null)
 
   // ── Auth guard (imperative) ──
   useEffect(() => {
@@ -138,7 +148,7 @@ export default function MechanicDashboard() {
     setUpdatingId(null)
   }
 
-  const activeJobs    = bookings.filter(b => ['confirmed', 'on_the_way', 'in_progress', 'pending'].includes(b.status))
+  const activeJobs    = bookings.filter(b => ['confirmed', 'on_the_way', 'quote_pending', 'quote_sent', 'in_progress', 'pending'].includes(b.status))
   const historyJobs   = bookings.filter(b => ['completed', 'cancelled'].includes(b.status))
   const completedJobs = bookings.filter(b => b.status === 'completed')
 
@@ -409,6 +419,30 @@ export default function MechanicDashboard() {
                             </div>
 
                             {/* Main CTA */}
+                            {job.status === 'on_the_way' && (
+                              <button
+                                onClick={() => setQuoteEditorJob(job)}
+                                style={{
+                                  width: '100%', marginTop: '10px', padding: '13px',
+                                  background: '#43BCC9', color: '#080808',
+                                  border: 'none', borderRadius: '12px',
+                                  fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                  fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em',
+                                }}
+                              >
+                                📝 Créer le devis
+                              </button>
+                            )}
+                            {job.status === 'quote_pending' && (
+                              <div style={{
+                                marginTop: '10px', padding: '13px', borderRadius: '12px', textAlign: 'center',
+                                background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.25)',
+                                color: '#F0C040', fontSize: '13px', fontWeight: 600,
+                              }}>
+                                ⏳ En attente de validation
+                              </div>
+                            )}
                             {nextAction && (
                               <button
                                 onClick={() => updateStatus(job.id, nextAction.next)}
@@ -672,6 +706,15 @@ export default function MechanicDashboard() {
           ::-webkit-scrollbar { display: none; }
         `}</style>
       </div>
+
+      {quoteEditorJob && user && (
+        <QuoteEditor
+          booking={quoteEditorJob}
+          userId={user.id}
+          onClose={() => setQuoteEditorJob(null)}
+          onSubmitted={fetchBookings}
+        />
+      )}
     </div>
   )
 }

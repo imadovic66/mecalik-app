@@ -2,7 +2,7 @@
 
 import { useTranslation } from 'react-i18next'
 
-export type BookingStatus = 'pending' | 'confirmed' | 'on_the_way' | 'in_progress' | 'completed' | 'cancelled'
+export type BookingStatus = 'pending' | 'confirmed' | 'on_the_way' | 'quote_pending' | 'quote_sent' | 'in_progress' | 'completed' | 'cancelled'
 
 export type ServiceDetailType = 'material' | 'labor' | 'vat' | 'discount'
 
@@ -26,6 +26,7 @@ export type ServiceDetail = {
 
 export type Booking = {
   id: string
+  reference?: string | null
   user_id: string | null
   service_name: string
   status: BookingStatus
@@ -39,6 +40,13 @@ export type Booking = {
   created_at: string
   service_details?: ServiceDetail[] | null
   profiles?: { full_name: string | null; phone: string | null }
+  quote_submitted_at?: string | null
+  quote_submitted_by?: string | null
+  quote_approved_at?: string | null
+  quote_approved_by?: string | null
+  quote_sent_at?: string | null
+  quote_feedback?: string | null
+  quote_reference?: string | null
 }
 
 export type Customer = {
@@ -73,24 +81,28 @@ export type FinanceBooking = {
 export type Tab = 'overview' | 'bookings' | 'customers' | 'finances' | 'reviews' | 'notifications'
 
 export const STATUS_CONFIG = {
-  pending:     { label: 'En attente',          color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },
-  confirmed:   { label: 'Confirmé',            color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
-  on_the_way:  { label: 'Mécanicien en route', color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },
-  in_progress: { label: 'En cours',            color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
-  completed:   { label: 'Terminé',             color: '#00DD88', bg: 'rgba(0,221,136,0.1)',   border: 'rgba(0,221,136,0.25)'   },
-  cancelled:   { label: 'Annulé',              color: '#FF4444', bg: 'rgba(255,68,68,0.1)',   border: 'rgba(255,68,68,0.25)'   },
+  pending:       { label: 'En attente',          color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },
+  confirmed:     { label: 'Confirmé',            color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
+  on_the_way:    { label: 'Mécanicien en route', color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },
+  quote_pending: { label: 'Devis à valider',     color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },
+  quote_sent:    { label: 'Devis envoyé',        color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
+  in_progress:   { label: 'En cours',            color: '#43BCC9', bg: 'rgba(67,188,201,0.1)',  border: 'rgba(67,188,201,0.25)'  },
+  completed:     { label: 'Terminé',             color: '#00DD88', bg: 'rgba(0,221,136,0.1)',   border: 'rgba(0,221,136,0.25)'   },
+  cancelled:     { label: 'Annulé',              color: '#FF4444', bg: 'rgba(255,68,68,0.1)',   border: 'rgba(255,68,68,0.25)'   },
 }
 
 export const STATUS_COLORS: Record<string, string> = {
-  pending:     '#F0C040',
-  confirmed:   '#43BCC9',
-  on_the_way:  '#F0C040',
-  in_progress: '#43BCC9',
-  completed:   '#00DD88',
-  cancelled:   '#FF4444',
+  pending:       '#F0C040',
+  confirmed:     '#43BCC9',
+  on_the_way:    '#F0C040',
+  quote_pending: '#F0C040',
+  quote_sent:    '#43BCC9',
+  in_progress:   '#43BCC9',
+  completed:     '#00DD88',
+  cancelled:     '#FF4444',
 }
 
-export const STATUS_KEYS = ['pending', 'confirmed', 'on_the_way', 'in_progress', 'completed', 'cancelled'] as const
+export const STATUS_KEYS = ['pending', 'confirmed', 'on_the_way', 'quote_pending', 'quote_sent', 'in_progress', 'completed', 'cancelled'] as const
 
 export function getGuestLabel(booking: { user_id: string | null; notes_admin: string | null; profiles?: { full_name: string | null } | undefined }): string {
   if (booking.profiles?.full_name) return booking.profiles.full_name

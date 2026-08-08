@@ -33,6 +33,8 @@ export const BOOKING_STATUSES = [
   'pending',
   'confirmed',
   'on_the_way',
+  'quote_pending',
+  'quote_sent',
   'in_progress',
   'completed',
   'cancelled',
@@ -41,19 +43,23 @@ export const BOOKING_STATUSES = [
 export type BookingStatus = typeof BOOKING_STATUSES[number]
 
 export const STATUS_COLORS: Record<BookingStatus, string> = {
-  pending:     '#F0C040',
-  confirmed:   '#43BCC9',
-  on_the_way:  '#F0C040',
-  in_progress: '#43BCC9',
-  completed:   '#22C55E',
-  cancelled:   '#FF4444',
+  pending:       '#F0C040',
+  confirmed:     '#43BCC9',
+  on_the_way:    '#F0C040',
+  quote_pending: '#F0C040',
+  quote_sent:    '#43BCC9',
+  in_progress:   '#43BCC9',
+  completed:     '#22C55E',
+  cancelled:     '#FF4444',
 }
 
 export const STATUS_LABELS: Record<BookingStatus, { fr: string; en: string }> = {
-  pending:     { fr: 'En attente',          en: 'Pending' },
-  confirmed:   { fr: 'Confirmée',           en: 'Confirmed' },
-  on_the_way:  { fr: 'Mécanicien en route', en: 'On the way' },
-  in_progress: { fr: 'En cours',            en: 'In progress' },
-  completed:   { fr: 'Terminée',            en: 'Completed' },
-  cancelled:   { fr: 'Annulée',             en: 'Cancelled' },
+  pending:       { fr: 'En attente',          en: 'Pending' },
+  confirmed:     { fr: 'Confirmée',           en: 'Confirmed' },
+  on_the_way:    { fr: 'Mécanicien en route', en: 'On the way' },
+  quote_pending: { fr: 'Devis à valider',     en: 'Quote pending approval' },
+  quote_sent:    { fr: 'Devis envoyé',        en: 'Quote sent' },
+  in_progress:   { fr: 'En cours',            en: 'In progress' },
+  completed:     { fr: 'Terminée',            en: 'Completed' },
+  cancelled:     { fr: 'Annulée',             en: 'Cancelled' },
 }
