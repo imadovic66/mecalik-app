@@ -39,7 +39,7 @@ export default function CtaSection({ onBookNow: _ }: Props) {
 
               {/* Left — copy */}
               <div className="lg:col-span-7">
-                <div className="text-xs uppercase tracking-[0.2em] mb-6 font-medium" style={{ color: '#43BCC9' }}>
+                <div className="text-xs uppercase tracking-[0.2em] mb-6 font-medium" style={{ color: 'var(--mk-action)' }}>
                   {t('landing.ctaCity')}
                 </div>
 
@@ -55,7 +55,7 @@ export default function CtaSection({ onBookNow: _ }: Props) {
                   {t('landing.ctaHeadline1')}<br />
                   {t('landing.ctaHeadline2')}<br />
                   <span style={{
-                    background: 'linear-gradient(90deg, #43BCC9, #5FD1DD)',
+                    background: 'linear-gradient(90deg, var(--mk-action), #5FD1DD)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
@@ -73,7 +73,7 @@ export default function CtaSection({ onBookNow: _ }: Props) {
                   <button
                     onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
                     className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-4 rounded-full font-bold text-sm transition-all"
-                    style={{ background: '#43BCC9', color: '#080808', boxShadow: '0 8px 32px rgba(67,188,201,0.3)' }}
+                    style={{ background: 'var(--mk-action)', color: '#080808', boxShadow: '0 8px 32px rgba(67,188,201,0.3)' }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(67,188,201,0.4)' }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(67,188,201,0.3)' }}
                   >
@@ -96,7 +96,7 @@ export default function CtaSection({ onBookNow: _ }: Props) {
                 <div className="flex flex-wrap gap-x-8 gap-y-3">
                   {[t('landing.ctaStat1'), t('landing.ctaStat2'), t('landing.ctaStat3'), t('landing.ctaStat4')].map((item, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="2.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mk-action)" strokeWidth="2.5">
                         <path d="M20 6L9 17l-5-5" />
                       </svg>
                       {item}
@@ -117,7 +117,7 @@ export default function CtaSection({ onBookNow: _ }: Props) {
                     <div style={{
                       fontFamily: 'Space Grotesk, sans-serif',
                       fontSize: '28px', fontWeight: 800,
-                      color: '#43BCC9', letterSpacing: '-0.02em',
+                      color: 'var(--mk-action)', letterSpacing: '-0.02em',
                       lineHeight: 1.1, marginBottom: '8px',
                     }}>
                       {stat.number}

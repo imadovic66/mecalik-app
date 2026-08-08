@@ -94,7 +94,7 @@ export default function Navbar() {
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
               className="flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition-colors"
-              style={{ background: '#43BCC9', color: '#080808' }}>
+              style={{ background: 'var(--mk-action)', color: '#080808' }}>
               {t('nav.quickQuote')}
             </button>
           </div>
@@ -122,7 +122,7 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <Link to="/login" className="block text-sm py-2" style={{ color: '#43BCC9' }}>
+              <Link to="/login" className="block text-sm py-2" style={{ color: 'var(--mk-action)' }}>
                 {t('nav.login')}
               </Link>
             </div>
@@ -145,9 +145,9 @@ export default function Navbar() {
   ] : []
 
   const roleBadge = profile?.role === 'admin'
-    ? { label: 'Admin', color: '#43BCC9', bg: 'rgba(67,188,201,0.1)', border: 'rgba(67,188,201,0.2)' }
+    ? { label: 'Admin', color: 'var(--mk-action)', bg: 'rgba(67,188,201,0.1)', border: 'rgba(67,188,201,0.2)' }
     : profile?.role === 'fleet_manager'
-    ? { label: 'Flotte', color: '#F0C040', bg: 'rgba(240,192,64,0.1)', border: 'rgba(240,192,64,0.2)' }
+    ? { label: 'Flotte', color: 'var(--mk-premium)', bg: 'rgba(240,192,64,0.1)', border: 'rgba(240,192,64,0.2)' }
     : null
 
   const homePath = profile?.role === 'admin' ? '/admin'
@@ -201,7 +201,7 @@ export default function Navbar() {
                 border: '1px solid rgba(255,255,255,0.08)',
               }}>
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'rgba(67,188,201,0.2)', color: '#43BCC9' }}>
+                style={{ background: 'rgba(67,188,201,0.2)', color: 'var(--mk-action)' }}>
                 {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'U'}
               </div>
               <span className="text-sm font-medium max-w-24 truncate"
@@ -259,7 +259,7 @@ export default function Navbar() {
                 <div className="border-t pt-1" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                   <button onClick={handleSignOut}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                    style={{ color: '#FF4444' }}
+                    style={{ color: 'var(--mk-urgent)' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     <LogOut size={15} />
@@ -299,7 +299,7 @@ export default function Navbar() {
             </div>
             <button onClick={handleSignOut}
               className="flex items-center gap-2 text-sm"
-              style={{ color: '#FF4444' }}>
+              style={{ color: 'var(--mk-urgent)' }}>
               <LogOut size={15} />
               Déconnexion
             </button>

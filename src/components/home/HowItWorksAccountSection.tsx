@@ -39,7 +39,7 @@ export default function HowItWorksAccountSection() {
 
         {/* Section label */}
         <p style={{
-          fontSize: '12px', fontWeight: 700, color: '#43BCC9',
+          fontSize: '12px', fontWeight: 700, color: 'var(--mk-action)',
           textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '16px',
         }}>
           {t('landing.accountSectionLabel')}
@@ -118,7 +118,7 @@ export default function HowItWorksAccountSection() {
                   background: 'rgba(67,188,201,0.15)',
                   border: '1px solid rgba(67,188,201,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '11px', fontWeight: 800, color: '#43BCC9', flexShrink: 0,
+                  fontSize: '11px', fontWeight: 800, color: 'var(--mk-action)', flexShrink: 0,
                 }}>
                   {step.num}
                 </div>
@@ -134,7 +134,7 @@ export default function HowItWorksAccountSection() {
             to="/signup"
             style={{
               padding: '14px 28px', borderRadius: '10px',
-              background: '#43BCC9', color: '#0A0A0A',
+              background: 'var(--mk-action)', color: '#0A0A0A',
               fontSize: '14px', fontWeight: 700,
               textDecoration: 'none', whiteSpace: 'nowrap',
               display: 'flex', alignItems: 'center', gap: '8px',

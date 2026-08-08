@@ -7,6 +7,7 @@ export default function LanguageSwitcher({ style }: { style?: React.CSSPropertie
   const switchTo = (lang: string) => {
     i18n.changeLanguage(lang)
     localStorage.setItem('mecalik-lang', lang)
+    document.documentElement.lang = lang
   }
 
   return (

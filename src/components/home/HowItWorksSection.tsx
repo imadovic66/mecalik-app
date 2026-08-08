@@ -34,7 +34,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
           {/* Section header */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8 lg:mb-12">
             <div className="lg:col-span-5">
-              <div className="text-xs uppercase tracking-[0.2em] mb-5 font-medium" style={{ color: '#43BCC9' }}>
+              <div className="text-xs uppercase tracking-[0.2em] mb-5 font-medium" style={{ color: 'var(--mk-action)' }}>
                 {t('landing.howTitle')}
               </div>
               <h2 style={{
@@ -51,7 +51,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                 {t('landing.howDesc')}
               </p>
               <div className="mt-6 flex items-center gap-2 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                <ArrowDownRight size={16} style={{ color: '#43BCC9' }} />
+                <ArrowDownRight size={16} style={{ color: 'var(--mk-action)' }} />
                 {t('landing.howScroll')}
               </div>
             </div>
@@ -63,10 +63,10 @@ export default function HowItWorksSection({ onBookNow }: Props) {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
               <div className="lg:col-span-6 order-2 lg:order-1">
                 <div className="flex items-center gap-3 mb-6 flex-wrap">
-                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.1em' }}>01</span>
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: 'var(--mk-action)', letterSpacing: '0.1em' }}>01</span>
                   <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
                   <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
-                    style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
+                    style={{ background: 'rgba(67,188,201,0.08)', color: 'var(--mk-action)', border: '1px solid rgba(67,188,201,0.2)' }}>
                     {t('landing.step1Time')}
                   </div>
                 </div>
@@ -79,7 +79,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                 <div className="space-y-3">
                   {[t('landing.step1Feature1'), t('landing.step1Feature2'), t('landing.step1Feature3')].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <CheckCircle2 size={14} style={{ color: '#43BCC9', flexShrink: 0 }} />
+                      <CheckCircle2 size={14} style={{ color: 'var(--mk-action)', flexShrink: 0 }} />
                       <span className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{item}</span>
                     </div>
                   ))}
@@ -91,7 +91,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.2)' }}>
-                      <Smartphone size={18} style={{ color: '#43BCC9' }} />
+                      <Smartphone size={18} style={{ color: 'var(--mk-action)' }} />
                     </div>
                     <div>
                       <div className="text-sm font-semibold" style={{ color: 'white' }}>{t('landing.step1FormTitle')}</div>
@@ -112,7 +112,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                   <button
                     onClick={onBookNow}
                     className="w-full mt-6 py-3 rounded-xl text-sm font-semibold transition-colors"
-                    style={{ background: '#43BCC9', color: '#080808' }}>
+                    style={{ background: 'var(--mk-action)', color: '#080808' }}>
                     {t('landing.step1FormSend')}
                   </button>
                 </div>
@@ -127,13 +127,13 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ background: 'rgba(0,221,136,0.1)', border: '1px solid rgba(0,221,136,0.2)' }}>
-                      <MessageSquare size={18} style={{ color: '#00DD88' }} />
+                      <MessageSquare size={18} style={{ color: 'var(--mk-success)' }} />
                     </div>
                     <div>
                       <div className="text-sm font-semibold" style={{ color: 'white' }}>{t('landing.step1FormQuote')}</div>
                       <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#00DD88' }} />
-                        <span className="text-xs" style={{ color: '#00DD88' }}>{t('landing.step1QuoteLabel')}</span>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--mk-success)' }} />
+                        <span className="text-xs" style={{ color: 'var(--mk-success)' }}>{t('landing.step1QuoteLabel')}</span>
                       </div>
                     </div>
                   </div>
@@ -147,12 +147,12 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                     ].map(row => (
                       <div key={row.labelKey} className="flex justify-between py-1.5">
                         <span className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{t(row.labelKey)}</span>
-                        <span className="text-sm font-medium" style={{ color: row.value === '0 MAD' ? '#00DD88' : 'white' }}>{row.value}</span>
+                        <span className="text-sm font-medium" style={{ color: row.value === '0 MAD' ? 'var(--mk-success)' : 'white' }}>{row.value}</span>
                       </div>
                     ))}
                     <div className="flex justify-between pt-3 mt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
                       <span className="text-sm font-bold" style={{ color: 'white' }}>{t('landing.quoteTotalTTC')}</span>
-                      <span className="text-base font-bold" style={{ color: '#43BCC9' }}>445 MAD</span>
+                      <span className="text-base font-bold" style={{ color: 'var(--mk-action)' }}>445 MAD</span>
                     </div>
                   </div>
                   <div className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('landing.quoteGuaranteed')}</div>
@@ -160,10 +160,10 @@ export default function HowItWorksSection({ onBookNow }: Props) {
               </div>
               <div className="lg:col-span-6 lg:col-start-7 order-2">
                 <div className="flex items-center gap-3 mb-6 flex-wrap">
-                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.1em' }}>02</span>
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: 'var(--mk-action)', letterSpacing: '0.1em' }}>02</span>
                   <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
                   <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
-                    style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
+                    style={{ background: 'rgba(67,188,201,0.08)', color: 'var(--mk-action)', border: '1px solid rgba(67,188,201,0.2)' }}>
                     &lt; 5 minutes
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                 <div className="space-y-3">
                   {[t('landing.step3Feature1'), t('landing.step3Feature2'), t('landing.step3Feature3')].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <CheckCircle2 size={14} style={{ color: '#43BCC9', flexShrink: 0 }} />
+                      <CheckCircle2 size={14} style={{ color: 'var(--mk-action)', flexShrink: 0 }} />
                       <span className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{item}</span>
                     </div>
                   ))}
@@ -188,10 +188,10 @@ export default function HowItWorksSection({ onBookNow }: Props) {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
               <div className="lg:col-span-6 order-2 lg:order-1">
                 <div className="flex items-center gap-3 mb-6 flex-wrap">
-                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: '#43BCC9', letterSpacing: '0.1em' }}>03</span>
+                  <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '14px', fontWeight: 700, color: 'var(--mk-action)', letterSpacing: '0.1em' }}>03</span>
                   <div className="flex-1 h-px" style={{ background: 'rgba(67,188,201,0.2)' }} />
                   <div className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase"
-                    style={{ background: 'rgba(67,188,201,0.08)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
+                    style={{ background: 'rgba(67,188,201,0.08)', color: 'var(--mk-action)', border: '1px solid rgba(67,188,201,0.2)' }}>
                     &lt; 90 min
                   </div>
                 </div>
@@ -204,7 +204,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                 <div className="space-y-3 mb-10">
                   {[t('landing.step3Feature1b'), t('landing.step3Feature2b'), t('landing.step3Feature3b')].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <CheckCircle2 size={14} style={{ color: '#43BCC9', flexShrink: 0 }} />
+                      <CheckCircle2 size={14} style={{ color: 'var(--mk-action)', flexShrink: 0 }} />
                       <span className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{item}</span>
                     </div>
                   ))}
@@ -212,7 +212,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                 <button
                   onClick={onBookNow}
                   className="flex items-center gap-2 px-7 py-4 rounded-full font-semibold text-sm transition-all"
-                  style={{ background: '#43BCC9', color: '#080808', boxShadow: '0 8px 32px rgba(67,188,201,0.2)' }}
+                  style={{ background: 'var(--mk-action)', color: '#080808', boxShadow: '0 8px 32px rgba(67,188,201,0.2)' }}
                   onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 12px 40px rgba(67,188,201,0.35)')}
                   onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 8px 32px rgba(67,188,201,0.2)')}
                 >
@@ -233,7 +233,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                   <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
                     <div>
                       <div className="flex items-center gap-1.5 mb-1">
-                        <Wrench size={11} style={{ color: '#43BCC9' }} />
+                        <Wrench size={11} style={{ color: 'var(--mk-action)' }} />
                         <span className="text-[10px] uppercase tracking-wider font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
                           {t('landing.step3TechLabel')}
                         </span>
@@ -242,8 +242,8 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                     </div>
                     <div className="px-3 py-1.5 rounded-full flex items-center gap-1.5"
                       style={{ background: 'rgba(0,221,136,0.15)', border: '1px solid rgba(0,221,136,0.3)' }}>
-                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#00DD88' }} />
-                      <span className="text-[10px] font-bold" style={{ color: '#00DD88' }}>{t('landing.step3DoneLabel')}</span>
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--mk-success)' }} />
+                      <span className="text-[10px] font-bold" style={{ color: 'var(--mk-success)' }}>{t('landing.step3DoneLabel')}</span>
                     </div>
                   </div>
                 </div>

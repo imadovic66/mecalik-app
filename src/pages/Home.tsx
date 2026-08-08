@@ -25,7 +25,7 @@ export default function Home() {
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <p style={{
-          fontSize: '12px', color: '#43BCC9',
+          fontSize: '12px', color: 'var(--mk-action)',
           textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '12px',
         }}>
           Comment ça marche

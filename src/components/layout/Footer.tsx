@@ -100,17 +100,17 @@ export default function Footer() {
             </p>
             <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
-                <MapPin size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
+                <MapPin size={16} color="var(--mk-action)" className="flex-shrink-0 mt-0.5" />
                 <span className="text-[rgba(255,255,255,0.45)] text-sm">{t('landing.footerLocation')}</span>
               </div>
               <div className="flex items-start gap-3">
-                <Phone size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
+                <Phone size={16} color="var(--mk-action)" className="flex-shrink-0 mt-0.5" />
                 <span className="text-[rgba(255,255,255,0.45)] text-sm">
                   +212 777 348 065
                 </span>
               </div>
               <div className="flex items-start gap-3">
-                <Mail size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
+                <Mail size={16} color="var(--mk-action)" className="flex-shrink-0 mt-0.5" />
                 <a
                   href="mailto:contact@mecalik.com"
                   className="text-[rgba(255,255,255,0.45)] text-sm hover:text-white transition-colors"

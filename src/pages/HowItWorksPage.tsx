@@ -22,7 +22,7 @@ export default function HowItWorksPage() {
           ← Accueil
         </Link>
         <p style={{
-          fontSize: '12px', fontWeight: 700, color: '#43BCC9',
+          fontSize: '12px', fontWeight: 700, color: 'var(--mk-action)',
           textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '12px',
         }}>
           Comment ça marche
@@ -54,7 +54,7 @@ export default function HowItWorksPage() {
             onClick={handleBookNow}
             style={{
               padding: '14px 32px', borderRadius: '10px',
-              background: '#43BCC9', color: '#0A0A0A',
+              background: 'var(--mk-action)', color: '#0A0A0A',
               fontSize: '15px', fontWeight: 700,
               border: 'none', cursor: 'pointer',
             }}

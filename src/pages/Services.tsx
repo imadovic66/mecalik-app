@@ -24,42 +24,42 @@ const serviceDefs: ServiceDef[] = [
   {
     id: 'lavage',
     icon: 'Droplets',
-    color: '#43BCC9',
+    color: 'var(--mk-action)',
     duration: '~45 min',
     includesKeys: ['lavageI1', 'lavageI2', 'lavageI3', 'lavageI4', 'lavageI5'],
   },
   {
     id: 'vidange',
     icon: 'Droplets',
-    color: '#43BCC9',
+    color: 'var(--mk-action)',
     duration: '~60 min',
     includesKeys: ['vidangeI1', 'vidangeI2', 'vidangeI3', 'vidangeI4', 'vidangeI5'],
   },
   {
     id: 'batterie',
     icon: 'Battery',
-    color: '#43BCC9',
+    color: 'var(--mk-action)',
     duration: '~30 min',
     includesKeys: ['batterieI1', 'batterieI2', 'batterieI3', 'batterieI4', 'batterieI5'],
   },
   {
     id: 'pneus',
     icon: 'Wrench',
-    color: '#43BCC9',
+    color: 'var(--mk-action)',
     duration: '~45 min',
     includesKeys: ['pneusI1', 'pneusI2', 'pneusI3', 'pneusI4', 'pneusI5'],
   },
   {
     id: 'diagnostic',
     icon: 'Search',
-    color: '#43BCC9',
+    color: 'var(--mk-action)',
     duration: '~30 min',
     includesKeys: ['diagnosticI1', 'diagnosticI2', 'diagnosticI3', 'diagnosticI4', 'diagnosticI5'],
   },
   {
     id: 'urgence',
     icon: 'AlertTriangle',
-    color: '#F0C040',
+    color: 'var(--mk-premium)',
     duration: 'ASAP',
     includesKeys: ['urgenceI1', 'urgenceI2', 'urgenceI3', 'urgenceI4', 'urgenceI5'],
   },
@@ -75,7 +75,7 @@ export default function Services() {
       <section className="py-20 px-6 text-center" style={{ background: '#080808' }}>
         <p
           className="text-sm font-semibold uppercase tracking-widest mb-4"
-          style={{ color: '#43BCC9' }}
+          style={{ color: 'var(--mk-action)' }}
         >
           {t('services.pageTitle')}
         </p>
@@ -84,7 +84,7 @@ export default function Services() {
           style={{ color: '#ffffff', letterSpacing: '-0.02em' }}
         >
           {t('services.pageSubtitle').split('. ')[0]}.
-          <span style={{ color: '#43BCC9' }}> {t('services.pageSubtitle').split('. ')[1]}</span>
+          <span style={{ color: 'var(--mk-action)' }}> {t('services.pageSubtitle').split('. ')[1]}</span>
         </h1>
         <p
           className="text-lg max-w-xl mx-auto"
@@ -243,7 +243,7 @@ export default function Services() {
                       onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
                       className="w-full mt-6 py-4 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-colors duration-200"
                       style={{
-                        background: isUrgence ? '#F0C040' : '#43BCC9',
+                        background: isUrgence ? 'var(--mk-premium)' : 'var(--mk-action)',
                         color: '#080808',
                       }}
                     >

@@ -6,22 +6,22 @@ export default function About() {
 
   const values = [
     {
-      icon: <Target size={20} color="#43BCC9" />,
+      icon: <Target size={20} color="var(--mk-action)" />,
       titleKey: 'about.value1Title',
       descKey:  'about.value1Desc',
     },
     {
-      icon: <Zap size={20} color="#43BCC9" />,
+      icon: <Zap size={20} color="var(--mk-action)" />,
       titleKey: 'about.value2Title',
       descKey:  'about.value2Desc',
     },
     {
-      icon: <Heart size={20} color="#43BCC9" />,
+      icon: <Heart size={20} color="var(--mk-action)" />,
       titleKey: 'about.value3Title',
       descKey:  'about.value3Desc',
     },
     {
-      icon: <TrendingUp size={20} color="#43BCC9" />,
+      icon: <TrendingUp size={20} color="var(--mk-action)" />,
       titleKey: 'about.value4Title',
       descKey:  'about.value4Desc',
     },
@@ -50,7 +50,7 @@ export default function About() {
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <p
             className="text-sm font-semibold uppercase tracking-widest mb-4"
-            style={{ color: '#43BCC9' }}
+            style={{ color: 'var(--mk-action)' }}
           >
             {t('about.historyTag')}
           </p>
@@ -60,7 +60,7 @@ export default function About() {
           >
             {t('about.headline1')}
             <br />
-            <span style={{ color: '#43BCC9' }}>{t('about.headline2')}</span>
+            <span style={{ color: 'var(--mk-action)' }}>{t('about.headline2')}</span>
           </h1>
           <p
             className="text-xl max-w-2xl mx-auto leading-relaxed"
@@ -95,7 +95,7 @@ export default function About() {
 
             <div
               className="mt-8 pl-6"
-              style={{ borderLeft: '2px solid #43BCC9' }}
+              style={{ borderLeft: '2px solid var(--mk-action)' }}
             >
               <p
                 className="font-heading font-semibold text-xl leading-relaxed"
@@ -124,7 +124,7 @@ export default function About() {
                   borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
                 }}
               >
-                <div className="font-heading font-bold text-3xl" style={{ color: '#43BCC9' }}>
+                <div className="font-heading font-bold text-3xl" style={{ color: 'var(--mk-action)' }}>
                   {stat.value}
                 </div>
                 <div className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
@@ -142,7 +142,7 @@ export default function About() {
         <div className="max-w-7xl mx-auto">
           <p
             className="text-sm font-semibold uppercase tracking-widest mb-4 text-center"
-            style={{ color: '#43BCC9' }}
+            style={{ color: 'var(--mk-action)' }}
           >
             {t('about.valuesTitle')}
           </p>
@@ -198,7 +198,7 @@ export default function About() {
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
           className="inline-flex items-center gap-2 font-bold px-10 py-4 rounded-full transition-colors duration-200"
-          style={{ background: '#43BCC9', color: '#080808' }}
+          style={{ background: 'var(--mk-action)', color: '#080808' }}
         >
           {t('about.ctaButton')}
           <ChevronRight size={18} />

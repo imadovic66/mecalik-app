@@ -31,10 +31,10 @@ function LiveActivityTicker() {
       style={{ background: 'rgba(67,188,201,0.04)', border: '1px solid rgba(67,188,201,0.12)' }}>
       <div className="flex items-center gap-2 mb-3">
         <span className="relative flex w-2 h-2">
-          <span className="absolute inset-0 rounded-full animate-ping" style={{ background: '#43BCC9', opacity: 0.5 }} />
-          <span className="relative rounded-full w-2 h-2" style={{ background: '#43BCC9' }} />
+          <span className="absolute inset-0 rounded-full animate-ping" style={{ background: 'var(--mk-action)', opacity: 0.5 }} />
+          <span className="relative rounded-full w-2 h-2" style={{ background: 'var(--mk-action)' }} />
         </span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#43BCC9' }}>
+        <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--mk-action)' }}>
           {t('landing.reviewLiveActivity')}
         </span>
       </div>
@@ -57,7 +57,7 @@ function LiveActivityTicker() {
 const StarRow = ({ count, size = 16 }: { count: number; size?: number }) => (
   <div className="flex gap-1">
     {Array.from({ length: count }, (_, i) => (
-      <svg key={i} width={size} height={size} viewBox="0 0 24 24" fill="#F0C040">
+      <svg key={i} width={size} height={size} viewBox="0 0 24 24" fill="var(--mk-premium)">
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
       </svg>
     ))}
@@ -75,7 +75,7 @@ export default function ReviewsSection() {
 
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-10">
-          <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium" style={{ color: '#43BCC9' }}>
+          <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium" style={{ color: 'var(--mk-action)' }}>
             {t('landing.reviewsTag')}
           </div>
           <h2 style={{
@@ -103,7 +103,7 @@ export default function ReviewsSection() {
             </blockquote>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold"
-                style={{ background: 'rgba(67,188,201,0.15)', color: '#43BCC9', border: '1px solid rgba(67,188,201,0.2)' }}>
+                style={{ background: 'rgba(67,188,201,0.15)', color: 'var(--mk-action)', border: '1px solid rgba(67,188,201,0.2)' }}>
                 AC
               </div>
               <div>
@@ -114,8 +114,8 @@ export default function ReviewsSection() {
               </div>
               <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                 style={{ background: 'rgba(0,221,136,0.08)', border: '1px solid rgba(0,221,136,0.2)' }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00DD88" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
-                <span className="text-[10px] font-semibold" style={{ color: '#00DD88' }}>{t('landing.reviewVerified')}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--mk-success)" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
+                <span className="text-[10px] font-semibold" style={{ color: 'var(--mk-success)' }}>{t('landing.reviewVerified')}</span>
               </div>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function ReviewsSection() {
               </blockquote>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={{ background: 'rgba(67,188,201,0.15)', color: '#43BCC9' }}>FB</div>
+                  style={{ background: 'rgba(67,188,201,0.15)', color: 'var(--mk-action)' }}>FB</div>
                 <div>
                   <div className="text-sm font-medium" style={{ color: 'white' }}>Fatima-Zahra Bennis</div>
                   <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -155,7 +155,7 @@ export default function ReviewsSection() {
               </blockquote>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={{ background: 'rgba(67,188,201,0.15)', color: '#43BCC9' }}>RB</div>
+                  style={{ background: 'rgba(67,188,201,0.15)', color: 'var(--mk-action)' }}>RB</div>
                 <div>
                   <div className="text-sm font-medium" style={{ color: 'white' }}>Rachid Benhaddou</div>
                   <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -178,7 +178,7 @@ export default function ReviewsSection() {
               </blockquote>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
-                  style={{ background: 'rgba(240,192,64,0.15)', color: '#F0C040' }}>MT</div>
+                  style={{ background: 'rgba(240,192,64,0.15)', color: 'var(--mk-premium)' }}>MT</div>
                 <div>
                   <div className="text-xs font-medium" style={{ color: 'white' }}>Mehdi Tazi</div>
                   <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>

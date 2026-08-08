@@ -56,8 +56,8 @@ export default function HeroSection({ onBookNow }: Props) {
               style={{ background: 'rgba(0,221,136,0.06)', border: '1px solid rgba(0,221,136,0.18)' }}
             >
               <span className="relative flex w-2 h-2">
-                <span className="absolute inset-0 rounded-full animate-ping" style={{ background: '#00DD88', opacity: 0.6 }} />
-                <span className="relative rounded-full w-2 h-2" style={{ background: '#00DD88' }} />
+                <span className="absolute inset-0 rounded-full animate-ping" style={{ background: 'var(--mk-success)', opacity: 0.6 }} />
+                <span className="relative rounded-full w-2 h-2" style={{ background: 'var(--mk-success)' }} />
               </span>
               <span className="text-[11px] font-medium tracking-wide" style={{ color: 'rgba(255,255,255,0.85)' }}>
                 {techCount} {t('landing.heroAvailable')}
@@ -78,7 +78,7 @@ export default function HeroSection({ onBookNow }: Props) {
               <span style={{ fontWeight: 300, color: 'rgba(255,255,255,0.55)', display: 'block' }}>{t('landing.heroTitle2')}</span>
               <span style={{
                 fontWeight: 700, display: 'block',
-                background: 'linear-gradient(90deg, #43BCC9 0%, #5FD1DD 100%)',
+                background: 'linear-gradient(90deg, var(--mk-action) 0%, #5FD1DD 100%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
               }}>
                 {t('landing.heroTitle3')}
@@ -96,7 +96,7 @@ export default function HeroSection({ onBookNow }: Props) {
               <button
                 onClick={onBookNow}
                 className="group flex items-center gap-2 px-7 py-4 rounded-full font-semibold text-sm transition-all"
-                style={{ background: '#43BCC9', color: '#080808', boxShadow: '0 8px 32px rgba(67,188,201,0.25)' }}
+                style={{ background: 'var(--mk-action)', color: '#080808', boxShadow: '0 8px 32px rgba(67,188,201,0.25)' }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(67,188,201,0.35)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(67,188,201,0.25)' }}
               >
@@ -114,7 +114,7 @@ export default function HeroSection({ onBookNow }: Props) {
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs whitespace-nowrap flex-shrink-0"
                   style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  <span style={{ color: '#43BCC9' }}>{item.icon}</span>
+                  <span style={{ color: 'var(--mk-action)' }}>{item.icon}</span>
                   {item.label}
                 </div>
               ))}
@@ -139,8 +139,8 @@ export default function HeroSection({ onBookNow }: Props) {
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                   style={{ background: 'rgba(0,221,136,0.15)', border: '1px solid rgba(0,221,136,0.3)' }}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#00DD88' }} />
-                  <span className="text-[10px] font-semibold" style={{ color: '#00DD88' }}>{t('landing.heroLive')}</span>
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--mk-success)' }} />
+                  <span className="text-[10px] font-semibold" style={{ color: 'var(--mk-success)' }}>{t('landing.heroLive')}</span>
                 </div>
               </div>
             </div>

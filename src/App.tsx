@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from './components/layout/Navbar'
@@ -55,7 +55,8 @@ function AppShell() {
           <Route path="/"         element={<PublicRoute><Home /></PublicRoute>} />
           <Route path="/services" element={<PublicRoute><Services /></PublicRoute>} />
           <Route path="/fleet"    element={<PublicRoute><Fleet /></PublicRoute>} />
-          <Route path="/about"    element={<PublicRoute><About /></PublicRoute>} />
+          <Route path="/a-propos" element={<PublicRoute><About /></PublicRoute>} />
+          <Route path="/about"    element={<Navigate to="/a-propos" replace />} />
           <Route path="/comment-ca-marche" element={<PublicRoute><HowItWorksPage /></PublicRoute>} />
           <Route path="/tarifs"   element={<PublicRoute><Tarifs /></PublicRoute>} />
           <Route path="/flottes"  element={<PublicRoute><Flottes /></PublicRoute>} />

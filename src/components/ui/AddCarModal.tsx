@@ -151,7 +151,7 @@ export default function AddCarModal({ isOpen, onClose, onSuccess, editingCar }: 
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: '20px',
         }}>
-          <CarIcon size={22} color="#43BCC9" />
+          <CarIcon size={22} color="var(--mk-action)" />
         </div>
 
         <h2 style={{
@@ -236,7 +236,7 @@ export default function AddCarModal({ isOpen, onClose, onSuccess, editingCar }: 
           <div style={{
             marginTop: '16px', padding: '10px 14px',
             background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)',
-            borderRadius: '8px', color: '#FF4444', fontSize: '13px',
+            borderRadius: '8px', color: 'var(--mk-urgent)', fontSize: '13px',
           }}>
             {error}
           </div>

@@ -313,13 +313,13 @@ export default function BookingModal() {
         }}>
           <div style={{
             flex: step === 1 ? 1 : 0.3,
-            height: '3px', background: '#43BCC9',
+            height: '3px', background: 'var(--mk-action)',
             borderRadius: '2px', transition: 'flex 0.3s',
           }} />
           <div style={{
             flex: step === 2 ? 1 : 0.3,
             height: '3px',
-            background: step === 2 ? '#43BCC9' : 'rgba(255,255,255,0.1)',
+            background: step === 2 ? 'var(--mk-action)' : 'rgba(255,255,255,0.1)',
             borderRadius: '2px', transition: 'all 0.3s',
           }} />
         </div>}
@@ -365,7 +365,7 @@ export default function BookingModal() {
                       flexShrink: 0,
                     }}>
                       {isSelected ? (
-                        <Check size={16} color="#43BCC9" />
+                        <Check size={16} color="var(--mk-action)" />
                       ) : (
                         <div style={{
                           width: '8px', height: '8px', borderRadius: '50%',
@@ -406,8 +406,8 @@ export default function BookingModal() {
                   border: '1px solid rgba(67,188,201,0.2)',
                   alignSelf: 'flex-start',
                 }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#43BCC9', display: 'inline-block' }} />
-                  <span style={{ fontSize: '12px', color: '#43BCC9', fontWeight: 600 }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--mk-action)', display: 'inline-block' }} />
+                  <span style={{ fontSize: '12px', color: 'var(--mk-action)', fontWeight: 600 }}>
                     {t('services.' + selectedService)}
                   </span>
                 </div>
@@ -495,7 +495,7 @@ export default function BookingModal() {
             <div style={{ padding: '8px 0 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
 
               {/* Success icon */}
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(67,188,201,0.12)', border: '2px solid #43BCC9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(67,188,201,0.12)', border: '2px solid var(--mk-action)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
                 ✓
               </div>
 
@@ -510,7 +510,7 @@ export default function BookingModal() {
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
                   {t('booking.yourReference')}
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#43BCC9', letterSpacing: '0.05em', fontFamily: 'Space Grotesk, monospace' }}>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--mk-action)', letterSpacing: '0.05em', fontFamily: 'Space Grotesk, monospace' }}>
                   {bookingReference || '—'}
                 </div>
                 <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginTop: '4px' }}>
@@ -524,7 +524,7 @@ export default function BookingModal() {
                   href={`/track/${bookingReference}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ width: '100%', padding: '13px', borderRadius: '10px', background: '#43BCC9', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '13px', borderRadius: '10px', background: 'var(--mk-action)', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}
                 >
                   🔍 {t('booking.trackBooking')}
                 </a>
@@ -533,7 +533,7 @@ export default function BookingModal() {
               {/* Create account nudge */}
               <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', margin: 0 }}>
                 {t('booking.wantHistory')}{' '}
-                <a href="/signup" style={{ color: '#43BCC9', textDecoration: 'none' }}>
+                <a href="/signup" style={{ color: 'var(--mk-action)', textDecoration: 'none' }}>
                   {t('booking.createAccountLink')}
                 </a>
               </p>
@@ -603,7 +603,7 @@ export default function BookingModal() {
                 style={{
                   width: '100%', padding: '14px',
                   borderRadius: '12px', border: 'none',
-                  background: canSubmit ? '#00DD88' : 'rgba(255,255,255,0.06)',
+                  background: canSubmit ? 'var(--mk-success)' : 'rgba(255,255,255,0.06)',
                   color:      canSubmit ? '#0A0A0A' : 'rgba(255,255,255,0.3)',
                   fontSize: '15px', fontWeight: 600,
                   cursor: canSubmit ? 'pointer' : 'not-allowed',
@@ -652,7 +652,7 @@ export default function BookingModal() {
                   disabled={!canSubmit}
                   style={{
                     width: '100%', padding: '14px', borderRadius: '12px',
-                    background: canSubmit ? '#43BCC9' : 'rgba(67,188,201,0.3)',
+                    background: canSubmit ? 'var(--mk-action)' : 'rgba(67,188,201,0.3)',
                     border: 'none',
                     color: '#0A0A0A', fontSize: '14px', fontWeight: 700,
                     cursor: canSubmit ? 'pointer' : 'not-allowed',
