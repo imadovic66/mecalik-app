@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { normalizeDetailType, type ServiceDetail, type ServiceDetailType } from '../admin/adminShared'
+import { getMechanicShare } from '../../lib/pricing'
 
 type EditorBooking = {
   id: string
@@ -64,7 +65,7 @@ export default function QuoteEditor({ booking, userId, onClose, onSubmitted }: P
   const totalHT  = Math.max(0, matTotal + laborTotal - discountTotal)
   const tva      = totalHT * 0.20
   const totalTTC = totalHT + tva
-  const mechanicShare = laborTotal * 0.65
+  const mechanicShare = getMechanicShare(lineItems, totalTTC)
 
   const canSubmit = lineItems.length > 0 && totalTTC > 0 && !submitting
 

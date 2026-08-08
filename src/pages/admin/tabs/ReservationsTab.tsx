@@ -10,6 +10,7 @@ import { usePushNotifications } from '../../../hooks/usePushNotifications'
 import { useAuth } from '../../../hooks/useAuth'
 import { generateQuote } from '../../../utils/generateQuote'
 import { WHATSAPP_NUMBER } from '../../../lib/constants'
+import { getMechanicShare, getMecalikProfit } from '../../../lib/pricing'
 
 interface Props {
   bookings: Booking[]
@@ -461,8 +462,8 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                   const quoteHT  = Math.max(0, matTotal + labTotal - discTotal)
                   const quoteTVA = quoteHT * 0.20
                   const quoteTTC = quoteHT + quoteTVA
-                  const mechanicPayout = labTotal * 0.65
-                  const mecalikProfit  = labTotal * 0.35
+                  const mechanicPayout = getMechanicShare(details, quoteTTC)
+                  const mecalikProfit  = getMecalikProfit(details, quoteTTC)
                   return (
                     <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                       {isQuotePending && (
