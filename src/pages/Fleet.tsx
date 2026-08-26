@@ -95,17 +95,16 @@ export default function Fleet() {
                 className="font-heading font-bold text-5xl lg:text-6xl mb-6"
                 style={{ color: '#ffffff', letterSpacing: '-0.02em', lineHeight: '1.05' }}
               >
-                La maintenance de votre flotte,
+                {t('fleet.heroTitle')}
                 <br />
-                <span style={{ color: '#F0C040' }}>sans interruption.</span>
+                <span style={{ color: '#F0C040' }}>{t('fleet.heroTitleAccent')}</span>
               </h1>
 
               <p
                 className="text-lg mb-10 leading-relaxed"
                 style={{ color: 'rgba(255,255,255,0.55)', maxWidth: '480px' }}
               >
-                Maintenance préventive planifiée, urgences résolues en moins de 90 minutes.
-                Un seul interlocuteur. Une facture mensuelle. Zéro déplacement.
+                {t('fleet.heroDesc')}
               </p>
 
               <div className="flex gap-4 flex-wrap">
@@ -114,7 +113,7 @@ export default function Fleet() {
                   className="flex items-center gap-2 font-semibold px-8 py-4 rounded-full transition-colors duration-200"
                   style={{ background: '#F0C040', color: '#080808' }}
                 >
-                  Parler à un expert
+                  {t('fleet.heroCta1')}
                   <ChevronRight size={18} />
                 </button>
                 <button
@@ -126,7 +125,7 @@ export default function Fleet() {
                     background: 'transparent',
                   }}
                 >
-                  Demander une offre
+                  {t('fleet.heroCta2')}
                 </button>
               </div>
             </div>
@@ -138,7 +137,7 @@ export default function Fleet() {
             >
               <div className="flex items-center justify-between mb-8">
                 <div className="font-heading font-bold text-lg" style={{ color: '#ffffff' }}>
-                  Vue d&apos;ensemble flotte
+                  {t('fleet.statsTitle')}
                 </div>
                 <div
                   className="rounded-full px-3 py-1 text-xs font-medium"
@@ -148,31 +147,31 @@ export default function Fleet() {
                     color: '#F0C040',
                   }}
                 >
-                  En direct
+                  {t('fleet.statsBadge')}
                 </div>
               </div>
 
               {[
                 {
-                  label: 'Véhicules actifs',
+                  label: t('fleet.stat1Label'),
                   value: '24',
                   pillBg: 'rgba(0,221,136,0.1)',
                   pillColor: '#00DD88',
-                  pillText: 'Opérationnels',
+                  pillText: t('fleet.stat1Pill'),
                 },
                 {
-                  label: 'Services ce mois',
+                  label: t('fleet.stat2Label'),
                   value: '47',
                   pillBg: 'rgba(67,188,201,0.1)',
                   pillColor: '#43BCC9',
-                  pillText: 'Complétés',
+                  pillText: t('fleet.stat2Pill'),
                 },
                 {
-                  label: 'Prochaine maintenance',
-                  value: 'Dans 3j',
+                  label: t('fleet.stat3Label'),
+                  value: t('fleet.stat3Value'),
                   pillBg: 'rgba(240,192,64,0.1)',
                   pillColor: '#F0C040',
-                  pillText: 'Planifiée',
+                  pillText: t('fleet.stat3Pill'),
                 },
               ].map((stat, i, arr) => (
                 <div
@@ -207,14 +206,14 @@ export default function Fleet() {
 
             <div className="text-center mb-16">
               <p className="text-sm font-semibold uppercase tracking-widest mb-4" style={{ color: '#F0C040' }}>
-                Pourquoi MecaLIK Flotte
+                {t('fleet.whyTag')}
               </p>
               <h2
                 className="font-heading text-4xl font-bold"
                 style={{ color: '#ffffff', letterSpacing: '-0.02em' }}
               >
-                Conçu pour les entreprises
-                <span style={{ color: '#F0C040' }}> qui ne peuvent pas s&apos;arrêter.</span>
+                {t('fleet.whyTitle')}
+                <span style={{ color: '#F0C040' }}> {t('fleet.whyTitleAccent')}</span>
               </h2>
             </div>
 
@@ -222,18 +221,18 @@ export default function Fleet() {
               {[
                 {
                   icon: <Shield size={22} color="#F0C040" />,
-                  title: 'Maintenance préventive',
-                  desc: "Planning mensuel adapté à votre flotte. Zéro panne surprise, zéro immobilisation non planifiée.",
+                  title: t('fleet.card1Title'),
+                  desc: t('fleet.card1Desc'),
                 },
                 {
                   icon: <Clock size={22} color="#F0C040" />,
-                  title: 'Urgences en 90 min',
-                  desc: "Panne sur route, batterie, pneu — notre technicien intervient partout à Casablanca en moins de 90 minutes.",
+                  title: t('fleet.card2Title'),
+                  desc: t('fleet.card2Desc'),
                 },
                 {
                   icon: <FileText size={22} color="#F0C040" />,
-                  title: 'Facturation simplifiée',
-                  desc: "Une seule facture mensuelle avec TVA 20%. Détail par véhicule, par service. Export PDF.",
+                  title: t('fleet.card3Title'),
+                  desc: t('fleet.card3Desc'),
                 },
               ].map((card) => (
                 <div
@@ -266,38 +265,22 @@ export default function Fleet() {
 
             <div className="text-center mb-16">
               <p className="text-sm font-semibold uppercase tracking-widest mb-4" style={{ color: '#F0C040' }}>
-                Processus
+                {t('fleet.processTag')}
               </p>
               <h2
                 className="font-heading text-4xl font-bold"
                 style={{ color: '#ffffff', letterSpacing: '-0.02em' }}
               >
-                Simple à mettre en place.
+                {t('fleet.processTitle')}
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {[
-                {
-                  num: '01',
-                  title: 'Contact',
-                  desc: "Vous nous contactez via le formulaire ou WhatsApp. Réponse en moins de 2h.",
-                },
-                {
-                  num: '02',
-                  title: 'Audit de flotte',
-                  desc: "Nous analysons vos besoins, vos véhicules, vos cycles de maintenance.",
-                },
-                {
-                  num: '03',
-                  title: 'Proposition',
-                  desc: "Vous recevez une offre personnalisée avec tarification par véhicule.",
-                },
-                {
-                  num: '04',
-                  title: 'Démarrage',
-                  desc: "Première intervention planifiée sous 48h. Tableau de bord activé.",
-                },
+                { num: '01', title: t('fleet.step1Title'), desc: t('fleet.step1Desc') },
+                { num: '02', title: t('fleet.step2Title'), desc: t('fleet.step2Desc') },
+                { num: '03', title: t('fleet.step3Title'), desc: t('fleet.step3Desc') },
+                { num: '04', title: t('fleet.step4Title'), desc: t('fleet.step4Desc') },
               ].map((step) => (
                 <div key={step.num} className="text-center">
                   <div
@@ -329,16 +312,16 @@ export default function Fleet() {
 
             <div className="text-center mb-12">
               <p className="text-sm font-semibold uppercase tracking-widest mb-4" style={{ color: '#F0C040' }}>
-                Contact
+                {t('fleet.contactTag')}
               </p>
               <h2
                 className="font-heading text-4xl font-bold"
                 style={{ color: '#ffffff', letterSpacing: '-0.02em' }}
               >
-                Parlons de votre flotte.
+                {t('fleet.contactTitle')}
               </h2>
               <p className="mt-4 text-base" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                Remplissez ce formulaire. Nous vous recontactons sous 2 heures ouvrées.
+                {t('fleet.contactDesc')}
               </p>
             </div>
 
@@ -346,17 +329,17 @@ export default function Fleet() {
               <div className="text-center py-12">
                 <CheckCircle size={48} color="#43BCC9" className="mx-auto mb-4" />
                 <h3 className="font-heading font-bold text-2xl mb-2" style={{ color: '#ffffff' }}>
-                  Demande envoyée
+                  {t('fleet.successTitle')}
                 </h3>
                 <p style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  Nous vous recontactons dans les 2 heures. Vous pouvez aussi nous joindre directement sur WhatsApp.
+                  {t('fleet.successDesc')}
                 </p>
                 <button
                   onClick={() => window.open(WA_FLEET, '_blank')}
                   className="mt-6 font-semibold px-8 py-4 rounded-full transition-colors duration-200"
                   style={{ background: '#43BCC9', color: '#080808' }}
                 >
-                  Ouvrir WhatsApp
+                  {t('fleet.successWa')}
                 </button>
               </div>
             ) : (
@@ -369,52 +352,52 @@ export default function Fleet() {
                   {/* Name */}
                   <div>
                     <label className="block text-xs font-medium uppercase tracking-wide mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      Nom complet *
+                      {t('fleet.formName')}
                     </label>
                     <input
                       type="text"
-                      placeholder="Votre nom"
+                      placeholder={t('fleet.formNamePlaceholder')}
                       value={formData.name}
                       onChange={(e) => update('name', e.target.value)}
                       style={errors.name ? inputErr : inputBase}
                     />
-                    {errors.name && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
+                    {errors.name && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>{t('fleet.formRequired')}</p>}
                   </div>
 
                   {/* Company */}
                   <div>
                     <label className="block text-xs font-medium uppercase tracking-wide mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      Entreprise *
+                      {t('fleet.formCompany')}
                     </label>
                     <input
                       type="text"
-                      placeholder="Nom de votre société"
+                      placeholder={t('fleet.formCompanyPlaceholder')}
                       value={formData.company}
                       onChange={(e) => update('company', e.target.value)}
                       style={errors.company ? inputErr : inputBase}
                     />
-                    {errors.company && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
+                    {errors.company && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>{t('fleet.formRequired')}</p>}
                   </div>
 
                   {/* Email */}
                   <div>
                     <label className="block text-xs font-medium uppercase tracking-wide mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      Email *
+                      {t('fleet.formEmail')}
                     </label>
                     <input
                       type="email"
-                      placeholder="vous@entreprise.com"
+                      placeholder={t('fleet.formEmailPlaceholder')}
                       value={formData.email}
                       onChange={(e) => update('email', e.target.value)}
                       style={errors.email ? inputErr : inputBase}
                     />
-                    {errors.email && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
+                    {errors.email && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>{t('fleet.formRequired')}</p>}
                   </div>
 
                   {/* Phone */}
                   <div>
                     <label className="block text-xs font-medium uppercase tracking-wide mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      Téléphone *
+                      {t('fleet.formPhone')}
                     </label>
                     <input
                       type="tel"
@@ -423,7 +406,7 @@ export default function Fleet() {
                       onChange={(e) => update('phone', e.target.value)}
                       style={errors.phone ? inputErr : inputBase}
                     />
-                    {errors.phone && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>Champ obligatoire</p>}
+                    {errors.phone && <p className="text-xs mt-1" style={{ color: '#FF4444' }}>{t('fleet.formRequired')}</p>}
                   </div>
 
                 </div>
@@ -434,7 +417,7 @@ export default function Fleet() {
                   className="w-full mt-6 flex items-center justify-center gap-2 font-bold py-4 rounded-full transition-colors duration-200 text-sm"
                   style={{ background: '#F0C040', color: '#080808' }}
                 >
-                  Envoyer la demande
+                  {t('fleet.formSubmit')}
                   <ChevronRight size={18} />
                 </button>
 
@@ -443,14 +426,13 @@ export default function Fleet() {
                   className="mt-6 pt-6 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm"
                   style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
                 >
-                  <a
-                    href="tel:+212777348065"
-                    className="flex items-center gap-2 transition-colors"
+                  <span
+                    className="flex items-center gap-2"
                     style={{ color: 'rgba(255,255,255,0.45)' }}
                   >
                     <Phone size={15} color="#43BCC9" />
                     +212 777 348 065
-                  </a>
+                  </span>
                   <a
                     href="mailto:contact@mecalik.com"
                     className="flex items-center gap-2 transition-colors"

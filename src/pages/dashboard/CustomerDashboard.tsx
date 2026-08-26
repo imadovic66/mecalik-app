@@ -6,10 +6,24 @@ import { supabase, type Car } from '../../lib/supabase'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   ChevronRight, MapPin, Plus, Phone, Bell,
-  Droplet, Battery, Disc, Search, AlertTriangle, Sparkles,
+  Droplet, Battery, Search, AlertTriangle,
   Home, Clock as ClockIcon, Car as CarIcon, User, Wrench, ArrowRight, ChevronDown,
 } from 'lucide-react'
 import AddCarModal from '../../components/ui/AddCarModal'
+import { serviceIdFromName } from '../../lib/serviceUtils'
+import { isServiceComingSoon } from '../../data/serviceStatus'
+
+type ServiceDetail = {
+  type: 'product' | 'part' | 'labor' | 'material' | 'vat' | 'discount'
+  name: string
+  brand?: string
+  reference?: string
+  quantity?: string
+  unit_price?: number
+  total_price?: number
+  photo_url?: string | null
+  notes?: string | null
+}
 
 type Booking = {
   id: string
@@ -22,33 +36,22 @@ type Booking = {
   technician_phone: string | null
   created_at: string
   completed_at: string | null
+  service_details?: ServiceDetail[] | null
+  quote_reference?: string | null
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string; eta: string }> = {
-  pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Confirmation en cours'  },
-  confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Technicien assigné'      },
-  in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Arrive sous 30 min'      },
-  completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88', eta: ''                        },
-  cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444', eta: ''                        },
+  pending:       { label: 'pending',       color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Confirmation en cours'  },
+  confirmed:     { label: 'confirmed',     color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Technicien assigné'      },
+  on_the_way:    { label: 'on_the_way',    color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Arrive sous 90 min'      },
+  quote_pending: { label: 'quote_pending', color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Devis en préparation'    },
+  quote_sent:    { label: 'quote_sent',    color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040', eta: 'Devis à valider'         },
+  in_progress:   { label: 'in_progress',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9', eta: 'Arrive sous 30 min'      },
+  completed:     { label: 'completed',     color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88', eta: ''                        },
+  cancelled:     { label: 'cancelled',     color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444', eta: ''                        },
 }
 
-const QUICK_SERVICES: {
-  id: string; label: string; icon: React.ElementType
-  price: number; gradient: string; dot: string; urgent?: boolean
-}[] = [
-  { id: 'vidange',    label: 'Vidange',     icon: Droplet,       price: 250, gradient: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)', dot: '#3B82F6' },
-  { id: 'batterie',   label: 'Batterie',    icon: Battery,       price: 210, gradient: 'linear-gradient(135deg, #14532D 0%, #166534 100%)', dot: '#22C55E' },
-  { id: 'diagnostic', label: 'Diagnostic',  icon: Search,        price: 220, gradient: 'linear-gradient(135deg, #0E7490 0%, #155E75 100%)', dot: '#06B6D4' },
-  { id: 'pneus',      label: 'Pneus',       icon: Disc,          price: 200, gradient: 'linear-gradient(135deg, #422006 0%, #57340a 100%)', dot: '#D97706' },
-  { id: 'lavage',     label: 'Lavage',      icon: Sparkles,      price: 150, gradient: 'linear-gradient(135deg, #312E81 0%, #3730A3 100%)', dot: '#818CF8' },
-  { id: 'urgence',    label: 'Urgence',     icon: AlertTriangle, price: 239, gradient: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', dot: '#FF4444', urgent: true },
-]
 
-const SERVICE_LABELS: Record<string, string> = {
-  lavage: 'Lavage Auto', vidange: 'Vidange & Filtres',
-  batterie: 'Batterie',  pneus: 'Pneus',
-  diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
-}
 
 function getFirstName(fullName: string | null | undefined, email: string | null | undefined): string {
   if (fullName?.trim()) {
@@ -63,10 +66,21 @@ export default function CustomerDashboard() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
 
-  const [bookings, setBookings]     = useState<Booking[]>([])
-  const [cars, setCars]             = useState<Car[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [showAddCar, setShowAddCar] = useState(false)
+  const QUICK_SERVICES: {
+    id: string; label: string; icon: React.ElementType
+    price: number; gradient: string; dot: string; urgent?: boolean
+  }[] = [
+    { id: 'vidange',    label: t('services.vidange'),    icon: Droplet,       price: 250, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
+    { id: 'batterie',   label: t('services.batterie'),   icon: Battery,       price: 210, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
+    { id: 'diagnostic', label: t('services.diagnostic'), icon: Search,        price: 220, gradient: 'linear-gradient(135deg, #111111 0%, #1A1A1A 100%)', dot: '#43BCC9' },
+    { id: 'urgence',    label: t('services.urgence'),    icon: AlertTriangle, price: 239, gradient: 'linear-gradient(135deg, #1A0A0A 0%, #1F0D0D 100%)', dot: '#FF4444', urgent: true },
+  ]
+
+  const [bookings, setBookings]         = useState<Booking[]>([])
+  const [cars, setCars]                 = useState<Car[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [showAddCar, setShowAddCar]     = useState(false)
+  const [expandedHistory, setExpandedHistory] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) { navigate('/login'); return }
@@ -74,13 +88,17 @@ export default function CustomerDashboard() {
 
     // ── Real-time: refresh active booking card when admin updates status ──
     const channel = supabase
-      .channel(`customer-${user.id}`)
+      .channel(`customer-bookings-${user.id}`)
       .on('postgres_changes', {
-        event: 'UPDATE',
+        event: '*',
         schema: 'public',
         table: 'bookings',
-        filter: `user_id=eq.${user.id}`,
-      }, () => { fetchAll() })
+      }, (payload) => {
+        const record = (payload.new as any) || (payload.old as any)
+        if (!record || record.user_id === user.id) {
+          fetchAll()
+        }
+      })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -99,12 +117,24 @@ export default function CustomerDashboard() {
     setLoading(false)
   }
 
-  const activeBooking   = bookings.find(b => ['pending', 'confirmed', 'in_progress'].includes(b.status))
+  const activeBooking   = bookings.find(b => ['pending', 'confirmed', 'on_the_way', 'quote_pending', 'quote_sent', 'in_progress'].includes(b.status))
   const recentCompleted = bookings.filter(b => b.status === 'completed').slice(0, 3)
   const firstName       = getFirstName(profile?.full_name, user?.email)
 
-  const openBookingWithService = (serviceId: string) =>
-    window.dispatchEvent(new CustomEvent('openBooking', { detail: { service: serviceId } }))
+  const openBookingWithService = (serviceId: string) => {
+    // Coming-soon services (e.g. from a past Pneus/Lavage booking) aren't bookable —
+    // fall back to the plain picker instead of presetting an unavailable service.
+    const detail = isServiceComingSoon(serviceIdFromName(serviceId)) ? undefined : { service: serviceId }
+    window.dispatchEvent(new CustomEvent('openBooking', { detail }))
+  }
+
+  const [acceptingQuote, setAcceptingQuote] = useState(false)
+  const handleAcceptQuote = async (bookingId: string) => {
+    setAcceptingQuote(true)
+    await supabase.from('bookings').update({ status: 'in_progress' }).eq('id', bookingId)
+    setAcceptingQuote(false)
+    fetchAll()
+  }
 
   // silence unused import warning — Wrench is used in Book Again section
   void Wrench
@@ -138,7 +168,7 @@ export default function CustomerDashboard() {
             <MapPin size={13} color="#43BCC9" />
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Adresse
+                {t('common.address')}
               </div>
               <div style={{ fontSize: '13px', fontWeight: 500, color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 Casablanca
@@ -216,7 +246,7 @@ export default function CustomerDashboard() {
                     <span style={{
                       width: '7px', height: '7px', borderRadius: '50%',
                       background: st.dot, display: 'inline-block',
-                      animation: activeBooking.status === 'in_progress' ? 'mecaPulse 2s ease-in-out infinite' : 'none',
+                      animation: (activeBooking.status === 'in_progress' || activeBooking.status === 'on_the_way') ? 'mecaPulse 2s ease-in-out infinite' : 'none',
                     }} />
                     <span style={{
                       fontSize: '10px', fontWeight: 700, color: st.color,
@@ -231,7 +261,7 @@ export default function CustomerDashboard() {
                     fontSize: '22px', fontWeight: 600, color: 'white',
                     marginBottom: '4px', letterSpacing: '-0.015em',
                   }}>
-                    {SERVICE_LABELS[activeBooking.service_name] ?? activeBooking.service_name}
+                    {t('services.' + serviceIdFromName(activeBooking.service_name))}
                   </div>
 
                   {st.eta && (
@@ -268,23 +298,84 @@ export default function CustomerDashboard() {
                           {activeBooking.technician_name}
                         </div>
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                          4.9 · {t('customer.certifiedTech')}
+                          {t('customer.certifiedTech')}
                         </div>
                       </div>
                       {activeBooking.technician_phone && (
-                        <a
-                          href={`tel:${activeBooking.technician_phone}`}
-                          onClick={e => e.stopPropagation()}
+                        <span
                           style={{
                             width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
                             background: '#00DD88', color: '#000000',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            textDecoration: 'none',
                           }}
                         >
                           <Phone size={15} />
-                        </a>
+                        </span>
                       )}
+                    </div>
+                  )}
+
+                  {/* ── Quote review (status: quote_sent) ── */}
+                  {activeBooking.status === 'quote_sent' && (
+                    <div onClick={e => e.stopPropagation()} style={{ marginTop: '14px' }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                        padding: '4px 10px', borderRadius: '6px', marginBottom: '10px',
+                        background: 'rgba(240,192,64,0.12)', border: '1px solid rgba(240,192,64,0.3)',
+                      }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#F0C040' }}>📄 Devis reçu</span>
+                      </div>
+
+                      {activeBooking.service_details && activeBooking.service_details.length > 0 && (
+                        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '12px 14px', marginBottom: '12px' }}>
+                          {activeBooking.service_details.map((item, idx) => {
+                            const qty = parseFloat(item.quantity || '1') || 1
+                            const lineTotal = (item.unit_price || 0) * qty
+                            const isDiscount = item.type === 'discount'
+                            return (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '4px 0', fontSize: '12px' }}>
+                                <span style={{ color: 'rgba(255,255,255,0.6)' }}>{item.name} <span style={{ color: 'rgba(255,255,255,0.3)' }}>× {qty}</span></span>
+                                <span style={{ color: isDiscount ? '#FF6B6B' : 'white', fontWeight: 600, flexShrink: 0 }}>
+                                  {isDiscount ? '-' : ''}{Math.round(lineTotal)} MAD
+                                </span>
+                              </div>
+                            )
+                          })}
+                          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>Total TTC</span>
+                            <span style={{ fontSize: '15px', fontWeight: 800, color: '#F0C040' }}>{activeBooking.amount_ttc} MAD</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => handleAcceptQuote(activeBooking.id)}
+                          disabled={acceptingQuote}
+                          style={{
+                            flex: 1, padding: '12px', borderRadius: '10px', border: 'none',
+                            background: '#00DD88', color: '#0A0A0A',
+                            fontSize: '13px', fontWeight: 700, cursor: acceptingQuote ? 'wait' : 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          ✅ J'accepte
+                        </button>
+                        <a
+                          href={`https://wa.me/212777348065?text=${encodeURIComponent(`Bonjour, j'ai une question sur mon devis ${activeBooking.reference || ''}`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            flex: 1, padding: '12px', borderRadius: '10px',
+                            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                            color: 'white', fontSize: '13px', fontWeight: 600, textDecoration: 'none',
+                            textAlign: 'center', fontFamily: 'inherit',
+                          }}
+                        >
+                          💬 J'ai une question
+                        </a>
+                      </div>
                     </div>
                   )}
 
@@ -383,14 +474,6 @@ export default function CustomerDashboard() {
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                   }}>
-                    {/* Teal corner glow */}
-                    <div style={{
-                      position: 'absolute', top: '-50px', right: '-50px',
-                      width: '160px', height: '160px',
-                      background: 'radial-gradient(circle, rgba(67,188,201,0.12) 0%, transparent 70%)',
-                      borderRadius: '50%', pointerEvents: 'none',
-                    }} />
-
                     {/* Top — icon + plate */}
                     <div style={{
                       position: 'relative',
@@ -398,12 +481,12 @@ export default function CustomerDashboard() {
                       marginBottom: '12px',
                     }}>
                       <div style={{
-                        width: '40px', height: '40px', borderRadius: '10px',
-                        background: 'rgba(67,188,201,0.1)',
-                        border: '1px solid rgba(67,188,201,0.2)',
+                        width: '32px', height: '32px', borderRadius: '10px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.08)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        <CarIcon size={18} color="#43BCC9" />
+                        <CarIcon size={15} color="#43BCC9" />
                       </div>
                       {car.license_plate && (
                         <div style={{
@@ -492,7 +575,7 @@ export default function CustomerDashboard() {
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-              {QUICK_SERVICES.map(({ id, label, icon: Icon, price, gradient, dot }) => (
+              {QUICK_SERVICES.map(({ id, label, icon: Icon, price, gradient, dot, urgent }) => (
                 <button
                   key={id}
                   onClick={() => openBookingWithService(id)}
@@ -510,14 +593,14 @@ export default function CustomerDashboard() {
                   <div style={{
                     position: 'absolute', top: '-30px', right: '-30px',
                     width: '120px', height: '120px',
-                    background: `radial-gradient(circle, ${dot}40 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, ${dot}${urgent ? '30' : '20'} 0%, transparent 70%)`,
                     borderRadius: '50%', pointerEvents: 'none',
                   }} />
                   <div style={{ position: 'relative' }}>
                     <div style={{
-                      width: '36px', height: '36px', borderRadius: '10px',
-                      background: 'rgba(255,255,255,0.13)',
-                      border: '1px solid rgba(255,255,255,0.18)',
+                      width: '36px', height: '36px', borderRadius: '8px',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       marginBottom: '14px',
                     }}>
@@ -546,7 +629,8 @@ export default function CustomerDashboard() {
             </div>
           </section>
 
-          {/* ── BOOK AGAIN ────────────────────────────────────────── */}
+
+          {/* ── BOOK AGAIN / SERVICE HISTORY ─────────────────────── */}
           {recentCompleted.length > 0 && (
             <section style={{ marginBottom: '28px' }}>
               <h2 style={{
@@ -557,38 +641,130 @@ export default function CustomerDashboard() {
                 {t('customer.bookAgain')}
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {recentCompleted.map(b => (
-                  <div
-                    key={b.id}
-                    onClick={() => openBookingWithService(b.service_name)}
-                    style={{
-                      padding: '14px 16px', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: '12px',
+                {recentCompleted.map(b => {
+                  const isExpanded = expandedHistory === b.id
+                  const hasDetails = b.service_details && b.service_details.length > 0
+                  return (
+                    <div key={b.id} style={{
                       background: '#0F0F0F',
-                      border: '1px solid rgba(255,255,255,0.06)',
+                      border: `1px solid ${isExpanded ? 'rgba(67,188,201,0.2)' : 'rgba(255,255,255,0.06)'}`,
                       borderRadius: '14px',
-                    }}
-                  >
-                    <div style={{
-                      width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
-                      background: 'rgba(255,255,255,0.04)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      overflow: 'hidden',
+                      transition: 'border-color 0.2s',
                     }}>
-                      <Wrench size={15} color="rgba(255,255,255,0.55)" />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '14px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
-                        {SERVICE_LABELS[b.service_name] ?? b.service_name}
+                      {/* Main row */}
+                      <div
+                        onClick={() => openBookingWithService(b.service_name)}
+                        style={{
+                          padding: '14px 16px', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '12px',
+                        }}
+                      >
+                        <div style={{
+                          width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0,
+                          background: 'rgba(255,255,255,0.04)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Wrench size={15} color="rgba(255,255,255,0.55)" />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '14px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
+                            {t('services.' + serviceIdFromName(b.service_name))}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                              {new Date(b.completed_at ?? b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short' })}
+                            </span>
+                            {b.amount_ttc && (
+                              <>
+                                <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'inline-block' }} />
+                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{b.amount_ttc} MAD</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#43BCC9', fontSize: '12px', fontWeight: 600 }}>
+                            {t('customer.bookAgain')} <ArrowRight size={12} />
+                          </div>
+                          {hasDetails && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setExpandedHistory(isExpanded ? null : b.id) }}
+                              style={{
+                                background: 'transparent', border: 'none', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: '3px',
+                                color: 'rgba(255,255,255,0.35)', fontSize: '10px', padding: 0,
+                              }}
+                            >
+                              Détails
+                              <ChevronDown size={10} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                        {new Date(b.completed_at ?? b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short' })}
-                      </div>
+
+                      {/* Expandable service details panel */}
+                      {isExpanded && hasDetails && (
+                        <div style={{
+                          borderTop: '1px solid rgba(255,255,255,0.05)',
+                          padding: '12px 16px',
+                          background: 'rgba(0,0,0,0.3)',
+                        }}>
+                          <div style={{
+                            fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em',
+                            color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase',
+                            marginBottom: '10px',
+                          }}>
+                            Produits & pièces utilisés
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {b.service_details!.map((item, idx) => {
+                              const typeColor = item.type === 'labor' ? '#43BCC9' : item.type === 'part' ? '#A78BFA' : '#F0C040'
+                              const initials  = item.brand ? item.brand.slice(0, 2).toUpperCase() : item.name.slice(0, 2).toUpperCase()
+                              const price     = item.total_price ?? (item.unit_price && item.quantity ? item.unit_price * parseFloat(item.quantity) : item.unit_price)
+                              return (
+                                <div key={idx} style={{
+                                  display: 'flex', alignItems: 'center', gap: '10px',
+                                  padding: '8px 10px',
+                                  background: 'rgba(255,255,255,0.02)',
+                                  border: '1px solid rgba(255,255,255,0.04)',
+                                  borderRadius: '10px',
+                                }}>
+                                  {/* Brand/type avatar */}
+                                  <div style={{
+                                    width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
+                                    background: `${typeColor}18`,
+                                    border: `1px solid ${typeColor}30`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '10px', fontWeight: 700, color: typeColor,
+                                    letterSpacing: '0.03em',
+                                  }}>
+                                    {initials}
+                                  </div>
+                                  {/* Name + brand */}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {item.name}
+                                    </div>
+                                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '1px' }}>
+                                      {[item.brand, item.quantity ? `×${item.quantity}` : null].filter(Boolean).join(' · ')}
+                                    </div>
+                                  </div>
+                                  {/* Price */}
+                                  {price != null && (
+                                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.7)', flexShrink: 0 }}>
+                                      {price} MAD
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#43BCC9', fontSize: '12px', fontWeight: 600, flexShrink: 0 }}>
-                      {t('customer.bookAgain')} <ArrowRight size={12} />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           )}
@@ -597,46 +773,37 @@ export default function CustomerDashboard() {
           {!loading && !activeBooking && cars.length > 0 && (
             <section style={{ marginBottom: '28px' }}>
               <div style={{
-                background: 'linear-gradient(135deg, #1A1A1A 0%, #0F0F0F 100%)',
-                border: '1px solid rgba(240,192,64,0.15)',
+                background: '#111111',
+                border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: '16px', padding: '18px',
-                position: 'relative', overflow: 'hidden',
               }}>
                 <div style={{
-                  position: 'absolute', top: '-40px', right: '-40px',
-                  width: '160px', height: '160px',
-                  background: 'radial-gradient(circle, rgba(240,192,64,0.15) 0%, transparent 70%)',
-                  borderRadius: '50%', pointerEvents: 'none',
-                }} />
-                <div style={{ position: 'relative' }}>
-                  <div style={{
-                    fontSize: '10px', color: '#F0C040', letterSpacing: '0.12em',
-                    fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px',
-                  }}>
-                    Astuce maintenance
-                  </div>
-                  <div style={{
-                    fontFamily: 'Space Grotesk, sans-serif',
-                    fontSize: '17px', fontWeight: 600, color: 'white',
-                    letterSpacing: '-0.01em', marginBottom: '6px',
-                  }}>
-                    Vidange tous les 10 000 km
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '14px', lineHeight: 1.5 }}>
-                    Pour préserver le moteur de votre {cars[0].brand} {cars[0].model}
-                  </div>
-                  <button
-                    onClick={() => openBookingWithService('vidange')}
-                    style={{
-                      background: '#F0C040', color: '#000000',
-                      border: 'none', padding: '8px 14px',
-                      borderRadius: '8px', fontSize: '12px', fontWeight: 600,
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
-                    }}
-                  >
-                    Réserver une vidange <ArrowRight size={12} />
-                  </button>
+                  fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em',
+                  fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px',
+                }}>
+                  {t('customer.maintenanceTag')}
                 </div>
+                <div style={{
+                  fontFamily: 'Space Grotesk, sans-serif',
+                  fontSize: '17px', fontWeight: 600, color: 'white',
+                  letterSpacing: '-0.01em', marginBottom: '6px',
+                }}>
+                  {t('customer.maintenanceTip')}
+                </div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '14px', lineHeight: 1.5 }}>
+                  {t('customer.maintenanceTipDesc', { brand: cars[0].brand, model: cars[0].model })}
+                </div>
+                <button
+                  onClick={() => openBookingWithService('vidange')}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)', color: 'white',
+                    border: '1px solid rgba(255,255,255,0.12)', padding: '8px 14px',
+                    borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+                  }}
+                >
+                  {t('customer.maintenanceCta')} <ArrowRight size={12} />
+                </button>
               </div>
             </section>
           )}

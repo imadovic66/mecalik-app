@@ -1,6 +1,57 @@
 import { Droplets, Battery, Wrench, Search, AlertTriangle, Clock, CheckCircle, ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import SEO from '../components/SEO'
+import { WHATSAPP_NUMBER } from '../lib/constants'
+import { isServiceComingSoon } from '../data/serviceStatus'
+
+// Only the 4 active services get Service schema — advertising Pneus/Lavage here while they're
+// not bookable would misrepresent availability to search engines.
+const SERVICE_SCHEMAS = [
+  {
+    serviceType: 'Vidange à Domicile',
+    description: 'Vidange moteur complète avec remplacement du filtre à huile d\'origine. Vérification des niveaux incluse. Prix confirmé selon votre modèle avant intervention.',
+    minPrice: 250,
+  },
+  {
+    serviceType: 'Remplacement Batterie à Domicile',
+    description: 'Diagnostic complet de votre batterie, remplacement si nécessaire. Toutes marques, tous gabarits. Notre technicien vient avec les batteries les plus courantes en stock.',
+    minPrice: 210,
+  },
+  {
+    serviceType: 'Diagnostic Auto à Domicile',
+    description: "Lecture complète des codes erreur OBD, bilan de l'état général du véhicule. Rapport détaillé fourni. Idéal avant un achat de voiture d'occasion ou en cas de voyant allumé.",
+    minPrice: 220,
+  },
+  {
+    serviceType: 'Urgence & Dépannage à Domicile',
+    description: "Panne sur route, batterie à plat en plein parking, démarrage impossible — nous intervenons en priorité selon disponibilité. Contactez-nous pour un créneau rapide.",
+    minPrice: undefined,
+  },
+].map(s => ({
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  serviceType: s.serviceType,
+  provider: { '@type': 'LocalBusiness', name: 'MecaLIK', '@id': 'https://mecalik.com/#business' },
+  areaServed: { '@type': 'City', name: 'Casablanca' },
+  description: s.description,
+  ...(s.minPrice != null ? {
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'MAD',
+      priceSpecification: { '@type': 'PriceSpecification', minPrice: s.minPrice, priceCurrency: 'MAD' },
+    },
+  } : {}),
+}))
+
+const BREADCRUMB_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://mecalik.com/' },
+    { '@type': 'ListItem', position: 2, name: 'Services', item: 'https://mecalik.com/services' },
+  ],
+}
 
 type ServiceId = 'lavage' | 'vidange' | 'batterie' | 'pneus' | 'diagnostic' | 'urgence'
 
@@ -16,52 +67,60 @@ type ServiceDef = {
   id: ServiceId
   icon: string
   color: string
-  duration: string
+  duration: string | null
   includesKeys: string[]
+  isComingSoon: boolean
 }
 
+// Active services first, coming-soon last
 const serviceDefs: ServiceDef[] = [
-  {
-    id: 'lavage',
-    icon: 'Droplets',
-    color: '#43BCC9',
-    duration: '~45 min',
-    includesKeys: ['lavageI1', 'lavageI2', 'lavageI3', 'lavageI4', 'lavageI5'],
-  },
   {
     id: 'vidange',
     icon: 'Droplets',
-    color: '#43BCC9',
+    color: 'var(--mk-action)',
     duration: '~60 min',
     includesKeys: ['vidangeI1', 'vidangeI2', 'vidangeI3', 'vidangeI4', 'vidangeI5'],
+    isComingSoon: isServiceComingSoon('vidange'),
   },
   {
     id: 'batterie',
     icon: 'Battery',
-    color: '#43BCC9',
+    color: 'var(--mk-action)',
     duration: '~30 min',
     includesKeys: ['batterieI1', 'batterieI2', 'batterieI3', 'batterieI4', 'batterieI5'],
-  },
-  {
-    id: 'pneus',
-    icon: 'Wrench',
-    color: '#43BCC9',
-    duration: '~45 min',
-    includesKeys: ['pneusI1', 'pneusI2', 'pneusI3', 'pneusI4', 'pneusI5'],
+    isComingSoon: isServiceComingSoon('batterie'),
   },
   {
     id: 'diagnostic',
     icon: 'Search',
-    color: '#43BCC9',
+    color: 'var(--mk-action)',
     duration: '~30 min',
     includesKeys: ['diagnosticI1', 'diagnosticI2', 'diagnosticI3', 'diagnosticI4', 'diagnosticI5'],
+    isComingSoon: isServiceComingSoon('diagnostic'),
   },
   {
     id: 'urgence',
     icon: 'AlertTriangle',
-    color: '#F0C040',
-    duration: 'ASAP',
+    color: 'var(--mk-premium)',
+    duration: null,
     includesKeys: ['urgenceI1', 'urgenceI2', 'urgenceI3', 'urgenceI4', 'urgenceI5'],
+    isComingSoon: isServiceComingSoon('urgence'),
+  },
+  {
+    id: 'pneus',
+    icon: 'Wrench',
+    color: 'var(--mk-action)',
+    duration: '~45 min',
+    includesKeys: ['pneusI1', 'pneusI2', 'pneusI3', 'pneusI4', 'pneusI5'],
+    isComingSoon: isServiceComingSoon('pneus'),
+  },
+  {
+    id: 'lavage',
+    icon: 'Droplets',
+    color: 'var(--mk-action)',
+    duration: '~45 min',
+    includesKeys: ['lavageI1', 'lavageI2', 'lavageI3', 'lavageI4', 'lavageI5'],
+    isComingSoon: isServiceComingSoon('lavage'),
   },
 ]
 
@@ -70,12 +129,18 @@ export default function Services() {
 
   return (
     <main>
+      <SEO
+        title="Nos Services — Vidange, Batterie, Diagnostic à Domicile | MecaLIK"
+        description="Quatre services auto à domicile à Casablanca : vidange & filtres, batterie, diagnostic et urgence. Technicien certifié, prix confirmé avant intervention."
+        path="/services"
+        jsonLd={[...SERVICE_SCHEMAS, BREADCRUMB_SCHEMA]}
+      />
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="py-20 px-6 text-center" style={{ background: '#080808' }}>
         <p
           className="text-sm font-semibold uppercase tracking-widest mb-4"
-          style={{ color: '#43BCC9' }}
+          style={{ color: 'var(--mk-action)' }}
         >
           {t('services.pageTitle')}
         </p>
@@ -84,7 +149,7 @@ export default function Services() {
           style={{ color: '#ffffff', letterSpacing: '-0.02em' }}
         >
           {t('services.pageSubtitle').split('. ')[0]}.
-          <span style={{ color: '#43BCC9' }}> {t('services.pageSubtitle').split('. ')[1]}</span>
+          <span style={{ color: 'var(--mk-action)' }}> {t('services.pageSubtitle').split('. ')[1]}</span>
         </h1>
         <p
           className="text-lg max-w-xl mx-auto"
@@ -101,6 +166,7 @@ export default function Services() {
             const isUrgence = def.id === 'urgence'
             const titleKey = `services.${def.id}Title` as const
             const descKey  = `services.${def.id}Desc`  as const
+            const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(t('services.interestedMessage', { service: t('services.' + def.id) }))}`
 
             return (
               <div
@@ -111,6 +177,7 @@ export default function Services() {
                   border: isUrgence
                     ? '1px solid rgba(240,192,64,0.15)'
                     : '1px solid rgba(255,255,255,0.06)',
+                  opacity: def.isComingSoon ? 0.55 : 1,
                 }}
               >
                 <div className="grid grid-cols-1 lg:grid-cols-3">
@@ -139,13 +206,7 @@ export default function Services() {
                         className="font-heading font-bold text-2xl mb-1"
                         style={{ color: '#ffffff' }}
                       >
-                        {/* Service name stays as-is (proper nouns) */}
-                        {def.id === 'lavage'     && 'Lavage Auto'}
-                        {def.id === 'vidange'    && 'Vidange & Filtres'}
-                        {def.id === 'batterie'   && 'Batterie'}
-                        {def.id === 'pneus'      && 'Pneus'}
-                        {def.id === 'diagnostic' && 'Diagnostic'}
-                        {def.id === 'urgence'    && 'Urgence 24/7'}
+                        {t(`services.${def.id}`)}
                       </h2>
                       <p className="text-sm mb-4" style={{ color: def.color }}>
                         {t(titleKey)}
@@ -154,7 +215,7 @@ export default function Services() {
                     <div className="flex items-center gap-4 mt-6">
                       <Clock size={14} color="rgba(255,255,255,0.35)" />
                       <span className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                        {def.duration}
+                        {def.duration ?? t('services.basedOnAvailability')}
                       </span>
                       <div
                         className="w-1 h-1 rounded-full"
@@ -245,17 +306,42 @@ export default function Services() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-                      className="w-full mt-6 py-4 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-colors duration-200"
-                      style={{
-                        background: isUrgence ? '#F0C040' : '#43BCC9',
-                        color: '#080808',
-                      }}
-                    >
-                      {t('services.getQuote')}
-                      <ChevronRight size={16} />
-                    </button>
+                    {def.isComingSoon ? (
+                      <div className="mt-6">
+                        <div
+                          className="w-full py-4 rounded-full font-semibold text-sm flex items-center justify-center gap-2"
+                          style={{
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'var(--mk-text-muted)',
+                          }}
+                        >
+                          <Clock size={12} />
+                          {t('services.comingSoon')}
+                        </div>
+                        <a
+                          href={waHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center mt-3 text-xs"
+                          style={{ color: 'var(--mk-action)', textDecoration: 'none' }}
+                        >
+                          {t('services.interestedWhatsapp')}
+                        </a>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
+                        className="w-full mt-6 py-4 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-colors duration-200"
+                        style={{
+                          background: isUrgence ? 'var(--mk-premium)' : 'var(--mk-action)',
+                          color: '#080808',
+                        }}
+                      >
+                        {t('services.getQuote')}
+                        <ChevronRight size={16} />
+                      </button>
+                    )}
                   </div>
 
                 </div>

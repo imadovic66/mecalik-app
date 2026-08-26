@@ -1,12 +1,20 @@
 import { useState } from 'react'
-import { SERVICES, ZONE_LABELS, ZONE_DESCRIPTIONS, getPrice, getPriceNumber, type Zone } from '../data/pricing'
-import { MapPin, Clock, ChevronRight, Phone, Info } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import {
+  SERVICES, getZoneLabels, getZoneDescriptions,
+  getServiceLabel, getServiceIncludes, getPriceLocale, getPriceNumber,
+  type Zone,
+} from '../data/pricing'
+import { MapPin, Clock, ChevronRight, Info } from 'lucide-react'
 
 export default function QuoteCalculator() {
+  const { t, i18n } = useTranslation()
   const [selectedZone, setSelectedZone] = useState<Zone>('zone1')
   const [selectedService, setSelectedService] = useState<string | null>(null)
 
   const service = SERVICES.find(s => s.id === selectedService)
+  const zoneLabels = getZoneLabels(i18n.language)
+  const zoneDescs  = getZoneDescriptions(i18n.language)
 
   return (
     <div className="min-h-screen" style={{ background: '#080808', paddingTop: '80px' }}>
@@ -16,7 +24,7 @@ export default function QuoteCalculator() {
         <div className="mb-12">
           <div className="text-xs uppercase tracking-[0.2em] mb-4 font-medium"
             style={{ color: '#43BCC9' }}>
-            Calculateur de devis
+            {t('devis.title')}
           </div>
           <h1 style={{
             fontFamily: 'Space Grotesk, sans-serif',
@@ -27,10 +35,10 @@ export default function QuoteCalculator() {
             lineHeight: 1.05,
             marginBottom: '16px',
           }}>
-            Estimez votre intervention
+            {t('devis.subtitle')}
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '16px', lineHeight: 1.6 }}>
-            Tarifs main d&apos;œuvre uniquement. Pièces facturées au coût réel sans marge.
+            {t('devis.desc')}
           </p>
         </div>
 
@@ -38,10 +46,10 @@ export default function QuoteCalculator() {
         <div className="mb-10">
           <h2 className="text-sm font-semibold uppercase tracking-wider mb-4"
             style={{ color: 'rgba(255,255,255,0.5)' }}>
-            1. Votre zone
+            {t('devis.step1Zone')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {(Object.keys(ZONE_LABELS) as Zone[]).map(zone => (
+            {(Object.keys(zoneLabels) as Zone[]).map(zone => (
               <button
                 key={zone}
                 onClick={() => setSelectedZone(zone)}
@@ -56,7 +64,7 @@ export default function QuoteCalculator() {
                     <MapPin size={14} style={{ color: selectedZone === zone ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)' }} />
                     <span className="text-sm"
                       style={{ color: selectedZone === zone ? 'white' : 'rgba(255,255,255,0.5)', fontWeight: selectedZone === zone ? 600 : 400 }}>
-                      {ZONE_LABELS[zone]}
+                      {zoneLabels[zone]}
                     </span>
                   </div>
                   {selectedZone === zone && (
@@ -64,7 +72,7 @@ export default function QuoteCalculator() {
                   )}
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                  {ZONE_DESCRIPTIONS[zone]}
+                  {zoneDescs[zone]}
                 </p>
               </button>
             ))}
@@ -75,11 +83,11 @@ export default function QuoteCalculator() {
         <div className="mb-10">
           <h2 className="text-sm font-semibold uppercase tracking-wider mb-4"
             style={{ color: 'rgba(255,255,255,0.5)' }}>
-            2. Votre service
+            {t('devis.step2Service')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {SERVICES.map(s => {
-              const price = getPrice(s, selectedZone)
+              const price = getPriceLocale(s, selectedZone, i18n.language)
               const isSelected = selectedService === s.id
               return (
                 <button
@@ -93,7 +101,7 @@ export default function QuoteCalculator() {
                 >
                   <div>
                     <div className="font-medium text-sm mb-1" style={{ color: 'white' }}>
-                      {s.label}
+                      {getServiceLabel(s, i18n.language)}
                     </div>
                     <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
                       {s.duration}
@@ -106,7 +114,7 @@ export default function QuoteCalculator() {
                     </div>
                     {s.contactOnly && (
                       <div className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                        Nous contacter
+                        {t('devis.contactUs')}
                       </div>
                     )}
                   </div>
@@ -125,18 +133,18 @@ export default function QuoteCalculator() {
             }}>
             <h2 className="text-sm font-semibold uppercase tracking-wider mb-6"
               style={{ color: 'rgba(255,255,255,0.5)' }}>
-              3. Votre devis estimatif
+              {t('devis.step3Quote')}
             </h2>
 
             <div className="flex items-start justify-between mb-6">
               <div>
                 <div className="text-xl font-bold mb-1" style={{ color: 'white' }}>
-                  {service.label}
+                  {getServiceLabel(service, i18n.language)}
                 </div>
                 <div className="flex items-center gap-2 text-sm"
                   style={{ color: 'rgba(255,255,255,0.5)' }}>
                   <MapPin size={13} />
-                  {ZONE_LABELS[selectedZone]}
+                  {zoneLabels[selectedZone]}
                 </div>
               </div>
               <div className="text-right">
@@ -148,10 +156,10 @@ export default function QuoteCalculator() {
                   letterSpacing: '-0.02em',
                   lineHeight: 1,
                 }}>
-                  {getPrice(service, selectedZone)}
+                  {getPriceLocale(service, selectedZone, i18n.language)}
                 </div>
                 <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                  Main d&apos;œuvre
+                  {t('devis.labour')}
                 </div>
               </div>
             </div>
@@ -162,14 +170,14 @@ export default function QuoteCalculator() {
                 style={{ background: 'rgba(255,255,255,0.04)' }}>
                 <Clock size={15} style={{ color: '#43BCC9', flexShrink: 0, marginTop: 1 }} />
                 <span style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  Durée estimée: <strong style={{ color: 'white' }}>{service.duration}</strong>
+                  {t('devis.duration')} <strong style={{ color: 'white' }}>{service.duration}</strong>
                 </span>
               </div>
               <div className="flex items-start gap-3 text-sm p-3 rounded-xl"
                 style={{ background: 'rgba(255,255,255,0.04)' }}>
                 <Info size={15} style={{ color: '#43BCC9', flexShrink: 0, marginTop: 1 }} />
                 <span style={{ color: 'rgba(255,255,255,0.7)' }}>
-                  {service.includes}
+                  {getServiceIncludes(service, i18n.language)}
                 </span>
               </div>
               {service.hasPartsRequired && service.typicalPartsCost && service.typicalPartsCost.min > 0 && (
@@ -178,11 +186,11 @@ export default function QuoteCalculator() {
                     style={{ background: 'rgba(255,255,255,0.04)' }}>
                     <Info size={15} style={{ color: '#F0C040', flexShrink: 0, marginTop: 1 }} />
                     <span style={{ color: 'rgba(255,255,255,0.7)' }}>
-                      Pièces estimées (hors taxe):{' '}
+                      {t('devis.partsEstimate')}{' '}
                       <strong style={{ color: 'white' }}>
                         {service.typicalPartsCost.min}–{service.typicalPartsCost.max} MAD
                       </strong>
-                      {' '}+ 5% frais de gestion
+                      {' '}{t('devis.managementFee')}
                     </span>
                   </div>
                   {getPriceNumber(service, selectedZone) && (
@@ -191,7 +199,7 @@ export default function QuoteCalculator() {
                       <Info size={15} style={{ color: '#43BCC9', flexShrink: 0, marginTop: 1 }} />
                       <div>
                         <span style={{ color: 'rgba(255,255,255,0.7)' }}>
-                          Coût total estimé (MO + pièces + frais):
+                          {t('devis.totalCost')}
                         </span>
                         <div className="font-bold mt-0.5" style={{ color: '#43BCC9' }}>
                           {Math.round((getPriceNumber(service, selectedZone) as number) + service.typicalPartsCost.min * 1.05)}
@@ -199,7 +207,7 @@ export default function QuoteCalculator() {
                           {Math.round((getPriceNumber(service, selectedZone) as number) + service.typicalPartsCost.max * 1.05)} MAD
                         </div>
                         <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                          Paiement uniquement après intervention
+                          {t('devis.payAfter')}
                         </div>
                       </div>
                     </div>
@@ -211,8 +219,7 @@ export default function QuoteCalculator() {
                   style={{ background: 'rgba(240,192,64,0.05)', border: '1px solid rgba(240,192,64,0.1)' }}>
                   <Info size={15} style={{ color: '#F0C040', flexShrink: 0, marginTop: 1 }} />
                   <span style={{ color: 'rgba(255,255,255,0.6)' }}>
-                    Les pièces (si nécessaires) sont facturées au coût réel,
-                    sans marge MecaLIK.
+                    {t('devis.partsNote')}
                   </span>
                 </div>
               )}
@@ -225,25 +232,16 @@ export default function QuoteCalculator() {
                 className="flex-1 flex items-center justify-center gap-2 py-4 rounded-full font-bold text-sm transition-all"
                 style={{ background: '#43BCC9', color: '#080808' }}
               >
-                Réserver ce service
+                {t('devis.bookBtn')}
                 <ChevronRight size={16} />
               </button>
-              <a
-                href="tel:+212777348065"
-                className="flex items-center justify-center gap-2 py-4 px-6 rounded-full font-semibold text-sm"
-                style={{ border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}
-              >
-                <Phone size={15} />
-                Appeler
-              </a>
             </div>
           </div>
         )}
 
         {/* Note */}
         <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Ces tarifs sont indicatifs. Le devis final vous est confirmé par WhatsApp avant toute intervention.
-          Paiement uniquement après service.
+          {t('devis.disclaimer')}
         </p>
       </div>
     </div>

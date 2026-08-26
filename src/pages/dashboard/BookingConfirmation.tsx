@@ -5,9 +5,19 @@ import { supabase } from '../../lib/supabase'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
   ArrowLeft, MapPin, Phone, MessageCircle, Star,
-  Check, Clock, Wrench, Sparkles, AlertCircle, Calendar,
+  Check, Clock, Wrench, Sparkles, AlertCircle, Calendar, Truck,
 } from 'lucide-react'
 import RatingModal from '../../components/ui/RatingModal'
+
+type ServiceDetail = {
+  type: 'product' | 'part' | 'labor'
+  name: string
+  brand?: string
+  reference?: string
+  quantity?: string
+  unit_price?: number
+  total_price?: number
+}
 
 type Booking = {
   id: string
@@ -27,17 +37,19 @@ type Booking = {
   created_at: string
   confirmed_at: string | null
   completed_at: string | null
+  service_details?: ServiceDetail[] | null
 }
 
 const STATUS_STEPS_BASE = [
   { key: 'pending',     labelKey: 'booking.requestReceived',   icon: Check    },
   { key: 'confirmed',   labelKey: 'booking.requestConfirmed',  icon: Calendar },
+  { key: 'on_the_way',  labelKey: 'booking.technicianEnRoute', icon: Truck    },
   { key: 'in_progress', labelKey: 'booking.technicianEnRoute', icon: Wrench   },
   { key: 'completed',   labelKey: 'booking.serviceCompleted',  icon: Sparkles },
 ]
 
 const STATUS_INDEX: Record<string, number> = {
-  pending: 0, confirmed: 1, in_progress: 2, completed: 3, cancelled: -1,
+  pending: 0, confirmed: 1, on_the_way: 2, in_progress: 3, completed: 4, cancelled: -1,
 }
 
 export default function BookingConfirmation() {
@@ -54,12 +66,14 @@ export default function BookingConfirmation() {
     fetchBooking()
 
     const channel = supabase
-      .channel(`booking-${id}`)
+      .channel(`booking-confirm-${id}`)
       .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'bookings',
-        filter: `id=eq.${id}`,
+        event: '*', schema: 'public', table: 'bookings',
       }, payload => {
-        setBooking(payload.new as Booking)
+        const record = (payload.new as any) || (payload.old as any)
+        if (!record || record.id === id) {
+          fetchBooking()
+        }
       })
       .subscribe()
 
@@ -329,20 +343,19 @@ export default function BookingConfirmation() {
                     {booking.technician_name}
                   </div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>
-                    {t('booking.certifiedTech')} · 4.9
+                    {t('booking.certifiedTech')}
                   </div>
                 </div>
                 {/* Actions */}
                 {booking.technician_phone && (
                   <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                    <a href={`tel:${booking.technician_phone}`} style={{
+                    <span style={{
                       width: '40px', height: '40px', borderRadius: '12px',
                       background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      textDecoration: 'none',
                     }}>
                       <Phone size={15} color="rgba(255,255,255,0.7)" />
-                    </a>
+                    </span>
                     <a
                       href={`https://wa.me/${booking.technician_phone.replace(/\D/g, '')}`}
                       target="_blank" rel="noopener noreferrer"
@@ -384,6 +397,85 @@ export default function BookingConfirmation() {
               )}
             </div>
           </div>
+
+          {/* ── PRODUITS & PIÈCES UTILISÉS ── */}
+          {booking.service_details && booking.service_details.length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <SectionLabel>Produits &amp; Pièces utilisés</SectionLabel>
+              <div style={{
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.07)',
+                overflow: 'hidden',
+              }}>
+                {booking.service_details.map((item, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '14px 16px',
+                    borderBottom: i < booking.service_details!.length - 1
+                      ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                  }}>
+                    {/* Brand badge */}
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '8px', flexShrink: 0,
+                      background: item.type === 'labor'
+                        ? 'rgba(67,188,201,0.1)' : 'rgba(255,255,255,0.06)',
+                      border: item.type === 'labor'
+                        ? '1px solid rgba(67,188,201,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '10px', fontWeight: 800,
+                      color: item.type === 'labor' ? '#43BCC9' : 'rgba(255,255,255,0.6)',
+                      letterSpacing: '-0.02em',
+                    }}>
+                      {(item.brand || item.name || '?').substring(0, 2).toUpperCase()}
+                    </div>
+                    {/* Name + meta */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: '14px', fontWeight: 600, color: 'white',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
+                        {[item.brand, item.reference, item.quantity].filter(Boolean).join(' · ')}
+                      </div>
+                    </div>
+                    {/* Price */}
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#43BCC9' }}>
+                        {item.unit_price
+                          ? `${(item.unit_price * parseFloat(item.quantity || '1')).toFixed(0)} MAD`
+                          : '—'}
+                      </div>
+                      {parseFloat(item.quantity || '1') > 1 && item.unit_price && (
+                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '2px' }}>
+                          {item.unit_price} MAD × {item.quantity}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {/* Total row */}
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '12px 16px',
+                  background: 'rgba(67,188,201,0.05)',
+                  borderTop: '1px solid rgba(67,188,201,0.1)',
+                }}>
+                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                    Total produits &amp; pièces
+                  </span>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#43BCC9' }}>
+                    {booking.service_details
+                      .reduce((sum, item) =>
+                        sum + ((item.unit_price || 0) * parseFloat(item.quantity || '1')), 0)
+                      .toFixed(0)} MAD
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── RATING DISPLAY (already rated) ── */}
           {isCompleted && booking.rating && (

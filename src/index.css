@@ -3,6 +3,41 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* ACTION — the only color for primary CTAs, links, active states */
+  --mk-action: #43BCC9;
+  --mk-action-hover: #5FCBD7;
+  --mk-action-dim: rgba(67, 188, 201, 0.15);
+  --mk-action-faint: rgba(67, 188, 201, 0.06);
+
+  /* URGENT — emergency badges, destructive actions, errors. NEVER a normal CTA */
+  --mk-urgent: #FF4444;
+  --mk-urgent-dim: rgba(255, 68, 68, 0.15);
+  --mk-urgent-faint: rgba(255, 68, 68, 0.06);
+
+  /* SUCCESS — live indicators, verified badges, completed states */
+  --mk-success: #00DD88;
+  --mk-success-dim: rgba(0, 221, 136, 0.15);
+  --mk-success-faint: rgba(0, 221, 136, 0.06);
+
+  /* PREMIUM — B2B/Enterprise tier LABELS only. NEVER a button */
+  --mk-premium: #F0C040;
+  --mk-premium-dim: rgba(240, 192, 64, 0.15);
+  --mk-premium-faint: rgba(240, 192, 64, 0.06);
+
+  /* SURFACES */
+  --mk-bg: #080808;
+  --mk-surface: #14141A;
+  --mk-border: rgba(255, 255, 255, 0.06);
+  --mk-border-strong: rgba(255, 255, 255, 0.12);
+
+  /* TEXT */
+  --mk-text: rgba(255, 255, 255, 0.88);
+  --mk-text-bright: #FFFFFF;
+  --mk-text-muted: rgba(255, 255, 255, 0.45);
+  --mk-text-faint: rgba(255, 255, 255, 0.3);
+}
+
 @layer base {
   html { font-family: 'Outfit', sans-serif; background: #080808; color: rgba(255,255,255,0.88); -webkit-tap-highlight-color: transparent; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,6 +54,9 @@
   .animate-float { animation: float 6s ease-in-out infinite; }
   @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
   .animate-pulse-slow { animation: pulse 3s ease-in-out infinite; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 /* Overrides Tailwind Preflight's background-color:transparent on <button> */

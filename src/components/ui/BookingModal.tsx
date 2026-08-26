@@ -4,33 +4,39 @@ import { X, ArrowLeft, Phone, MapPin, User, Car as CarIcon, MessageCircle, Check
 import { useTranslation } from 'react-i18next'
 import { supabase, type Car } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
-import { SERVICES, getPrice } from '../../data/pricing'
+import { analytics } from '../../lib/analytics'
+import { SERVICES, getPrice, getPriceNumber } from '../../data/pricing'
+import { isServiceComingSoon } from '../../data/serviceStatus'
 
+// Active services first; Pneus and Lavage Auto are excluded entirely — not bookable while "coming soon"
 const SERVICE_OPTIONS = [
-  { id: 'lavage',     label: 'Lavage Auto',       duration: '~45 min' },
-  { id: 'vidange',    label: 'Vidange & Filtres', duration: '~60 min' },
-  { id: 'batterie',   label: 'Batterie',          duration: '~30 min' },
-  { id: 'pneus',      label: 'Pneus',             duration: '~45 min' },
-  { id: 'diagnostic', label: 'Diagnostic',        duration: '~30 min' },
-  { id: 'urgence',    label: 'Urgence 24/7',      duration: 'ASAP' },
-]
+  { id: 'vidange',    duration: '~60 min' },
+  { id: 'batterie',   duration: '~30 min' },
+  { id: 'diagnostic', duration: '~30 min' },
+  { id: 'urgence',    duration: null },
+].filter(svc => !isServiceComingSoon(svc.id))
 
-const SERVICE_LABEL_MAP: Record<string, string> = {
-  lavage: 'Lavage Auto',
-  vidange: 'Vidange & Filtres',
-  batterie: 'Batterie',
-  pneus: 'Pneus',
+const SERVICE_LABELS: Record<string, string> = {
+  lavage:     'Lavage Auto',
+  vidange:    'Vidange & Filtres',
+  batterie:   'Batterie',
+  pneus:      'Pneus',
   diagnostic: 'Diagnostic',
-  urgence: 'Urgence 24/7',
+  urgence:    'Urgence & Dépannage',
 }
+
+const resolveServiceName = (id: string): string =>
+  SERVICE_LABELS[id] || id
 
 export default function BookingModal() {
   const { user, profile } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isFr = i18n.language === 'fr'
   const navigate = useNavigate()
 
   const [isOpen, setIsOpen]                 = useState(false)
   const [step, setStep]                     = useState(1)
+  const [bookingReference, setBookingReference] = useState('')
   const [selectedService, setSelectedService] = useState<string>('')
   const [name, setName]                     = useState('')
   const [phone, setPhone]                   = useState('')
@@ -81,11 +87,103 @@ export default function BookingModal() {
 
   if (!isOpen) return null
 
+  const selectedPricingService = SERVICES.find(s => s.id === selectedService)
+  const selectedServicePrice = selectedPricingService && !selectedPricingService.contactOnly
+    ? (getPriceNumber(selectedPricingService, 'zone1') ?? 0)
+    : 0
+
   const close = () => {
     setIsOpen(false)
     setStep(1)
     setSelectedService('')
     setError('')
+  }
+
+  const openWhatsApp = (message: string) => {
+    analytics.whatsappClick('success_screen')
+    const url = `https://wa.me/212777348065?text=${encodeURIComponent(message)}`
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      window.location.href = url
+    } else {
+      window.open(url, '_blank')
+    }
+  }
+
+  const buildWhatsAppMessage = (bookingRef: string) => {
+    const selectedCar = cars.find(c => c.id === selectedCarId)
+    const carInfo = selectedCar
+      ? `${selectedCar.brand} ${selectedCar.model}${selectedCar.year ? ' ' + selectedCar.year : ''}${selectedCar.license_plate ? ' · ' + selectedCar.license_plate : ''}`
+      : ''
+    const trackingLine = bookingRef
+      ? `\n\n📋 *${isFr ? 'Référence' : 'Reference'} :* ${bookingRef}\n🔗 *${isFr ? 'Suivi' : 'Track'} :* https://mecalik.com/track/${bookingRef}`
+      : ''
+    if (isFr) {
+      return `Bonjour MecaLIK ! 👋\n\nJe souhaite réserver une intervention :\n\n🔧 *Service :* ${resolveServiceName(selectedService)}\n📍 *Adresse :* ${address}\n👤 *Nom :* ${name}\n📞 *Téléphone :* ${phone}${addressNotes ? `\n📝 *Notes :* ${addressNotes}` : ''}${carInfo ? `\n🚗 *Véhicule :* ${carInfo}` : ''}${trackingLine}\n\nMerci !`
+    }
+    return `Hello MecaLIK! 👋\n\nI'd like to book a service:\n\n🔧 *Service:* ${resolveServiceName(selectedService)}\n📍 *Address:* ${address}\n👤 *Name:* ${name}\n📞 *Phone:* ${phone}${addressNotes ? `\n📝 *Notes:* ${addressNotes}` : ''}${carInfo ? `\n🚗 *Vehicle:* ${carInfo}` : ''}${trackingLine}\n\nThank you!`
+  }
+
+  const handleGuestBooking = async () => {
+    if (submitting) return
+    if (!name || !phone || !address) { setError('Tous les champs marqués * sont obligatoires'); return }
+    setSubmitting(true)
+    setError('')
+    let reference: string | null = null
+    try {
+      const serviceLabel = resolveServiceName(selectedService)
+
+      // Server-side dedup guard: same phone + service submitted in the last 2 min → reuse it
+      // instead of inserting a duplicate (covers double-taps/double-clicks and network retries).
+      const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
+      const { data: existing } = await supabase
+        .from('bookings')
+        .select('id, reference')
+        .eq('customer_phone', phone)
+        .eq('service_name', serviceLabel)
+        .gte('created_at', twoMinAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (existing) {
+        reference = (existing as { reference: string }).reference
+      } else {
+        const { data } = await supabase.from('bookings').insert({
+          service_name:   serviceLabel,
+          address,
+          address_notes:  addressNotes || null,
+          status:         'pending',
+          customer_name:  name,
+          customer_phone: phone,
+          source:         'platform',
+        }).select('reference').single()
+        reference = (data as { reference: string } | null)?.reference ?? null
+      }
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('Failed to save guest booking', err)
+    } finally {
+      setSubmitting(false)
+    }
+    analytics.bookingCompleted(reference ?? '', resolveServiceName(selectedService), selectedServicePrice)
+    openWhatsApp(buildWhatsAppMessage(reference ?? ''))
+    setBookingReference(reference ?? '')
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      ;(window as any).fbq('track', 'Lead', {
+        content_name: SERVICE_LABELS[selectedService] || selectedService,
+        content_category: 'Booking',
+      })
+    }
+    setStep(3)
+  }
+
+  const handleCreateAccount = () => {
+    if (!name || !phone || !address) { setError('Tous les champs marqués * sont obligatoires'); return }
+    openWhatsApp(buildWhatsAppMessage(''))
+    sessionStorage.setItem('pendingBooking', JSON.stringify({
+      service: selectedService, name, phone, address, notes: addressNotes || '',
+    }))
+    close()
+    window.location.href = '/signup?from=booking'
   }
 
   const goToStep2 = () => {
@@ -98,6 +196,7 @@ export default function BookingModal() {
   }
 
   const submit = async () => {
+    if (submitting) return
     if (!name || !phone || !address) {
       setError('Tous les champs marqués * sont obligatoires')
       return
@@ -111,51 +210,48 @@ export default function BookingModal() {
     setSubmitting(true)
     setError('')
 
-    const selectedCar = cars.find(c => c.id === selectedCarId)
-    const carInfo = selectedCar
-      ? `${selectedCar.brand} ${selectedCar.model}${selectedCar.year ? ' ' + selectedCar.year : ''}${selectedCar.license_plate ? ' · ' + selectedCar.license_plate : ''}`
-      : ''
+    try {
+      const serviceLabel = resolveServiceName(selectedService)
 
-    const serviceLabel = SERVICE_LABEL_MAP[selectedService] || selectedService
+      // Same dedup guard as the guest path, keyed on the account instead of a phone number.
+      const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
+      const { data: existing } = await supabase
+        .from('bookings')
+        .select('id, reference')
+        .eq('user_id', user.id)
+        .eq('service_name', serviceLabel)
+        .gte('created_at', twoMinAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-    const { data: booking, error: insertError } = await supabase
-      .from('bookings')
-      .insert({
-        user_id:       user.id,
-        car_id:        selectedCarId || null,
-        service_name:  serviceLabel,
-        address,
-        address_notes: addressNotes || null,
-        status:        'pending',
-      })
-      .select()
-      .single()
+      const booking = existing ?? await (async () => {
+        const { data, error: insertError } = await supabase
+          .from('bookings')
+          .insert({
+            user_id:       user.id,
+            car_id:        selectedCarId || null,
+            service_name:  serviceLabel,
+            address,
+            address_notes: addressNotes || null,
+            status:        'pending',
+            source:        'platform',
+          })
+          .select()
+          .single()
+        if (insertError) throw insertError
+        return data
+      })()
 
-    if (insertError) {
+      const bookingRef = (booking as { reference?: string } | null)?.reference ?? ''
+      analytics.bookingCompleted(bookingRef, serviceLabel, selectedServicePrice)
+      openWhatsApp(buildWhatsAppMessage(bookingRef))
+      close()
+      if (booking?.id) navigate(`/booking/${booking.id}`)
+    } catch (err) {
+      setError('Erreur: ' + (err instanceof Error ? err.message : 'inconnue'))
+    } finally {
       setSubmitting(false)
-      setError('Erreur: ' + insertError.message)
-      return
-    }
-
-    const message = encodeURIComponent(
-      `Bonjour MecaLIK,\n\n` +
-      `Je souhaite réserver:\n` +
-      `Service: ${serviceLabel}\n` +
-      (carInfo ? `Véhicule: ${carInfo}\n` : '') +
-      `Adresse: ${address}\n` +
-      (addressNotes ? `Précisions: ${addressNotes}\n` : '') +
-      `Nom: ${name}\n` +
-      `Téléphone: ${phone}\n\n` +
-      `Référence: ${(booking as { reference?: string } | null)?.reference ?? ''}\n\n` +
-      `Merci !`
-    )
-    window.open(`https://wa.me/212777348065?text=${message}`, '_blank')
-
-    setSubmitting(false)
-    close()
-
-    if (user && booking?.id) {
-      navigate(`/booking/${booking.id}`)
     }
   }
 
@@ -227,11 +323,13 @@ export default function BookingModal() {
               fontSize: '20px', fontWeight: 600, color: 'white',
               letterSpacing: '-0.015em', marginBottom: '2px',
             }}>
-              {step === 1 ? t('booking.chooseService') : t('booking.title')}
+              {step === 1 ? t('booking.chooseService') : step === 3 ? t('booking.confirmed') : t('booking.title')}
             </h2>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-              {step === 1 ? t('booking.chooseService') : t('booking.whatsappResponse')}
-            </div>
+            {step !== 3 && (
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                {step === 1 ? t('booking.chooseService') : t('booking.whatsappResponse')}
+              </div>
+            )}
           </div>
           <button
             onClick={close}
@@ -248,24 +346,24 @@ export default function BookingModal() {
           </button>
         </div>
 
-        {/* Progress bar */}
-        <div style={{
+        {/* Progress bar — hidden on step 3 */}
+        {step < 3 && <div style={{
           padding: '12px 20px',
           display: 'flex', alignItems: 'center', gap: '6px',
           flexShrink: 0,
         }}>
           <div style={{
             flex: step === 1 ? 1 : 0.3,
-            height: '3px', background: '#43BCC9',
+            height: '3px', background: 'var(--mk-action)',
             borderRadius: '2px', transition: 'flex 0.3s',
           }} />
           <div style={{
             flex: step === 2 ? 1 : 0.3,
             height: '3px',
-            background: step === 2 ? '#43BCC9' : 'rgba(255,255,255,0.1)',
+            background: step === 2 ? 'var(--mk-action)' : 'rgba(255,255,255,0.1)',
             borderRadius: '2px', transition: 'all 0.3s',
           }} />
-        </div>
+        </div>}
 
         {/* Scrollable body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 20px' }}>
@@ -284,7 +382,10 @@ export default function BookingModal() {
                 return (
                   <button
                     key={svc.id}
-                    onClick={() => setSelectedService(svc.id)}
+                    onClick={() => {
+                      setSelectedService(svc.id)
+                      analytics.selectService(resolveServiceName(svc.id), price ? (getPriceNumber(pricingService!, 'zone1') ?? 0) : 0)
+                    }}
                     style={{
                       width: '100%', padding: '16px',
                       background: isSelected ? 'rgba(67,188,201,0.08)' : '#0F0F0F',
@@ -305,7 +406,7 @@ export default function BookingModal() {
                       flexShrink: 0,
                     }}>
                       {isSelected ? (
-                        <Check size={16} color="#43BCC9" />
+                        <Check size={16} color="var(--mk-action)" />
                       ) : (
                         <div style={{
                           width: '8px', height: '8px', borderRadius: '50%',
@@ -315,10 +416,10 @@ export default function BookingModal() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '15px', fontWeight: 500, color: 'white', marginBottom: '2px' }}>
-                        {svc.label}
+                        {t('services.' + svc.id)}
                       </div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', display: 'flex', gap: '8px' }}>
-                        <span>{svc.duration}</span>
+                        <span>{svc.duration ?? t('services.onQuote')}</span>
                         {price && !isUrgent && (
                           <>
                             <span>·</span>
@@ -346,9 +447,9 @@ export default function BookingModal() {
                   border: '1px solid rgba(67,188,201,0.2)',
                   alignSelf: 'flex-start',
                 }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#43BCC9', display: 'inline-block' }} />
-                  <span style={{ fontSize: '12px', color: '#43BCC9', fontWeight: 600 }}>
-                    {SERVICE_LABEL_MAP[selectedService] || selectedService}
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--mk-action)', display: 'inline-block' }} />
+                  <span style={{ fontSize: '12px', color: 'var(--mk-action)', fontWeight: 600 }}>
+                    {t('services.' + selectedService)}
                   </span>
                 </div>
               )}
@@ -430,6 +531,71 @@ export default function BookingModal() {
             </div>
           )}
 
+          {/* ── STEP 3 — confirmation ── */}
+          {step === 3 && (
+            <div style={{ padding: '8px 0 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+
+              {/* Success icon */}
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(67,188,201,0.12)', border: '2px solid var(--mk-action)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+                ✓
+              </div>
+
+              <div>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.6 }}>
+                  {t('booking.confirmedDesc')}
+                </p>
+              </div>
+
+              {/* Reference number */}
+              <div style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                  {t('booking.yourReference')}
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--mk-action)', letterSpacing: '0.05em', fontFamily: 'Space Grotesk, monospace' }}>
+                  {bookingReference || '—'}
+                </div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginTop: '4px' }}>
+                  {t('booking.saveReference')}
+                </div>
+              </div>
+
+              {/* Track booking link */}
+              {bookingReference && (
+                <a
+                  href={`/track/${bookingReference}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ width: '100%', padding: '13px', borderRadius: '10px', background: 'var(--mk-action)', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}
+                >
+                  🔍 {t('booking.trackBooking')}
+                </a>
+              )}
+
+              {/* Create account nudge */}
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', margin: 0 }}>
+                {t('booking.wantHistory')}{' '}
+                <a href="/signup" style={{ color: 'var(--mk-action)', textDecoration: 'none' }}>
+                  {t('booking.createAccountLink')}
+                </a>
+              </p>
+
+              {/* Google review nudge */}
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', textAlign: 'center', margin: '4px 0 0' }}>
+                {isFr
+                  ? 'Après votre intervention, laissez-nous un avis Google ⭐'
+                  : 'After your service, leave us a Google review ⭐'}
+              </p>
+
+              {/* Close button */}
+              <button
+                onClick={close}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '13px', cursor: 'pointer', marginTop: '4px', fontFamily: 'inherit' }}
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          )}
+
           {/* Error */}
           {error && (
             <div style={{
@@ -470,27 +636,85 @@ export default function BookingModal() {
           )}
 
           {step === 2 && (
-            <button
-              onClick={submit}
-              disabled={!canSubmit}
-              style={{
-                width: '100%', padding: '14px',
-                borderRadius: '12px', border: 'none',
-                background: canSubmit ? '#00DD88' : 'rgba(255,255,255,0.06)',
-                color:      canSubmit ? '#0A0A0A' : 'rgba(255,255,255,0.3)',
-                fontSize: '15px', fontWeight: 600,
-                cursor: canSubmit ? 'pointer' : 'not-allowed',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                transition: 'all 0.15s',
-              }}
-            >
-              {submitting ? t('common.loading') : (
-                <>
-                  <MessageCircle size={16} />
-                  {t('booking.submitWhatsapp')}
-                </>
-              )}
-            </button>
+            user ? (
+              /* Logged-in: save to DB + WhatsApp (existing flow) */
+              <button
+                onClick={submit}
+                disabled={!canSubmit}
+                style={{
+                  width: '100%', padding: '14px',
+                  borderRadius: '12px', border: 'none',
+                  background: canSubmit ? 'var(--mk-success)' : 'rgba(255,255,255,0.06)',
+                  color:      canSubmit ? '#0A0A0A' : 'rgba(255,255,255,0.3)',
+                  fontSize: '15px', fontWeight: 600,
+                  cursor: canSubmit ? 'pointer' : 'not-allowed',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {submitting ? (
+                  <><Spinner /> {t('common.loading')}</>
+                ) : (
+                  <>
+                    <MessageCircle size={16} />
+                    {t('booking.submitWhatsapp')}
+                  </>
+                )}
+              </button>
+            ) : (
+              /* Guest: two-option layout */
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '0 0 12px' }}>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {t('booking.chooseOption')}
+                  </span>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                </div>
+
+                <button
+                  onClick={handleGuestBooking}
+                  disabled={!canSubmit}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: '12px',
+                    background: canSubmit ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: canSubmit ? 'white' : 'rgba(255,255,255,0.3)',
+                    fontSize: '14px', fontWeight: 600,
+                    cursor: canSubmit ? 'pointer' : 'not-allowed',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {submitting ? (
+                    <><Spinner /> {t('common.loading')}</>
+                  ) : (
+                    <><span>💬</span>{t('booking.continueAsGuest')}</>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleCreateAccount}
+                  disabled={!canSubmit}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: '12px',
+                    background: canSubmit ? 'var(--mk-action)' : 'rgba(67,188,201,0.3)',
+                    border: 'none',
+                    color: '#0A0A0A', fontSize: '14px', fontWeight: 700,
+                    cursor: canSubmit ? 'pointer' : 'not-allowed',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    fontFamily: 'inherit', marginTop: '8px',
+                  }}
+                >
+                  <span>✦</span>
+                  {t('booking.createAccountAndBook')}
+                </button>
+
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', textAlign: 'center', margin: '8px 0 0' }}>
+                  {t('booking.accountBenefit')}
+                </p>
+              </div>
+            )
           )}
         </div>
       </div>
@@ -498,6 +722,7 @@ export default function BookingModal() {
       <style>{`
         @keyframes bmFadeIn  { from { opacity: 0 }             to { opacity: 1 } }
         @keyframes bmSlideUp { from { transform: translate(-50%, 100%) } to { transform: translate(-50%, 0) } }
+        @keyframes bmSpin    { to { transform: rotate(360deg) } }
         input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
         input:focus, select:focus, textarea:focus { outline: none; }
         select option { background: #111111 !important; color: white !important; }
@@ -507,6 +732,17 @@ export default function BookingModal() {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+function Spinner() {
+  return (
+    <span style={{
+      display: 'inline-block', width: '15px', height: '15px',
+      borderRadius: '50%', border: '2px solid currentColor',
+      borderTopColor: 'transparent', animation: 'bmSpin 0.7s linear infinite',
+      flexShrink: 0,
+    }} />
+  )
+}
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (

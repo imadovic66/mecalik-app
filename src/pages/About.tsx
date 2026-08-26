@@ -1,27 +1,37 @@
 import { ChevronRight, Target, Zap, Heart, TrendingUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import SEO from '../components/SEO'
+
+const BREADCRUMB_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Accueil', item: 'https://mecalik.com/' },
+    { '@type': 'ListItem', position: 2, name: 'À Propos', item: 'https://mecalik.com/a-propos' },
+  ],
+}
 
 export default function About() {
   const { t } = useTranslation()
 
   const values = [
     {
-      icon: <Target size={20} color="#43BCC9" />,
+      icon: <Target size={20} color="var(--mk-action)" />,
       titleKey: 'about.value1Title',
       descKey:  'about.value1Desc',
     },
     {
-      icon: <Zap size={20} color="#43BCC9" />,
+      icon: <Zap size={20} color="var(--mk-action)" />,
       titleKey: 'about.value2Title',
       descKey:  'about.value2Desc',
     },
     {
-      icon: <Heart size={20} color="#43BCC9" />,
+      icon: <Heart size={20} color="var(--mk-action)" />,
       titleKey: 'about.value3Title',
       descKey:  'about.value3Desc',
     },
     {
-      icon: <TrendingUp size={20} color="#43BCC9" />,
+      icon: <TrendingUp size={20} color="var(--mk-action)" />,
       titleKey: 'about.value4Title',
       descKey:  'about.value4Desc',
     },
@@ -29,6 +39,12 @@ export default function About() {
 
   return (
     <main>
+      <SEO
+        title="À Propos — Le Garage Vient à Vous | MecaLIK Casablanca"
+        description="MecaLIK est né d'une conviction simple : le service doit venir au client. Technicien certifié, prix transparent, paiement après service. Découvrez notre histoire."
+        path="/a-propos"
+        jsonLd={BREADCRUMB_SCHEMA}
+      />
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section
@@ -50,7 +66,7 @@ export default function About() {
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <p
             className="text-sm font-semibold uppercase tracking-widest mb-4"
-            style={{ color: '#43BCC9' }}
+            style={{ color: 'var(--mk-action)' }}
           >
             {t('about.historyTag')}
           </p>
@@ -60,7 +76,7 @@ export default function About() {
           >
             {t('about.headline1')}
             <br />
-            <span style={{ color: '#43BCC9' }}>{t('about.headline2')}</span>
+            <span style={{ color: 'var(--mk-action)' }}>{t('about.headline2')}</span>
           </h1>
           <p
             className="text-xl max-w-2xl mx-auto leading-relaxed"
@@ -95,7 +111,7 @@ export default function About() {
 
             <div
               className="mt-8 pl-6"
-              style={{ borderLeft: '2px solid #43BCC9' }}
+              style={{ borderLeft: '2px solid var(--mk-action)' }}
             >
               <p
                 className="font-heading font-semibold text-xl leading-relaxed"
@@ -112,10 +128,10 @@ export default function About() {
             style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.08)' }}
           >
             {[
-              { value: '2 800+', labelKey: 'about.stat1Label' },
-              { value: '< 90 min', labelKey: 'about.stat2Label' },
-              { value: '4,9 / 5',  labelKey: 'about.stat3Label' },
-              { value: '100%',     labelKey: 'about.stat4Label' },
+              { value: '< 90 min', labelKey: 'about.stat1Label' },
+              { value: '100%',     labelKey: 'about.stat2Label' },
+              { value: '0 MAD',    labelKey: 'about.stat3Label' },
+              { value: '7j/7',     labelKey: 'about.stat4Label' },
             ].map((stat, i, arr) => (
               <div
                 key={stat.labelKey}
@@ -124,7 +140,7 @@ export default function About() {
                   borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
                 }}
               >
-                <div className="font-heading font-bold text-3xl" style={{ color: '#43BCC9' }}>
+                <div className="font-heading font-bold text-3xl" style={{ color: 'var(--mk-action)' }}>
                   {stat.value}
                 </div>
                 <div className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
@@ -142,7 +158,7 @@ export default function About() {
         <div className="max-w-7xl mx-auto">
           <p
             className="text-sm font-semibold uppercase tracking-widest mb-4 text-center"
-            style={{ color: '#43BCC9' }}
+            style={{ color: 'var(--mk-action)' }}
           >
             {t('about.valuesTitle')}
           </p>
@@ -198,7 +214,7 @@ export default function About() {
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
           className="inline-flex items-center gap-2 font-bold px-10 py-4 rounded-full transition-colors duration-200"
-          style={{ background: '#43BCC9', color: '#080808' }}
+          style={{ background: 'var(--mk-action)', color: '#080808' }}
         >
           {t('about.ctaButton')}
           <ChevronRight size={18} />

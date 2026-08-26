@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
+import { analytics } from '../../lib/analytics'
+import SEO from '../../components/SEO'
 import { Eye, EyeOff, ChevronRight } from 'lucide-react'
 
 export default function Login() {
@@ -35,6 +37,8 @@ export default function Login() {
       .eq('id', data.user.id)
       .single()
 
+    analytics.login('email', profile?.role ?? 'customer')
+
     if (profile?.role === 'admin')          navigate('/admin')
     else if (profile?.role === 'fleet_manager') navigate('/fleet-dashboard')
     else if (profile?.role === 'mechanic')  navigate('/mechanic')
@@ -43,6 +47,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-[#080808] flex items-center justify-center px-4">
+      <SEO title="Connexion | MecaLIK" description="Connectez-vous à votre compte MecaLIK." path="/login" noindex />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div style={{
           position: 'absolute', width: '500px', height: '500px',

@@ -1,28 +1,36 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/jpeg" href="/logo.jpg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Primary Meta -->
-  <title>MecaLIK — Mécanicien à Domicile Casablanca | Votre voiture, votre lieu.</title>
-  <meta name="description" content="MecaLIK est le premier service de mécanique à domicile à Casablanca. Un technicien certifié vient à votre voiture — domicile, bureau, parking. Devis gratuit, paiement après service." />
+  <!-- Primary Meta
+       title / description / canonical are intentionally NOT set here — they are owned per-route
+       by <SEO> (src/components/SEO.tsx, react-helmet-async), rendered on every route (with a
+       homepage fallback for routes without custom copy). A static duplicate here would leave two
+       <title>/canonical/description elements in the DOM once Helmet mounts (Helmet only manages
+       tags it renders itself, it doesn't strip pre-existing static ones) — browsers/Google then
+       pick whichever comes first, which was exactly the "canonical stuck on every page" bug. -->
   <meta name="keywords" content="mécanicien domicile casablanca, mécanique mobile maroc, vidange domicile, batterie voiture domicile, dépannage auto casablanca, mecalik" />
   <meta name="author" content="MecaLIK" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://mecalik.com" />
 
-  <!-- Open Graph -->
+  <!-- Open Graph / Twitter — homepage default. This is a client-rendered SPA (no SSR/prerendering),
+       so non-JS crawlers (WhatsApp, Facebook, Twitter link unfurlers) only ever see this static
+       HTML and will always render this preview regardless of which URL was shared; <SEO>'s
+       per-route og:/twitter: tags only reach crawlers that execute JS (e.g. Googlebot). -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://mecalik.com" />
   <meta property="og:title" content="MecaLIK — Mécanicien à Domicile Casablanca" />
   <meta property="og:description" content="Un technicien certifié vient à votre voiture. Devis gratuit sur WhatsApp. Paiement après service." />
   <meta property="og:image" content="https://mecalik.com/hero-photo.png" />
-  <meta property="og:locale" content="fr_MA" />
+  <!-- og:locale intentionally NOT set here — it's owned by <SEO> (dynamic per current language,
+       fr_MA/en_US). A static value here would duplicate it once Helmet mounts, and since the
+       static tag is always first in the DOM, document.querySelector would keep returning the
+       stale locale even after switching language. -->
   <meta property="og:site_name" content="MecaLIK" />
 
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="MecaLIK — Mécanicien à Domicile Casablanca" />
   <meta name="twitter:description" content="Un technicien certifié vient à votre voiture. Devis gratuit sur WhatsApp." />
@@ -33,6 +41,7 @@
   {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
+    "@id": "https://mecalik.com/#business",
     "name": "MecaLIK",
     "description": "Service de mécanique automobile à domicile à Casablanca. Technicien certifié qui vient à votre voiture.",
     "url": "https://mecalik.com",
@@ -74,10 +83,46 @@
   </script>
 
   <!-- PWA -->
-  <meta name="theme-color" content="#080808" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="MecaLIK" />
+  <meta name="application-name" content="MecaLIK" />
+
+  <!-- Meta Pixel -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1333475171511832');
+  fbq('track', 'PageView');
+  </script>
+  <noscript>
+    <img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=1333475171511832&ev=PageView&noscript=1"
+    />
+  </noscript>
+  <!-- End Meta Pixel -->
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PXH9CW2XYF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("config", "G-PXH9CW2XYF", {
+      page_path: window.location.pathname,
+      cookie_flags: "SameSite=None;Secure"
+    });
+  </script>
+  <!-- End Google Analytics -->
 </head>
   <body>
     <div id="root"></div>

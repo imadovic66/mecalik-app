@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from './components/layout/Navbar'
@@ -20,18 +20,44 @@ import MyCars from './pages/dashboard/MyCars'
 import MyHistory from './pages/dashboard/MyHistory'
 import MyProfile from './pages/dashboard/MyProfile'
 import MechanicDashboard from './pages/mechanic/MechanicDashboard'
+import HowItWorksPage from './pages/HowItWorksPage'
+import Tarifs from './pages/Tarifs'
+import Flottes from './pages/Flottes'
+import FAQ from './pages/FAQ'
+import TrackBooking from './pages/TrackBooking'
+import ReviewPage from './pages/ReviewPage'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
+import { trackPageView } from './lib/analytics'
 
 // AppShell lives inside <BrowserRouter> so it can call useLocation
 function AppShell() {
   const location    = useLocation()
   const { i18n }    = useTranslation()
 
+  // Plain (non-Helmet) fallback title for routes with no <SEO> of their own (e.g. /devis,
+  // /dashboard). Deliberately NOT rendered via <Helmet>/<SEO>: react-helmet-async does not
+  // dedupe tags across sibling <Helmet> instances (only parent/child nesting), so a second
+  // always-mounted <SEO> here would leave two <meta name="description"> / <link rel="canonical">
+  // elements in the DOM whenever a page also renders its own <SEO> — silently reintroducing the
+  // "duplicate canonical" bug this overhaul fixes. document.title has no such downside: the
+  // setter updates the document's single title element in place, and a page's own <SEO> mounting
+  // later simply takes over cleanly.
   useEffect(() => {
     document.title = i18n.language === 'en'
       ? 'MecaLIK — Mobile Mechanic Casablanca | Your car, your location.'
       : 'MecaLIK — Mécanicien à Domicile Casablanca | Votre voiture, votre lieu.'
+  }, [i18n.language])
+
+  useEffect(() => {
+    trackPageView(location.pathname)
+  }, [location.pathname])
+
+  // Keep <html lang> in sync with i18next — covers initial load too, since i18next may
+  // initialize straight into 'en' (from localStorage) while the static index.html always
+  // ships with lang="fr".
+  useEffect(() => {
+    document.documentElement.lang = i18n.language || 'fr'
   }, [i18n.language])
   const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/booking') || location.pathname.startsWith('/fleet-dashboard') || location.pathname.startsWith('/mechanic')
 
@@ -46,7 +72,12 @@ function AppShell() {
           <Route path="/"         element={<PublicRoute><Home /></PublicRoute>} />
           <Route path="/services" element={<PublicRoute><Services /></PublicRoute>} />
           <Route path="/fleet"    element={<PublicRoute><Fleet /></PublicRoute>} />
-          <Route path="/about"    element={<PublicRoute><About /></PublicRoute>} />
+          <Route path="/a-propos" element={<PublicRoute><About /></PublicRoute>} />
+          <Route path="/about"    element={<Navigate to="/a-propos" replace />} />
+          <Route path="/comment-ca-marche" element={<PublicRoute><HowItWorksPage /></PublicRoute>} />
+          <Route path="/tarifs"   element={<PublicRoute><Tarifs /></PublicRoute>} />
+          <Route path="/flottes"  element={<PublicRoute><Flottes /></PublicRoute>} />
+          <Route path="/faq"      element={<PublicRoute><FAQ /></PublicRoute>} />
           <Route path="/devis"    element={<QuoteCalculator />} />
           <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup"   element={<PublicRoute><Signup /></PublicRoute>} />
@@ -66,6 +97,9 @@ function AppShell() {
           <Route path="/fleet-dashboard" element={
             <ProtectedRoute><FleetDashboard /></ProtectedRoute>
           } />
+          <Route path="/track/:reference?" element={<TrackBooking />} />
+          <Route path="/suivi/:reference?" element={<TrackBooking />} />
+          <Route path="/avis/:token" element={<ReviewPage />} />
           <Route path="/mechanic" element={<MechanicDashboard />} />
           <Route path="/admin" element={
             <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>

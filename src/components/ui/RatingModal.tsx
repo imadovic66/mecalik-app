@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { serviceIdFromName } from '../../lib/serviceUtils'
 
 type Props = {
   bookingId: string
@@ -10,15 +12,11 @@ type Props = {
   onSubmitted: () => void
 }
 
-const SERVICE_LABELS: Record<string, string> = {
-  lavage: 'Lavage Auto', vidange: 'Vidange & Filtres', batterie: 'Batterie',
-  pneus: 'Pneus', diagnostic: 'Diagnostic', urgence: 'Urgence 24/7',
-}
-
 const RATING_LABELS = ['', 'Mauvais', 'Passable', 'Bien', 'Très bien', 'Excellent']
 const MAX_CHARS = 500
 
 export default function RatingModal({ bookingId, serviceName, isOpen, onClose, onSubmitted }: Props) {
+  const { t } = useTranslation()
   const [rating, setRating]       = useState(0)
   const [hovered, setHovered]     = useState(0)
   const [comment, setComment]     = useState('')
@@ -81,7 +79,7 @@ export default function RatingModal({ bookingId, serviceName, isOpen, onClose, o
               Comment s&apos;est passée votre intervention ?
             </h2>
             <p className="text-xs mt-1.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {SERVICE_LABELS[serviceName] || serviceName}
+              {t('services.' + serviceIdFromName(serviceName))}
             </p>
           </div>
           <button
@@ -97,9 +95,9 @@ export default function RatingModal({ bookingId, serviceName, isOpen, onClose, o
           <div className="p-12 text-center">
             <div
               className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-              style={{ background: 'rgba(67,188,201,0.1)', border: '2px solid #43BCC9' }}
+              style={{ background: 'rgba(67,188,201,0.1)', border: '2px solid var(--mk-action)' }}
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#43BCC9" strokeWidth="2.5">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--mk-action)" strokeWidth="2.5">
                 <path d="M20 6L9 17l-5-5" />
               </svg>
             </div>
@@ -129,8 +127,8 @@ export default function RatingModal({ bookingId, serviceName, isOpen, onClose, o
                   >
                     <svg
                       width="38" height="38" viewBox="0 0 24 24"
-                      fill={star <= active ? '#43BCC9' : 'transparent'}
-                      stroke={star <= active ? '#43BCC9' : 'rgba(255,255,255,0.18)'}
+                      fill={star <= active ? 'var(--mk-action)' : 'transparent'}
+                      stroke={star <= active ? 'var(--mk-action)' : 'rgba(255,255,255,0.18)'}
                       strokeWidth="1.5"
                       style={{ transition: 'all 0.12s' }}
                     >
@@ -140,7 +138,7 @@ export default function RatingModal({ bookingId, serviceName, isOpen, onClose, o
                 ))}
               </div>
               {active > 0 && (
-                <p className="text-sm font-semibold" style={{ color: '#43BCC9' }}>
+                <p className="text-sm font-semibold" style={{ color: 'var(--mk-action)' }}>
                   {RATING_LABELS[active]}
                 </p>
               )}
@@ -165,12 +163,12 @@ export default function RatingModal({ bookingId, serviceName, isOpen, onClose, o
                   border: '1px solid rgba(255,255,255,0.08)',
                   color: 'white',
                 }}
-                onFocus={e => (e.target.style.borderColor = '#43BCC9')}
+                onFocus={e => (e.target.style.borderColor = 'var(--mk-action)')}
                 onBlur={e  => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
               />
               <div className="text-right mt-1">
                 <span className="text-xs" style={{
-                  color: comment.length >= MAX_CHARS ? '#FF4444' : 'rgba(255,255,255,0.25)',
+                  color: comment.length >= MAX_CHARS ? 'var(--mk-urgent)' : 'rgba(255,255,255,0.25)',
                 }}>
                   {comment.length}/{MAX_CHARS}
                 </span>
@@ -196,7 +194,7 @@ export default function RatingModal({ bookingId, serviceName, isOpen, onClose, o
                 disabled={rating === 0 || submitting}
                 className="flex-1 py-3.5 rounded-full text-sm font-bold"
                 style={{
-                  background: rating === 0 ? 'rgba(67,188,201,0.2)' : '#43BCC9',
+                  background: rating === 0 ? 'rgba(67,188,201,0.2)' : 'var(--mk-action)',
                   color: rating === 0 ? 'rgba(255,255,255,0.35)' : '#080808',
                   cursor: rating === 0 ? 'not-allowed' : 'pointer',
                   border: 'none',
