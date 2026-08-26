@@ -10,7 +10,7 @@ import { usePushNotifications } from '../../../hooks/usePushNotifications'
 import { useAuth } from '../../../hooks/useAuth'
 import { generateQuote } from '../../../utils/generateQuote'
 import { WHATSAPP_NUMBER } from '../../../lib/constants'
-import { getMechanicShare, getMecalikProfit, getCustomerName, getCustomerPhone, getSourceBadge } from '../../../lib/bookingUtils'
+import { computeQuoteTotals, getCustomerName, getCustomerPhone, getSourceBadge } from '../../../lib/bookingUtils'
 import NewBookingModal from './NewBookingModal'
 
 interface Props {
@@ -45,6 +45,10 @@ const CATEGORY_CONFIG: Record<ServiceDetailType, { label: string; emoji: string;
   vat:      { label: 'TVA',         emoji: '💰', color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.08)' },
   discount: { label: 'Remise',      emoji: '🎁', color: '#FF6B6B', bg: 'rgba(255,107,107,0.15)' },
 }
+
+// 'vat' is not selectable — prices are entered TTC, so TVA is reverse-calculated,
+// never a line item. It remains in CATEGORY_CONFIG only to render legacy lines.
+const SELECTABLE_CATEGORIES: ServiceDetailType[] = ['material', 'labor', 'discount']
 
 function getTemplate(serviceName: string): ServiceDetail[] {
   const key = (serviceName || '').toLowerCase()
@@ -104,19 +108,9 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
 
   const quotePendingCount = bookings.filter(b => b.status === 'quote_pending').length
 
-  const computeQuoteTotals = (details: ServiceDetail[]) => {
-    const mat  = details.filter(d => normalizeDetailType(d.type) === 'material').reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
-    const lab  = details.filter(d => normalizeDetailType(d.type) === 'labor').reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
-    const disc = details.filter(d => normalizeDetailType(d.type) === 'discount').reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
-    const ht  = Math.max(0, mat + lab - disc)
-    const tva = ht * 0.20
-    const ttc = ht + tva
-    return { mat, lab, disc, ht, tva, ttc }
-  }
-
   const handleApprove = async (booking: Booking) => {
     const details = getDetails(booking.id, booking.service_details)
-    const { ht, tva, ttc } = computeQuoteTotals(details)
+    const { totalHT: ht, totalTVA: tva, totalTTC: ttc } = computeQuoteTotals(details)
     if (ttc <= 0 || !user) return
     setApproving(booking.id)
 
@@ -476,16 +470,15 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
 
                 {/* ── Service Details Panel ── */}
                 {isExpanded && (() => {
-                  const matTotal  = details.filter(d => normalizeDetailType(d.type) === 'material').reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
-                  const labTotal  = details.filter(d => normalizeDetailType(d.type) === 'labor').reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
-                  const vatTotal  = details.filter(d => normalizeDetailType(d.type) === 'vat').reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
-                  const discTotal = details.filter(d => normalizeDetailType(d.type) === 'discount').reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
-                  const calcTotal = matTotal + labTotal + vatTotal - discTotal
-                  const quoteHT  = Math.max(0, matTotal + labTotal - discTotal)
-                  const quoteTVA = quoteHT * 0.20
-                  const quoteTTC = quoteHT + quoteTVA
-                  const mechanicPayout = getMechanicShare(details, quoteTTC)
-                  const mecalikProfit  = getMecalikProfit(details, quoteTTC)
+                  // All money figures come from the shared helper — no local arithmetic here.
+                  const {
+                    materialsTTC: matTotal, labourTTC: labTotal, discountTTC: discTotal,
+                    totalTTC: quoteTTC, totalHT: quoteHT, totalTVA: quoteTVA,
+                    labourHT, mechanicShare: mechanicPayout, mecalikShare: mecalikProfit,
+                  } = computeQuoteTotals(details, booking.amount_ttc)
+                  const vatTotal = details
+                    .filter(d => normalizeDetailType(d.type) === 'vat')
+                    .reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
                   return (
                     <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                       {isQuotePending && (
@@ -503,7 +496,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                       {/* Column headers */}
                       {details.length > 0 && (
                         <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 110px 70px 70px 90px 32px', gap: '8px', marginBottom: '6px', padding: '0 2px' }}>
-                          {['Catégorie', 'Nom / Description', 'Marque', 'Qté', 'P.U. (MAD)', 'Total', ''].map(h => (
+                          {['Catégorie', 'Nom / Description', 'Marque', 'Qté', 'P.U. TTC', 'Total TTC', ''].map(h => (
                             <div key={h} style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
                           ))}
                         </div>
@@ -520,7 +513,9 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                             {/* Segmented category control */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                               <div style={{ display: 'flex', gap: '3px', background: isLegacy ? 'rgba(240,192,64,0.08)' : 'rgba(255,255,255,0.04)', borderRadius: '7px', padding: '3px', border: isLegacy ? '1px solid rgba(240,192,64,0.25)' : '1px solid transparent' }}>
-                                {(Object.entries(CATEGORY_CONFIG) as [ServiceDetailType, typeof CATEGORY_CONFIG[ServiceDetailType]][]).map(([key, c]) => (
+                                {SELECTABLE_CATEGORIES.map(key => {
+                                  const c = CATEGORY_CONFIG[key]
+                                  return (
                                   <button
                                     key={key}
                                     title={c.label}
@@ -534,7 +529,8 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                                   >
                                     {c.emoji}
                                   </button>
-                                ))}
+                                  )
+                                })}
                               </div>
                               {isLegacy && (
                                 <div style={{ fontSize: '9px', color: '#F0C040', opacity: 0.8, paddingLeft: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
@@ -591,32 +587,40 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             {matTotal > 0 && (
                               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>🔩 Matériaux</span>
+                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>🔩 Matériaux (TTC)</span>
                                 <span style={{ fontSize: '12px', color: '#43BCC9', fontWeight: 600 }}>{Math.round(matTotal)} MAD</span>
                               </div>
                             )}
                             {labTotal > 0 && (
                               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>🔧 Main d'œuvre</span>
+                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>🔧 Main d'œuvre (TTC)</span>
                                 <span style={{ fontSize: '12px', color: '#F0C040', fontWeight: 600 }}>{Math.round(labTotal)} MAD</span>
                               </div>
                             )}
                             {vatTotal > 0 && (
                               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>💰 TVA</span>
+                                <span style={{ fontSize: '12px', color: '#F0C040' }}>⚠️ Ligne TVA héritée — à supprimer</span>
                                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{Math.round(vatTotal)} MAD</span>
                               </div>
                             )}
                             {discTotal > 0 && (
                               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>🎁 Remise</span>
-                                <span style={{ fontSize: '12px', color: '#FF6B6B', fontWeight: 600 }}>-{Math.round(discTotal)} MAD</span>
+                                <span style={{ fontSize: '12px', color: '#FF6B6B', fontWeight: 600 }}>−{Math.round(discTotal)} MAD</span>
                               </div>
                             )}
                             <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>TOTAL TTC calculé</span>
-                              <span style={{ fontSize: '14px', fontWeight: 800, color: '#43BCC9' }}>{Math.round(calcTotal)} MAD</span>
+                              <span style={{ fontSize: '13px', fontWeight: 700, color: 'white' }}>TOTAL TTC</span>
+                              <span style={{ fontSize: '14px', fontWeight: 800, color: '#43BCC9' }}>{Math.round(quoteTTC)} MAD</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>dont HT</span>
+                              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>{Math.round(quoteHT)} MAD</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>dont TVA (20%)</span>
+                              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>{Math.round(quoteTVA)} MAD</span>
                             </div>
                           </div>
                         </div>
@@ -646,16 +650,16 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                             <div style={{ fontSize: '10px', fontWeight: 700, color: '#F0C040', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Total devis</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>Total HT</span>
-                                <span style={{ fontSize: '12px', color: 'white', fontWeight: 600 }}>{Math.round(quoteHT)} MAD</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>TVA (20%)</span>
-                                <span style={{ fontSize: '12px', color: 'white', fontWeight: 600 }}>{Math.round(quoteTVA)} MAD</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
                                 <span style={{ fontSize: '13px', color: 'white', fontWeight: 700 }}>TOTAL TTC</span>
                                 <span style={{ fontSize: '15px', color: '#F0C040', fontWeight: 800 }}>{Math.round(quoteTTC)} MAD</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>dont HT</span>
+                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{Math.round(quoteHT)} MAD</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>dont TVA (20%)</span>
+                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{Math.round(quoteTVA)} MAD</span>
                               </div>
                             </div>
                           </div>
@@ -665,12 +669,12 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                             <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Marge (admin uniquement)</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>Matériaux</span>
+                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>Matériaux (TTC)</span>
                                 <span style={{ fontSize: '12px', color: '#43BCC9', fontWeight: 600 }}>{Math.round(matTotal)} MAD</span>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>Base main d'œuvre</span>
-                                <span style={{ fontSize: '12px', color: 'white', fontWeight: 600 }}>{Math.round(labTotal)} MAD</span>
+                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>Main d'œuvre (HT)</span>
+                                <span style={{ fontSize: '12px', color: 'white', fontWeight: 600 }}>{Math.round(labourHT)} MAD</span>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>Part mécanicien 65%</span>

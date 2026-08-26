@@ -13,13 +13,6 @@ export type QuoteData = {
   notes?: string | null
 }
 
-const CATEGORY_LABEL: Record<string, string> = {
-  material: 'Pièce',
-  labor:    "Main d'œuvre",
-  vat:      'TVA',
-  discount: 'Remise',
-}
-
 export function generateQuote(data: QuoteData): void {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -95,10 +88,9 @@ export function generateQuote(data: QuoteData): void {
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
   doc.text('DESCRIPTION', 20, y + 5.5)
-  doc.text('TYPE', 105, y + 5.5)
-  doc.text('QTÉ', 130, y + 5.5)
-  doc.text('P.U.', 150, y + 5.5)
-  doc.text('TOTAL', pageWidth - 20, y + 5.5, { align: 'right' })
+  doc.text('QTÉ', 120, y + 5.5)
+  doc.text('P.U. TTC', 140, y + 5.5)
+  doc.text('TOTAL TTC', pageWidth - 20, y + 5.5, { align: 'right' })
 
   y += 12
   doc.setFont('helvetica', 'normal')
@@ -117,10 +109,9 @@ export function generateQuote(data: QuoteData): void {
 
     doc.setTextColor(200, 200, 200)
     doc.setFontSize(8)
-    doc.text((item.name || '').substring(0, 38), 20, y + 1)
-    doc.text(CATEGORY_LABEL[cat] || cat, 105, y + 1)
-    doc.text(String(qty), 130, y + 1)
-    doc.text(`${unitPrice.toFixed(0)} MAD`, 150, y + 1)
+    doc.text((item.name || '').substring(0, 52), 20, y + 1)
+    doc.text(String(qty), 120, y + 1)
+    doc.text(`${unitPrice.toFixed(0)} MAD`, 140, y + 1)
     doc.setTextColor(255, 255, 255)
     doc.text(`${cat === 'discount' ? '-' : ''}${lineTotal.toFixed(0)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
 
@@ -153,30 +144,30 @@ export function generateQuote(data: QuoteData): void {
   y += 8
   const totalsX = pageWidth - 80
 
-  doc.setFillColor(20, 20, 20)
-  doc.rect(totalsX - 5, y - 4, 80, 8, 'F')
-  doc.setTextColor(180, 180, 180)
-  doc.setFontSize(9)
-  doc.text('Total HT:', totalsX, y + 1)
-  doc.setTextColor(255, 255, 255)
-  doc.text(`${data.totals.ht.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
-  y += 9
-
-  doc.setFillColor(16, 16, 16)
-  doc.rect(totalsX - 5, y - 4, 80, 8, 'F')
-  doc.setTextColor(180, 180, 180)
-  doc.text('TVA (20%):', totalsX, y + 1)
-  doc.setTextColor(255, 255, 255)
-  doc.text(`${data.totals.tva.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
-  y += 9
-
+  // TTC leads — HT and TVA follow as components of it, not as additions.
   doc.setFillColor(...TEAL)
   doc.rect(totalsX - 5, y - 4, 80, 10, 'F')
   doc.setTextColor(8, 8, 8)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
-  doc.text('TOTAL TTC:', totalsX, y + 2)
+  doc.text('Total TTC:', totalsX, y + 2)
   doc.text(`${data.totals.ttc.toFixed(2)} MAD`, pageWidth - 20, y + 2, { align: 'right' })
+  y += 12
+
+  doc.setFillColor(20, 20, 20)
+  doc.rect(totalsX - 5, y - 4, 80, 8, 'F')
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(150, 150, 150)
+  doc.setFontSize(8.5)
+  doc.text('dont HT:', totalsX, y + 1)
+  doc.text(`${data.totals.ht.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
+  y += 9
+
+  doc.setFillColor(16, 16, 16)
+  doc.rect(totalsX - 5, y - 4, 80, 8, 'F')
+  doc.setTextColor(150, 150, 150)
+  doc.text('dont TVA (20%):', totalsX, y + 1)
+  doc.text(`${data.totals.tva.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
 
   // Footer
   y += 20

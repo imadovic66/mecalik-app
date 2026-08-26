@@ -9,6 +9,7 @@ import {
 import { SERVICES as PRICING_SERVICES, getTotalRevenuePerIntervention, type Zone } from '../../../data/pricing'
 import { type FinanceBooking } from '../adminShared'
 import { supabase } from '../../../lib/supabase'
+import { computeQuoteTotals, computeOfflineTotals, getBookingRevenueTTC, ttcToHT } from '../../../lib/bookingUtils'
 
 interface Props {
   financeBookings: FinanceBooking[]
@@ -61,31 +62,20 @@ const EXP_CATS: { key: ExpenseCategory; label: string; emoji: string; color: str
   { key: 'autre',     label: 'Autre',        emoji: '📦', color: 'rgba(255,255,255,0.5)' },
 ]
 
-const LEGACY_TYPE: Record<string, string> = { product: 'material', part: 'material' }
+// All booking money math comes from the shared TTC-first helpers in bookingUtils —
+// no local arithmetic here, so the P&L can never drift from the quote screens.
 
-function categorizeDetails(details: any[]) {
-  return (details ?? []).map((d: any) => {
-    const t = LEGACY_TYPE[d.type] ?? d.type
-    const qty = parseFloat(String(d.quantity ?? '1')) || 1
-    const line = (Number(d.unit_price) || 0) * qty
-    return { type: t as string, line }
-  })
+/** Revenue (TTC) for one booking. */
+function bookingRevenueTTC(b: any): number {
+  return getBookingRevenueTTC(b.service_details, b.amount_ttc)
 }
-
-function bookingMaterials(b: any): number {
-  return categorizeDetails(b.service_details ?? []).filter(d => d.type === 'material').reduce((s, d) => s + d.line, 0)
+/** Materials COGS is HT: line items are TTC, so divide by 1.2. */
+function bookingMaterialsHT(b: any): number {
+  return ttcToHT(computeQuoteTotals(b.service_details, b.amount_ttc).materialsTTC)
 }
-function bookingLabor(b: any): number {
-  return categorizeDetails(b.service_details ?? []).filter(d => d.type === 'labor').reduce((s, d) => s + d.line, 0)
-}
-function bookingDiscount(b: any): number {
-  return categorizeDetails(b.service_details ?? []).filter(d => d.type === 'discount').reduce((s, d) => s + d.line, 0)
-}
-function bookingLabourBase(b: any): number {
-  const explicitLabor = bookingLabor(b)
-  if (explicitLabor > 0) return Math.max(0, explicitLabor - bookingDiscount(b))
-  const ht = (b.amount_ttc || 0) / 1.2
-  return Math.max(0, ht - bookingMaterials(b))
+/** The mechanic's 65% of the HT labour base (TVA is never split). */
+function bookingMechanicShare(b: any): number {
+  return computeQuoteTotals(b.service_details, b.amount_ttc).mechanicShare
 }
 
 function fmt(n: number) {
@@ -229,37 +219,30 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
   const downloadReport = () => {
     const dateStr = new Date().toLocaleDateString('fr-MA').replace(/\//g, '-')
     const rows: string[][] = [
-      ['Type', 'Date', 'Référence', 'Client', 'Service', 'TTC (MAD)', 'HT (MAD)', 'TVA (MAD)', 'Matériaux (MAD)', "Main d'œuvre (MAD)", 'TVA lignes (MAD)', 'Remise (MAD)', 'Base MO (MAD)', 'Mécanicien 65% (MAD)', 'Profit MecaLIK 35% (MAD)'],
+      ['Type', 'Date', 'Référence', 'Client', 'Service', 'TTC (MAD)', 'HT (MAD)', 'TVA (MAD)', 'Matériaux TTC (MAD)', "Main d'œuvre TTC (MAD)", 'Remise TTC (MAD)', 'Base MO HT (MAD)', 'Mécanicien 65% (MAD)', 'Profit MecaLIK 35% (MAD)'],
     ]
     financeBookings.forEach((b: any) => {
-      const ttc = b.amount_ttc || 0
-      const ht = ttc / 1.2
-      const tvaAmt = ttc - ht
-      const cats = categorizeDetails(b.service_details ?? [])
-      const mats    = cats.filter(d => d.type === 'material').reduce((s, d) => s + d.line, 0)
-      const lab     = cats.filter(d => d.type === 'labor').reduce((s, d) => s + d.line, 0)
-      const vatLine = cats.filter(d => d.type === 'vat').reduce((s, d) => s + d.line, 0)
-      const disc    = cats.filter(d => d.type === 'discount').reduce((s, d) => s + d.line, 0)
-      const labour  = bookingLabourBase(b)
-      rows.push(['Plateforme', new Date(b.created_at).toLocaleDateString('fr-MA'), b.reference || '', b.profiles?.full_name || '', b.service_name || '', ttc.toFixed(2), ht.toFixed(2), tvaAmt.toFixed(2), mats.toFixed(2), lab.toFixed(2), vatLine.toFixed(2), disc.toFixed(2), labour.toFixed(2), (labour * 0.65).toFixed(2), (labour * 0.35).toFixed(2)])
+      const q = computeQuoteTotals(b.service_details, b.amount_ttc)
+      const ttc = getBookingRevenueTTC(b.service_details, b.amount_ttc)
+      const ht = ttcToHT(ttc)
+      rows.push(['Plateforme', new Date(b.created_at).toLocaleDateString('fr-MA'), b.reference || '', b.profiles?.full_name || '', b.service_name || '', ttc.toFixed(2), ht.toFixed(2), (ttc - ht).toFixed(2), q.materialsTTC.toFixed(2), q.labourTTC.toFixed(2), q.discountTTC.toFixed(2), q.labourHT.toFixed(2), q.mechanicShare.toFixed(2), q.mecalikShare.toFixed(2)])
     })
     offlineEntries.forEach(e => {
-      const ttc = e.amount_ttc || 0
-      const ht = ttc / 1.2
-      const tvaAmt = ttc - ht
-      const mats = e.materials_cost || 0
-      const lab  = e.labor_cost ?? 0
-      const labour = (lab > 0) ? lab : Math.max(0, ht - mats)
-      rows.push(['Offline', e.date, 'OFFLINE', e.client_name || 'Client', e.service_name || '', ttc.toFixed(2), ht.toFixed(2), tvaAmt.toFixed(2), mats.toFixed(2), lab.toFixed(2), '0.00', '0.00', labour.toFixed(2), (labour * 0.65).toFixed(2), (labour * 0.35).toFixed(2)])
+      const o = computeOfflineTotals(e)
+      rows.push(['Offline', e.date, 'OFFLINE', e.client_name || 'Client', e.service_name || '', o.totalTTC.toFixed(2), o.totalHT.toFixed(2), o.totalTVA.toFixed(2), (e.materials_cost || 0).toFixed(2), (e.labor_cost ?? 0).toFixed(2), '0.00', o.labourHT.toFixed(2), o.mechanicShare.toFixed(2), o.mecalikShare.toFixed(2)])
     })
-    const allTTC = [...financeBookings.map(b => b.amount_ttc || 0), ...offlineEntries.map(e => e.amount_ttc || 0)].reduce((s, v) => s + v, 0)
-    const allHT  = allTTC / 1.2
-    const allMats = financeBookings.reduce((s, b: any) => s + bookingMaterials(b), 0) + offlineEntries.reduce((s, e) => s + (e.materials_cost || 0), 0)
-    const allLab  = financeBookings.reduce((s, b: any) => s + bookingLabourBase(b), 0) + offlineEntries.reduce((s, e) => {
-      if ((e.labor_cost ?? 0) > 0) return s + (e.labor_cost ?? 0)
-      return s + Math.max(0, e.amount_ttc / 1.2 - (e.materials_cost || 0))
-    }, 0)
-    rows.push(['TOTAL', '', '', '', '', allTTC.toFixed(2), allHT.toFixed(2), (allTTC - allHT).toFixed(2), allMats.toFixed(2), '', '', '', allLab.toFixed(2), (allLab * 0.65).toFixed(2), (allLab * 0.35).toFixed(2)])
+    const allTTC  = financeBookings.reduce((s, b: any) => s + getBookingRevenueTTC(b.service_details, b.amount_ttc), 0)
+                  + offlineEntries.reduce((s, e) => s + computeOfflineTotals(e).totalTTC, 0)
+    const allHT   = ttcToHT(allTTC)
+    const allMats = financeBookings.reduce((s, b: any) => s + computeQuoteTotals(b.service_details, b.amount_ttc).materialsTTC, 0)
+                  + offlineEntries.reduce((s, e) => s + (e.materials_cost || 0), 0)
+    const allLabHT = financeBookings.reduce((s, b: any) => s + computeQuoteTotals(b.service_details, b.amount_ttc).labourHT, 0)
+                   + offlineEntries.reduce((s, e) => s + computeOfflineTotals(e).labourHT, 0)
+    const allMech  = financeBookings.reduce((s, b: any) => s + computeQuoteTotals(b.service_details, b.amount_ttc).mechanicShare, 0)
+                   + offlineEntries.reduce((s, e) => s + computeOfflineTotals(e).mechanicShare, 0)
+    const allProfit = financeBookings.reduce((s, b: any) => s + computeQuoteTotals(b.service_details, b.amount_ttc).mecalikShare, 0)
+                    + offlineEntries.reduce((s, e) => s + computeOfflineTotals(e).mecalikShare, 0)
+    rows.push(['TOTAL', '', '', '', '', allTTC.toFixed(2), allHT.toFixed(2), (allTTC - allHT).toFixed(2), allMats.toFixed(2), '', '', allLabHT.toFixed(2), allMech.toFixed(2), allProfit.toFixed(2)])
     const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -333,22 +316,20 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
   const filteredOffline  = offlineEntries.filter(e => inPeriod(e.date, period))
   const filteredExpenses = expenses.filter(e => inPeriod(e.date, period))
 
-  const platformRevTTC = filteredBookings.reduce((s, b) => s + (b.amount_ttc || 0), 0)
-  const offlineRevTTC  = filteredOffline.reduce((s, e) => s + (e.amount_ttc || 0), 0)
+  // Revenue is TTC; COGS are HT (materials HT + the mechanic's 65% of the HT
+  // labour base). TVA is collected for the state and never enters COGS.
+  const platformRevTTC = filteredBookings.reduce((s, b: any) => s + bookingRevenueTTC(b), 0)
+  const offlineRevTTC  = filteredOffline.reduce((s, e) => s + computeOfflineTotals(e).totalTTC, 0)
   const revTTC       = platformRevTTC + offlineRevTTC
-  const revHT        = revTTC / 1.2
+  const revHT        = ttcToHT(revTTC)
   const tvaCollected = revTTC - revHT
 
-  const totalMats    = filteredBookings.reduce((s, b: any) => s + bookingMaterials(b), 0)
-                     + filteredOffline.reduce((s, e) => s + (e.materials_cost || 0), 0)
+  const totalMats    = filteredBookings.reduce((s, b: any) => s + bookingMaterialsHT(b), 0)
+                     + filteredOffline.reduce((s, e) => s + computeOfflineTotals(e).materialsHT, 0)
 
-  const totalLabBase = filteredBookings.reduce((s, b: any) => s + bookingLabourBase(b), 0)
-                     + filteredOffline.reduce((s, e) => {
-                         if ((e.labor_cost ?? 0) > 0) return s + (e.labor_cost ?? 0)
-                         return s + Math.max(0, e.amount_ttc / 1.2 - (e.materials_cost || 0))
-                       }, 0)
+  const mechanicPayout = filteredBookings.reduce((s, b: any) => s + bookingMechanicShare(b), 0)
+                       + filteredOffline.reduce((s, e) => s + computeOfflineTotals(e).mechanicShare, 0)
 
-  const mechanicPayout = totalLabBase * 0.65
   const cogs           = totalMats + mechanicPayout
   const grossProfit    = revHT - cogs
   const grossMargin    = revHT > 0 ? (grossProfit / revHT * 100) : 0
@@ -369,18 +350,15 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     const d = new Date(thisYear, thisMonth - 11 + i, 1)
     const m = d.getMonth(), y = d.getFullYear()
     const inM = (s: string) => { const dd = new Date(s); return dd.getMonth() === m && dd.getFullYear() === y }
-    const mRevTTC = financeBookings.filter(b => inM(b.created_at)).reduce((s, b) => s + (b.amount_ttc || 0), 0)
-                  + offlineEntries.filter(e => inM(e.date)).reduce((s, e) => s + (e.amount_ttc || 0), 0)
-    const mRevHT  = mRevTTC / 1.2
-    const mMats   = financeBookings.filter(b => inM(b.created_at)).reduce((s, b: any) => s + bookingMaterials(b), 0)
-                  + offlineEntries.filter(e => inM(e.date)).reduce((s, e) => s + (e.materials_cost || 0), 0)
-    const mLab    = financeBookings.filter(b => inM(b.created_at)).reduce((s, b: any) => s + bookingLabourBase(b), 0)
-                  + offlineEntries.filter(e => inM(e.date)).reduce((s, e) => {
-                      if ((e.labor_cost ?? 0) > 0) return s + (e.labor_cost ?? 0)
-                      return s + Math.max(0, e.amount_ttc / 1.2 - (e.materials_cost || 0))
-                    }, 0)
+    const mRevTTC = financeBookings.filter(b => inM(b.created_at)).reduce((s, b: any) => s + bookingRevenueTTC(b), 0)
+                  + offlineEntries.filter(e => inM(e.date)).reduce((s, e) => s + computeOfflineTotals(e).totalTTC, 0)
+    const mRevHT  = ttcToHT(mRevTTC)
+    const mMatsHT = financeBookings.filter(b => inM(b.created_at)).reduce((s, b: any) => s + bookingMaterialsHT(b), 0)
+                  + offlineEntries.filter(e => inM(e.date)).reduce((s, e) => s + computeOfflineTotals(e).materialsHT, 0)
+    const mMech   = financeBookings.filter(b => inM(b.created_at)).reduce((s, b: any) => s + bookingMechanicShare(b), 0)
+                  + offlineEntries.filter(e => inM(e.date)).reduce((s, e) => s + computeOfflineTotals(e).mechanicShare, 0)
     const mOpex   = expenses.filter(e => inM(e.date)).reduce((s, e) => s + (e.amount_ttc || 0), 0)
-    const mNet    = mRevHT - mMats - mLab * 0.65 - mOpex
+    const mNet    = mRevHT - mMatsHT - mMech - mOpex
     return { month: monthLabels[m], revenueTTC: Math.round(mRevTTC), netProfit: Math.round(mNet) }
   })
 
@@ -797,7 +775,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
                 { label: 'CA TTC',                    value: revTTC,          color: 'white',                  indent: false, sep: false },
                 { label: '− TVA collectée (20%)',     value: -tvaCollected,   color: '#F0C040',                indent: true,  sep: false },
                 { label: 'CA Hors Taxes',             value: revHT,           color: 'white',                  indent: false, sep: true,  bold: true },
-                { label: '− Matériaux (COGS)',        value: -totalMats,      color: 'rgba(255,255,255,0.5)',  indent: true,  sep: false },
+                { label: '− Matériaux HT (COGS)',     value: -totalMats,      color: 'rgba(255,255,255,0.5)',  indent: true,  sep: false },
                 { label: '− Part mécaniciens (65%)',  value: -mechanicPayout, color: '#FF6B6B',               indent: true,  sep: false },
                 { label: 'Marge Brute',               value: grossProfit,     color: grossProfit >= 0 ? '#43BCC9' : '#FF4444', indent: false, sep: true, bold: true, pct: grossMargin },
                 { label: "− Charges d'exploitation", value: -totalOpex,      color: 'rgba(255,255,255,0.5)',  indent: true,  sep: false },
@@ -1058,7 +1036,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
                     description: newExpense.description,
                     vendor: newExpense.vendor || null,
                     amount_ttc: newExpense.amount_ttc,
-                    amount_ht: parseFloat((newExpense.amount_ttc / 1.2).toFixed(2)),
+                    amount_ht: parseFloat(ttcToHT(newExpense.amount_ttc).toFixed(2)),
                     notes: newExpense.notes || null,
                   }).select().single()
                   if (!error && data) {
@@ -1096,15 +1074,14 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
         <div style={{ marginBottom: '24px' }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 80px 80px 110px 90px 32px', gap: '8px', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
-              {['Date', 'Client', 'Service', 'TTC', 'Matériaux', 'Mécanicien (65%)', 'Profit (35%)', ''].map(h => (
+              {['Date', 'Client', 'Service', 'TTC', 'Matériaux TTC', 'Mécanicien (65%)', 'Profit (35%)', ''].map(h => (
                 <div key={h} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
               ))}
             </div>
             {offlineEntries.map(entry => {
-              const ht = entry.amount_ttc / 1.2
-              const labourBase = (entry.labor_cost ?? 0) > 0 ? (entry.labor_cost ?? 0) : Math.max(0, ht - (entry.materials_cost || 0))
-              const mechPayout = labourBase * 0.65
-              const profit     = labourBase * 0.35
+              const o = computeOfflineTotals(entry)
+              const mechPayout = o.mechanicShare
+              const profit     = o.mecalikShare
               return (
                 <div key={entry.id} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 80px 80px 110px 90px 32px', gap: '8px', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>{entry.date}</span>
@@ -1153,32 +1130,32 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', color: 'rgba(67,188,201,0.8)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>🔩 Matériaux (MAD)</label>
+                  <label style={{ fontSize: '11px', color: 'rgba(67,188,201,0.8)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>🔩 Matériaux TTC (MAD)</label>
                   <input type="number" value={newEntry.materials_cost || ''} placeholder="Ex: 200" onChange={e => setNewEntry(prev => ({ ...prev, materials_cost: parseFloat(e.target.value) || 0 }))} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', background: 'rgba(67,188,201,0.06)', border: '1px solid rgba(67,188,201,0.2)', color: 'white', fontSize: '13px', fontFamily: 'Outfit, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '11px', color: 'rgba(240,192,64,0.8)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>🔧 Main d'œuvre (MAD)</label>
+                  <label style={{ fontSize: '11px', color: 'rgba(240,192,64,0.8)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '6px' }}>🔧 Main d'œuvre TTC (MAD)</label>
                   <input type="number" value={newEntry.labor_cost || ''} placeholder="Ex: 175" onChange={e => setNewEntry(prev => ({ ...prev, labor_cost: parseFloat(e.target.value) || 0 }))} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', background: 'rgba(240,192,64,0.06)', border: '1px solid rgba(240,192,64,0.2)', color: 'white', fontSize: '13px', fontFamily: 'Outfit, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               </div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
-                Si "Main d'œuvre" est renseigné, le calcul 65/35 se base dessus. Sinon : HT − matériaux.
+                Tous les montants sont TTC. Si "Main d'œuvre" est renseigné, le 65/35 se base sur sa
+                part HT. Sinon : (TTC − matériaux) ÷ 1,2.
               </div>
               {newEntry.amount_ttc > 0 && (() => {
-                const ht = newEntry.amount_ttc / 1.2
-                const tvaPreview = newEntry.amount_ttc - ht
-                const labourBase = (newEntry.labor_cost > 0) ? newEntry.labor_cost : Math.max(0, ht - (newEntry.materials_cost || 0))
-                const mechPayoutPreview = labourBase * 0.65
-                const profitPreview = labourBase * 0.35
+                const o = computeOfflineTotals(newEntry)
+                const mechPayoutPreview = o.mechanicShare
+                const profitPreview = o.mecalikShare
                 return (
                   <div style={{ padding: '12px', borderRadius: '8px', background: 'rgba(67,188,201,0.06)', border: '1px solid rgba(67,188,201,0.15)' }}>
                     <div style={{ fontSize: '11px', color: '#43BCC9', fontWeight: 700, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Aperçu</div>
                     {([
-                      { label: 'CA HT',                   value: ht.toFixed(0) + ' MAD',                            color: 'white' },
-                      { label: 'TVA (20%)',                value: tvaPreview.toFixed(0) + ' MAD',                    color: '#F0C040' },
-                      { label: '🔩 Matériaux',            value: (newEntry.materials_cost || 0).toFixed(0) + ' MAD', color: '#43BCC9' },
-                      { label: "🔧 Main d'œuvre",         value: (newEntry.labor_cost || 0).toFixed(0) + ' MAD',     color: '#F0C040' },
-                      { label: 'Base MO retenue',         value: labourBase.toFixed(0) + ' MAD',                    color: 'rgba(255,255,255,0.7)' },
+                      { label: 'Total TTC',                value: o.totalTTC.toFixed(0) + ' MAD',                     color: 'white', bold: true },
+                      { label: 'dont HT',                  value: o.totalHT.toFixed(0) + ' MAD',                      color: 'rgba(255,255,255,0.6)' },
+                      { label: 'dont TVA (20%)',           value: o.totalTVA.toFixed(0) + ' MAD',                     color: '#F0C040' },
+                      { label: '🔩 Matériaux (TTC)',      value: (newEntry.materials_cost || 0).toFixed(0) + ' MAD', color: '#43BCC9' },
+                      { label: "🔧 Main d'œuvre (TTC)",   value: (newEntry.labor_cost || 0).toFixed(0) + ' MAD',     color: '#F0C040' },
+                      { label: "Base MO retenue (HT)",     value: o.labourHT.toFixed(0) + ' MAD',                     color: 'rgba(255,255,255,0.7)' },
                       { label: 'Part mécanicien (65%)',   value: mechPayoutPreview.toFixed(0) + ' MAD',              color: '#FF6B6B' },
                       { label: '→ Profit MecaLIK (35%)', value: profitPreview.toFixed(0) + ' MAD',                 color: '#43BCC9', bold: true },
                     ] as { label: string; value: string; color: string; bold?: boolean }[]).map((row, ri) => (

@@ -1,19 +1,5 @@
 import * as XLSX from 'xlsx'
-
-const LEGACY: Record<string, string> = { product: 'material', part: 'material' }
-
-function parseDetails(details: any[]): { mats: number; labor: number } {
-  const cats = (details ?? []).map((d: any) => {
-    const t = LEGACY[d.type] ?? d.type
-    const qty = parseFloat(String(d.quantity ?? '1')) || 1
-    const line = (Number(d.unit_price) || 0) * qty
-    return { type: t as string, line }
-  })
-  return {
-    mats:  cats.filter(c => c.type === 'material').reduce((s, c) => s + c.line, 0),
-    labor: cats.filter(c => c.type === 'labor').reduce((s, c) => s + c.line, 0),
-  }
-}
+import { computeQuoteTotals, ttcToHT } from '../lib/bookingUtils'
 
 type BookingEntry = {
   id: string
@@ -58,7 +44,7 @@ type SortableRow = { date: string; row: (string | number)[] }
 const HEADERS = [
   'Date', 'Type', 'Référence', 'Description', 'Catégorie',
   'Vendeur / Client', 'TTC (MAD)', 'HT (MAD)', 'TVA (MAD)',
-  'Matériaux (MAD)', "Main d'œuvre (MAD)",
+  'Matériaux TTC (MAD)', "Main d'œuvre TTC (MAD)",
 ]
 
 export function generateLedger(data: LedgerData): void {
@@ -66,10 +52,11 @@ export function generateLedger(data: LedgerData): void {
 
   for (const b of data.bookings) {
     const ttc = b.amount_ttc || 0
-    const ht  = ttc / 1.2
+    const ht  = ttcToHT(ttc)
     const tva = ttc - ht
-    const { mats, labor } = parseDetails(b.service_details ?? [])
-    const labFallback = labor > 0 ? labor : Math.max(0, ht - mats)
+    const q = computeQuoteTotals(b.service_details ?? [], b.amount_ttc)
+    const mats = q.materialsTTC
+    const labFallback = q.labourTTC > 0 ? q.labourTTC : Math.max(0, ttc - mats)
     const client = b.profiles?.full_name ?? '—'
     sortable.push({
       date: new Date(b.created_at).toISOString().slice(0, 10),
@@ -78,7 +65,7 @@ export function generateLedger(data: LedgerData): void {
         'Réservation',
         (b.reference || b.id.slice(0, 8).toUpperCase()),
         `${b.service_name} — ${client}`,
-        mats >= labor ? 'Matériau' : "Main d'œuvre",
+        mats >= q.labourTTC ? 'Matériau' : "Main d'œuvre",
         client,
         +ttc.toFixed(2), +ht.toFixed(2), +tva.toFixed(2),
         +mats.toFixed(2), +labFallback.toFixed(2),
@@ -88,10 +75,10 @@ export function generateLedger(data: LedgerData): void {
 
   for (const e of data.offline) {
     const ttc  = e.amount_ttc || 0
-    const ht   = ttc / 1.2
+    const ht   = ttcToHT(ttc)
     const tva  = ttc - ht
     const mats = e.materials_cost || 0
-    const lab  = (e.labor_cost ?? 0) > 0 ? (e.labor_cost ?? 0) : Math.max(0, ht - mats)
+    const lab  = (e.labor_cost ?? 0) > 0 ? (e.labor_cost ?? 0) : Math.max(0, ttc - mats)
     sortable.push({
       date: e.date,
       row: [
@@ -106,7 +93,7 @@ export function generateLedger(data: LedgerData): void {
 
   for (const exp of data.expenses) {
     const ttc = exp.amount_ttc || 0
-    const ht  = exp.amount_ht ?? ttc / 1.2
+    const ht  = exp.amount_ht ?? ttcToHT(ttc)
     const tva = ttc - ht
     sortable.push({
       date: exp.date,
