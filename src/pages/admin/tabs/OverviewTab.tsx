@@ -6,8 +6,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts'
-import { type Booking, getGuestLabel, StatusPill } from '../adminShared'
+import { type Booking, StatusPill } from '../adminShared'
 import { serviceIdFromName } from '../../../lib/serviceUtils'
+import { getCustomerName, getSourceBadge } from '../../../lib/bookingUtils'
 
 interface OfflineActivity {
   id: string
@@ -190,7 +191,15 @@ export default function OverviewTab({ bookings, loading, stats, revenueData, boo
                         Guest
                       </span>
                     )}
-                    {getGuestLabel(item.booking)}
+                    {(() => {
+                      const badge = getSourceBadge(item.booking.source)
+                      return (
+                        <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: badge.bg, color: badge.color }}>
+                          {badge.emoji} {badge.label}
+                        </span>
+                      )
+                    })()}
+                    {getCustomerName(item.booking)}
                   </div>
                 </div>
               </div>

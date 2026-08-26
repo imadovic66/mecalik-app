@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Search } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
-import { type Booking, type ServiceDetail, type ServiceDetailType, normalizeDetailType, STATUS_COLORS, STATUS_KEYS, getGuestLabel } from '../adminShared'
+import { type Booking, type ServiceDetail, type ServiceDetailType, normalizeDetailType, STATUS_COLORS, STATUS_KEYS } from '../adminShared'
 import { serviceIdFromName } from '../../../lib/serviceUtils'
 import { usePushNotifications } from '../../../hooks/usePushNotifications'
 import { useAuth } from '../../../hooks/useAuth'
 import { generateQuote } from '../../../utils/generateQuote'
 import { WHATSAPP_NUMBER } from '../../../lib/constants'
-import { getMechanicShare, getMecalikProfit } from '../../../lib/pricing'
+import { getMechanicShare, getMecalikProfit, getCustomerName, getCustomerPhone, getSourceBadge } from '../../../lib/bookingUtils'
+import NewBookingModal from './NewBookingModal'
 
 interface Props {
   bookings: Booking[]
@@ -99,6 +100,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
   const [saving, setSaving] = useState<string | null>(null)
   const [approving, setApproving] = useState<string | null>(null)
   const [approvalResult, setApprovalResult] = useState<ApprovalResult | null>(null)
+  const [showNewBooking, setShowNewBooking] = useState(false)
 
   const quotePendingCount = bookings.filter(b => b.status === 'quote_pending').length
 
@@ -131,8 +133,8 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
     setApproving(null)
     if (error) return
 
-    const customerName = getGuestLabel(booking)
-    const customerPhone = booking.profiles?.phone ?? null
+    const customerName = getCustomerName(booking)
+    const customerPhone = getCustomerPhone(booking)
 
     generateQuote({
       quoteReference,
@@ -302,7 +304,24 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
             </button>
           ))}
         </div>
+        <button
+          onClick={() => setShowNewBooking(true)}
+          className="rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2 flex-shrink-0"
+          style={{ background: '#43BCC9', color: '#080808', border: 'none', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+        >
+          + Nouvelle réservation
+        </button>
       </div>
+
+      {showNewBooking && (
+        <NewBookingModal
+          mechanics={mechanics}
+          bookings={bookings}
+          onClose={() => setShowNewBooking(false)}
+          onCreated={onRefresh}
+          onViewBooking={b => { setShowNewBooking(false); onSelectBooking(b) }}
+        />
+      )}
 
       {loading ? (
         <div className="space-y-2">
@@ -349,13 +368,16 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                     {t('services.' + serviceIdFromName(booking.service_name))}
                   </div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    {!booking.user_id && (
-                      <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
-                        Guest
-                      </span>
-                    )}
+                    {(() => {
+                      const badge = getSourceBadge(booking.source)
+                      return (
+                        <span title={badge.label} style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: badge.bg, color: badge.color, flexShrink: 0 }}>
+                          {badge.emoji}
+                        </span>
+                      )
+                    })()}
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {getGuestLabel(booking)}
+                      {getCustomerName(booking)}
                     </span>
                   </div>
                   {/* Technician inline select */}

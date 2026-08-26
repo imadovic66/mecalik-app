@@ -47,6 +47,13 @@ export type Booking = {
   quote_sent_at?: string | null
   quote_feedback?: string | null
   quote_reference?: string | null
+  customer_name?: string | null
+  customer_phone?: string | null
+  vehicle_label?: string | null
+  created_by?: string | null
+  source?: string | null
+  address_notes?: string | null
+  slot_type?: string | null
 }
 
 export type Customer = {
@@ -103,15 +110,6 @@ export const STATUS_COLORS: Record<string, string> = {
 }
 
 export const STATUS_KEYS = ['pending', 'confirmed', 'on_the_way', 'quote_pending', 'quote_sent', 'in_progress', 'completed', 'cancelled'] as const
-
-export function getGuestLabel(booking: { user_id: string | null; notes_admin: string | null; profiles?: { full_name: string | null } | undefined }): string {
-  if (booking.profiles?.full_name) return booking.profiles.full_name
-  if (!booking.user_id && booking.notes_admin) {
-    const m = booking.notes_admin.match(/Nom:\s*([^|]+)/)
-    if (m) return m[1].trim()
-  }
-  return 'Anonyme'
-}
 
 export function getInitials(name: string | null | undefined): string {
   if (!name) return '?'

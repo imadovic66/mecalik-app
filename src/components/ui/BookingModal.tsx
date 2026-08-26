@@ -124,19 +124,45 @@ export default function BookingModal() {
   }
 
   const handleGuestBooking = async () => {
+    if (submitting) return
     if (!name || !phone || !address) { setError('Tous les champs marqués * sont obligatoires'); return }
+    setSubmitting(true)
+    setError('')
     let reference: string | null = null
     try {
-      const { data } = await supabase.from('bookings').insert({
-        service_name:  resolveServiceName(selectedService),
-        address,
-        address_notes: addressNotes || null,
-        status:        'pending',
-        notes_admin:   `Guest booking — Nom: ${name} | Tél: ${phone} | Service: ${resolveServiceName(selectedService)}`,
-      }).select('reference').single()
-      reference = (data as { reference: string } | null)?.reference ?? null
+      const serviceLabel = resolveServiceName(selectedService)
+
+      // Server-side dedup guard: same phone + service submitted in the last 2 min → reuse it
+      // instead of inserting a duplicate (covers double-taps/double-clicks and network retries).
+      const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
+      const { data: existing } = await supabase
+        .from('bookings')
+        .select('id, reference')
+        .eq('customer_phone', phone)
+        .eq('service_name', serviceLabel)
+        .gte('created_at', twoMinAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (existing) {
+        reference = (existing as { reference: string }).reference
+      } else {
+        const { data } = await supabase.from('bookings').insert({
+          service_name:   serviceLabel,
+          address,
+          address_notes:  addressNotes || null,
+          status:         'pending',
+          customer_name:  name,
+          customer_phone: phone,
+          source:         'platform',
+        }).select('reference').single()
+        reference = (data as { reference: string } | null)?.reference ?? null
+      }
     } catch (err) {
       if (import.meta.env.DEV) console.error('Failed to save guest booking', err)
+    } finally {
+      setSubmitting(false)
     }
     analytics.bookingCompleted(reference ?? '', resolveServiceName(selectedService), selectedServicePrice)
     openWhatsApp(buildWhatsAppMessage(reference ?? ''))
@@ -170,6 +196,7 @@ export default function BookingModal() {
   }
 
   const submit = async () => {
+    if (submitting) return
     if (!name || !phone || !address) {
       setError('Tous les champs marqués * sont obligatoires')
       return
@@ -183,34 +210,48 @@ export default function BookingModal() {
     setSubmitting(true)
     setError('')
 
-    const { data: booking, error: insertError } = await supabase
-      .from('bookings')
-      .insert({
-        user_id:       user.id,
-        car_id:        selectedCarId || null,
-        service_name:  resolveServiceName(selectedService),
-        address,
-        address_notes: addressNotes || null,
-        status:        'pending',
-      })
-      .select()
-      .single()
+    try {
+      const serviceLabel = resolveServiceName(selectedService)
 
-    if (insertError) {
+      // Same dedup guard as the guest path, keyed on the account instead of a phone number.
+      const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
+      const { data: existing } = await supabase
+        .from('bookings')
+        .select('id, reference')
+        .eq('user_id', user.id)
+        .eq('service_name', serviceLabel)
+        .gte('created_at', twoMinAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      const booking = existing ?? await (async () => {
+        const { data, error: insertError } = await supabase
+          .from('bookings')
+          .insert({
+            user_id:       user.id,
+            car_id:        selectedCarId || null,
+            service_name:  serviceLabel,
+            address,
+            address_notes: addressNotes || null,
+            status:        'pending',
+            source:        'platform',
+          })
+          .select()
+          .single()
+        if (insertError) throw insertError
+        return data
+      })()
+
+      const bookingRef = (booking as { reference?: string } | null)?.reference ?? ''
+      analytics.bookingCompleted(bookingRef, serviceLabel, selectedServicePrice)
+      openWhatsApp(buildWhatsAppMessage(bookingRef))
+      close()
+      if (booking?.id) navigate(`/booking/${booking.id}`)
+    } catch (err) {
+      setError('Erreur: ' + (err instanceof Error ? err.message : 'inconnue'))
+    } finally {
       setSubmitting(false)
-      setError('Erreur: ' + insertError.message)
-      return
-    }
-
-    const bookingRef = (booking as { reference?: string } | null)?.reference ?? ''
-    analytics.bookingCompleted(bookingRef, resolveServiceName(selectedService), selectedServicePrice)
-    openWhatsApp(buildWhatsAppMessage(bookingRef))
-
-    setSubmitting(false)
-    close()
-
-    if (user && booking?.id) {
-      navigate(`/booking/${booking.id}`)
     }
   }
 
@@ -611,7 +652,9 @@ export default function BookingModal() {
                   transition: 'all 0.15s',
                 }}
               >
-                {submitting ? t('common.loading') : (
+                {submitting ? (
+                  <><Spinner /> {t('common.loading')}</>
+                ) : (
                   <>
                     <MessageCircle size={16} />
                     {t('booking.submitWhatsapp')}
@@ -643,8 +686,11 @@ export default function BookingModal() {
                     fontFamily: 'inherit',
                   }}
                 >
-                  <span>💬</span>
-                  {t('booking.continueAsGuest')}
+                  {submitting ? (
+                    <><Spinner /> {t('common.loading')}</>
+                  ) : (
+                    <><span>💬</span>{t('booking.continueAsGuest')}</>
+                  )}
                 </button>
 
                 <button
@@ -676,6 +722,7 @@ export default function BookingModal() {
       <style>{`
         @keyframes bmFadeIn  { from { opacity: 0 }             to { opacity: 1 } }
         @keyframes bmSlideUp { from { transform: translate(-50%, 100%) } to { transform: translate(-50%, 0) } }
+        @keyframes bmSpin    { to { transform: rotate(360deg) } }
         input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
         input:focus, select:focus, textarea:focus { outline: none; }
         select option { background: #111111 !important; color: white !important; }
@@ -685,6 +732,17 @@ export default function BookingModal() {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+function Spinner() {
+  return (
+    <span style={{
+      display: 'inline-block', width: '15px', height: '15px',
+      borderRadius: '50%', border: '2px solid currentColor',
+      borderTopColor: 'transparent', animation: 'bmSpin 0.7s linear infinite',
+      flexShrink: 0,
+    }} />
+  )
+}
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (

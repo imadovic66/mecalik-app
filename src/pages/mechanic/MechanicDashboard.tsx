@@ -7,7 +7,7 @@ import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
 import QuoteEditor from './QuoteEditor'
 import type { ServiceDetail } from '../admin/adminShared'
-import { getMechanicShare } from '../../lib/pricing'
+import { getMechanicShare, getCustomerName, getCustomerPhone, getSourceBadge } from '../../lib/bookingUtils'
 import {
   MapPin, MessageCircle, Navigation,
   Wrench, Star,
@@ -36,6 +36,10 @@ type Booking = {
   service_details?: ServiceDetail[] | null
   quote_feedback: string | null
   quote_submitted_at: string | null
+  customer_name?: string | null
+  customer_phone?: string | null
+  source?: string | null
+  profiles?: { full_name?: string | null; phone?: string | null } | null
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
@@ -112,7 +116,7 @@ export default function MechanicDashboard() {
     const name = profile.full_name || user.email || ''
     const { data } = await supabase
       .from('bookings')
-      .select('*')
+      .select('*, profiles!bookings_user_id_fkey(full_name, phone)')
       .eq('technician_name', name)
       .order('created_at', { ascending: false })
     setBookings(data || [])
@@ -332,25 +336,48 @@ export default function MechanicDashboard() {
                         <div onClick={() => setExpandedJob(isExpanded ? null : job.id)} style={{ padding: '16px', cursor: 'pointer' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              {/* Status pill */}
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 9px', borderRadius: '5px', background: status.bg, marginBottom: '10px' }}>
-                                <span style={{
-                                  width: '5px', height: '5px', borderRadius: '50%', background: status.dot,
-                                  animation: (job.status === 'in_progress' || job.status === 'on_the_way') ? 'mechPulse 2s infinite' : 'none',
-                                }} />
-                                <span style={{ fontSize: '9px', fontWeight: 600, color: status.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                                  {i18nT(`status.${job.status}`)}
-                                </span>
+                              {/* Status pill + channel badge */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 9px', borderRadius: '5px', background: status.bg }}>
+                                  <span style={{
+                                    width: '5px', height: '5px', borderRadius: '50%', background: status.dot,
+                                    animation: (job.status === 'in_progress' || job.status === 'on_the_way') ? 'mechPulse 2s infinite' : 'none',
+                                  }} />
+                                  <span style={{ fontSize: '9px', fontWeight: 600, color: status.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                    {i18nT(`status.${job.status}`)}
+                                  </span>
+                                </div>
+                                {(() => {
+                                  const badge = getSourceBadge(job.source)
+                                  return (
+                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 7px', borderRadius: '5px', background: badge.bg, color: badge.color }}>
+                                      {badge.emoji} {badge.label}
+                                    </span>
+                                  )
+                                })()}
                               </div>
 
-                              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '17px', fontWeight: 600, color: 'white', marginBottom: '6px', letterSpacing: '-0.01em' }}>
+                              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '17px', fontWeight: 600, color: 'white', marginBottom: '2px', letterSpacing: '-0.01em' }}>
                                 {job.service_name}
+                              </div>
+
+                              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>
+                                {getCustomerName(job)}
                               </div>
 
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                   <MapPin size={11} /> {job.address}
                                 </span>
+                                {getCustomerPhone(job) && (
+                                  <a
+                                    href={`tel:${getCustomerPhone(job)}`}
+                                    onClick={e => e.stopPropagation()}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--mk-action)', textDecoration: 'none' }}
+                                  >
+                                    📞 {getCustomerPhone(job)}
+                                  </a>
+                                )}
                                 <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
                                   {job.reference}
                                 </span>

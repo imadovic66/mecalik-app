@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { normalizeDetailType, type ServiceDetail, type ServiceDetailType } from '../admin/adminShared'
-import { getMechanicShare } from '../../lib/pricing'
+import { getMechanicShare, getCustomerName, getCustomerPhone } from '../../lib/bookingUtils'
 
 type EditorBooking = {
   id: string
@@ -15,6 +15,9 @@ type EditorBooking = {
   notes_admin: string | null
   service_details?: ServiceDetail[] | null
   quote_feedback?: string | null
+  customer_name?: string | null
+  customer_phone?: string | null
+  profiles?: { full_name?: string | null; phone?: string | null } | null
 }
 
 interface Props {
@@ -29,12 +32,6 @@ const TYPE_CONFIG: Record<ServiceDetailType, { emoji: string; label: string; col
   labor:    { emoji: '🔧', label: "Main d'œuvre", color: '#F0C040', bg: 'rgba(240,192,64,0.15)' },
   vat:      { emoji: '💰', label: 'TVA',           color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.08)' },
   discount: { emoji: '🎁', label: 'Remise',        color: '#FF6B6B', bg: 'rgba(255,107,107,0.15)' },
-}
-
-function getCustomerName(notes_admin: string | null): string {
-  if (!notes_admin) return 'Client'
-  const m = notes_admin.match(/Nom:\s*([^|]+)/)
-  return m ? m[1].trim() : 'Client'
 }
 
 const inputStyle: React.CSSProperties = {
@@ -110,12 +107,20 @@ export default function QuoteEditor({ booking, userId, onClose, onSubmitted }: P
           <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '17px', fontWeight: 700, color: 'white' }}>
             Créer le devis
           </div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '2px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', marginTop: '2px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontFamily: 'monospace' }}>{booking.reference}</span>
             <span>·</span>
-            <span>{getCustomerName(booking.notes_admin)}</span>
+            <span>{getCustomerName(booking)}</span>
             <span>·</span>
             <span>{booking.service_name}</span>
+            {getCustomerPhone(booking) && (
+              <>
+                <span>·</span>
+                <a href={`tel:${getCustomerPhone(booking)}`} style={{ color: 'var(--mk-action)', textDecoration: 'none' }}>
+                  📞 {getCustomerPhone(booking)}
+                </a>
+              </>
+            )}
           </div>
         </div>
         <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
