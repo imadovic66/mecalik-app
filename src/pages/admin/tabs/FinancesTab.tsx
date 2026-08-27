@@ -16,7 +16,8 @@ interface Props {
   financeLoading: boolean
 }
 
-type InvoiceLine = { description: string; quantity: number; unitPrice: number }
+/** Manual devis/facture line. unitPriceTTC is TTC per unit — the price the client pays. */
+type InvoiceLine = { description: string; quantity: number; unitPriceTTC: number }
 type Period = 'month' | 'quarter' | 'year' | 'all'
 type ExpenseCategory = 'loyer' | 'salaires' | 'marketing' | 'transport' | 'tech' | 'admin' | 'insurance' | 'autre'
 
@@ -154,7 +155,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     quoteNumber: `DEV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Date.now()).slice(-4)}`,
     quoteDate: new Date().toLocaleDateString('fr-MA'),
     validityDays: 30,
-    lines: [{ description: '', quantity: 1, unitPrice: 0 }] as InvoiceLine[],
+    lines: [{ description: '', quantity: 1, unitPriceTTC: 0 }] as InvoiceLine[],
     notes: '',
   })
 
@@ -168,7 +169,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     clientICE: '',
     invoiceNumber: `FAC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
     invoiceDate: new Date().toLocaleDateString('fr-MA'),
-    lines: [{ description: '', quantity: 1, unitPrice: 0 }] as InvoiceLine[],
+    lines: [{ description: '', quantity: 1, unitPriceTTC: 0 }] as InvoiceLine[],
     paymentMethod: 'Espèces',
     notes: '',
   })
@@ -293,20 +294,27 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
   }
 
   // ── Invoice helpers ───────────────────────────────────────────────────────
-  const totalHT  = invoiceData.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
-  const tva      = totalHT * 0.20
-  const totalTTC = totalHT + tva
+  // Adapter: the manual devis/facture line shape differs from service_details, so map
+  // onto it and reuse the shared TTC math rather than duplicating the formula.
+  const invoiceLineTotals = (lines: InvoiceLine[]) => computeQuoteTotals(
+    lines.map(l => ({
+      type: 'material' as const,
+      name: l.description,
+      quantity: String(l.quantity),
+      unit_price: l.unitPriceTTC,
+    })),
+  )
 
-  const addLine    = () => setInvoiceData(p => ({ ...p, lines: [...p.lines, { description: '', quantity: 1, unitPrice: 0 }] }))
+  const { totalTTC, totalHT, totalTVA: tva } = invoiceLineTotals(invoiceData.lines)
+
+  const addLine    = () => setInvoiceData(p => ({ ...p, lines: [...p.lines, { description: '', quantity: 1, unitPriceTTC: 0 }] }))
   const removeLine = (i: number) => setInvoiceData(p => ({ ...p, lines: p.lines.filter((_, j) => j !== i) }))
   const updateLine = (i: number, field: keyof InvoiceLine, val: string | number) =>
     setInvoiceData(p => ({ ...p, lines: p.lines.map((l, j) => j === i ? { ...l, [field]: val } : l) }))
 
-  const quoteTotalHT  = quoteData.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
-  const quoteTva      = quoteTotalHT * 0.20
-  const quoteTotalTTC = quoteTotalHT + quoteTva
+  const { totalTTC: quoteTotalTTC, totalHT: quoteTotalHT, totalTVA: quoteTva } = invoiceLineTotals(quoteData.lines)
 
-  const addQuoteLine    = () => setQuoteData(p => ({ ...p, lines: [...p.lines, { description: '', quantity: 1, unitPrice: 0 }] }))
+  const addQuoteLine    = () => setQuoteData(p => ({ ...p, lines: [...p.lines, { description: '', quantity: 1, unitPriceTTC: 0 }] }))
   const removeQuoteLine = (i: number) => setQuoteData(p => ({ ...p, lines: p.lines.filter((_, j) => j !== i) }))
   const updateQuoteLine = (i: number, field: keyof InvoiceLine, val: string | number) =>
     setQuoteData(p => ({ ...p, lines: p.lines.map((l, j) => j === i ? { ...l, [field]: val } : l) }))
@@ -391,8 +399,8 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
       <tr>
         <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;">${l.description || '—'}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:center;">${l.quantity}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;">${l.unitPrice.toFixed(0)} MAD</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;font-weight:600;">${(l.quantity * l.unitPrice).toFixed(0)} MAD</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;">${l.unitPriceTTC.toFixed(0)} MAD</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;font-weight:600;">${(l.quantity * l.unitPriceTTC).toFixed(0)} MAD</td>
       </tr>
     `).join('')
 
@@ -466,8 +474,8 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
             <tr style="background:#0A0A0A;color:white;">
               <th style="padding:12px;font-size:12px;text-align:left;text-transform:uppercase;letter-spacing:0.05em;border-radius:6px 0 0 6px;">Description</th>
               <th style="padding:12px;font-size:12px;text-align:center;text-transform:uppercase;letter-spacing:0.05em;">Qté</th>
-              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;">P.U. HT</th>
-              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;border-radius:0 6px 6px 0;">Total HT</th>
+              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;">P.U. TTC</th>
+              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;border-radius:0 6px 6px 0;">Total TTC</th>
             </tr>
           </thead>
           <tbody>${linesHtml}</tbody>
@@ -476,17 +484,17 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
         <!-- Totals -->
         <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
           <div style="width:280px;">
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
-              <span style="font-size:13px;color:#666;">Sous-total HT</span>
-              <span style="font-size:13px;font-weight:600;">${quoteTotalHT.toFixed(0)} MAD</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
-              <span style="font-size:13px;color:#666;">TVA (20%)</span>
-              <span style="font-size:13px;font-weight:600;">${quoteTva.toFixed(0)} MAD</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:#f0fafa;border-radius:6px;padding:12px 16px;margin-top:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#f0fafa;border-radius:6px;padding:12px 16px;margin-bottom:4px;">
               <span style="font-size:16px;font-weight:800;">Total TTC</span>
               <span style="font-size:16px;font-weight:800;color:#43BCC9;">${quoteTotalTTC.toFixed(0)} MAD</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:6px 16px;">
+              <span style="font-size:12px;color:#888;">dont HT</span>
+              <span style="font-size:12px;color:#888;">${quoteTotalHT.toFixed(0)} MAD</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:6px 16px;">
+              <span style="font-size:12px;color:#888;">dont TVA (20%)</span>
+              <span style="font-size:12px;color:#888;">${quoteTva.toFixed(0)} MAD</span>
             </div>
           </div>
         </div>
@@ -563,8 +571,8 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
       <tr>
         <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;">${l.description || '—'}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:center;">${l.quantity}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;">${l.unitPrice.toFixed(0)} MAD</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;font-weight:600;">${(l.quantity * l.unitPrice).toFixed(0)} MAD</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;">${l.unitPriceTTC.toFixed(0)} MAD</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;font-weight:600;">${(l.quantity * l.unitPriceTTC).toFixed(0)} MAD</td>
       </tr>
     `).join('')
 
@@ -631,8 +639,8 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
             <tr style="background:#0A0A0A;color:white;">
               <th style="padding:12px;font-size:12px;text-align:left;text-transform:uppercase;letter-spacing:0.05em;border-radius:6px 0 0 6px;">Description</th>
               <th style="padding:12px;font-size:12px;text-align:center;text-transform:uppercase;letter-spacing:0.05em;">Qté</th>
-              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;">P.U. HT</th>
-              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;border-radius:0 6px 6px 0;">Total HT</th>
+              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;">P.U. TTC</th>
+              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;border-radius:0 6px 6px 0;">Total TTC</th>
             </tr>
           </thead>
           <tbody>${linesHtml}</tbody>
@@ -640,17 +648,17 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
 
         <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
           <div style="width:280px;">
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
-              <span style="font-size:13px;color:#666;">Total HT</span>
-              <span style="font-size:13px;font-weight:600;">${totalHT.toFixed(0)} MAD</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;">
-              <span style="font-size:13px;color:#666;">TVA (20%)</span>
-              <span style="font-size:13px;font-weight:600;">${tva.toFixed(0)} MAD</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;background:#f0fafa;border-radius:6px;padding:12px 16px;margin-top:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#f0fafa;border-radius:6px;padding:12px 16px;margin-bottom:4px;">
               <span style="font-size:16px;font-weight:800;">Total TTC</span>
               <span style="font-size:16px;font-weight:800;color:#43BCC9;">${totalTTC.toFixed(0)} MAD</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:6px 16px;">
+              <span style="font-size:12px;color:#888;">dont HT</span>
+              <span style="font-size:12px;color:#888;">${totalHT.toFixed(0)} MAD</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:6px 16px;">
+              <span style="font-size:12px;color:#888;">dont TVA (20%)</span>
+              <span style="font-size:12px;color:#888;">${tva.toFixed(0)} MAD</span>
             </div>
           </div>
         </div>
@@ -1319,7 +1327,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
             <div style={{ marginBottom: '24px' }}>
               <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#F0C040', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>Prestations estimées</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px' }}>
-                {['Description', 'Qté', 'P.U. HT (MAD)', 'Total HT', ''].map(h => (
+                {['Description', 'Qté', 'P.U. TTC (MAD)', 'Total TTC', ''].map(h => (
                   <div key={h} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
                 ))}
               </div>
@@ -1327,8 +1335,11 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                   <input value={line.description} onChange={e => updateQuoteLine(i, 'description', e.target.value)} placeholder="Vidange & Filtres — Toyota Hilux" style={inputStyle} />
                   <input value={line.quantity} type="number" min="1" onChange={e => updateQuoteLine(i, 'quantity', parseFloat(e.target.value) || 1)} style={inputStyle} />
-                  <input value={line.unitPrice} type="number" min="0" onChange={e => updateQuoteLine(i, 'unitPrice', parseFloat(e.target.value) || 0)} style={inputStyle} />
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#F0C040', padding: '0 4px' }}>{(line.quantity * line.unitPrice).toFixed(0)} MAD</div>
+                  <div>
+                    <input value={line.unitPriceTTC} type="number" min="0" onChange={e => updateQuoteLine(i, 'unitPriceTTC', parseFloat(e.target.value) || 0)} style={inputStyle} />
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', lineHeight: 1.25 }}>Prix client, TVA incluse</div>
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#F0C040', padding: '0 4px' }}>{(line.quantity * line.unitPriceTTC).toFixed(0)} MAD</div>
                   {quoteData.lines.length > 1 ? (
                     <button onClick={() => removeQuoteLine(i)} style={{ background: 'none', border: 'none', color: '#FF4444', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: 0 }}>×</button>
                   ) : <div />}
@@ -1338,17 +1349,17 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
             </div>
 
             <div style={{ marginLeft: 'auto', width: '280px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Sous-total HT</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{quoteTotalHT.toFixed(0)} MAD</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: 'white' }}>TOTAL TTC</span>
+                <span style={{ fontSize: '20px', fontWeight: 800, color: '#43BCC9', fontFamily: 'Space Grotesk, sans-serif' }}>{quoteTotalTTC.toFixed(0)} MAD</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>TVA (20%)</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{quoteTva.toFixed(0)} MAD</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>dont HT</span>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{quoteTotalHT.toFixed(0)} MAD</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: 'white' }}>Total TTC</span>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: '#F0C040' }}>{quoteTotalTTC.toFixed(0)} MAD</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>dont TVA (20%)</span>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{quoteTva.toFixed(0)} MAD</span>
               </div>
             </div>
 
@@ -1396,7 +1407,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
             <div style={{ marginBottom: '24px' }}>
               <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#43BCC9', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>Prestations</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px' }}>
-                {['Description', 'Qté', 'P.U. HT (MAD)', 'Total HT', ''].map(h => (
+                {['Description', 'Qté', 'P.U. TTC (MAD)', 'Total TTC', ''].map(h => (
                   <div key={h} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
                 ))}
               </div>
@@ -1404,8 +1415,11 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                   <input value={line.description} onChange={e => updateLine(i, 'description', e.target.value)} placeholder="Vidange & Filtres — Toyota Hilux" style={inputStyle} />
                   <input value={line.quantity} type="number" min="1" onChange={e => updateLine(i, 'quantity', parseFloat(e.target.value) || 1)} style={inputStyle} />
-                  <input value={line.unitPrice} type="number" min="0" onChange={e => updateLine(i, 'unitPrice', parseFloat(e.target.value) || 0)} style={inputStyle} />
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#43BCC9', padding: '0 4px' }}>{(line.quantity * line.unitPrice).toFixed(0)} MAD</div>
+                  <div>
+                    <input value={line.unitPriceTTC} type="number" min="0" onChange={e => updateLine(i, 'unitPriceTTC', parseFloat(e.target.value) || 0)} style={inputStyle} />
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', lineHeight: 1.25 }}>Prix client, TVA incluse</div>
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#43BCC9', padding: '0 4px' }}>{(line.quantity * line.unitPriceTTC).toFixed(0)} MAD</div>
                   {invoiceData.lines.length > 1 ? (
                     <button onClick={() => removeLine(i)} style={{ background: 'none', border: 'none', color: '#FF4444', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: 0 }}>×</button>
                   ) : <div />}
@@ -1415,17 +1429,17 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
             </div>
 
             <div style={{ marginLeft: 'auto', width: '280px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Total HT</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{totalHT.toFixed(0)} MAD</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: 'white' }}>TOTAL TTC</span>
+                <span style={{ fontSize: '20px', fontWeight: 800, color: '#43BCC9', fontFamily: 'Space Grotesk, sans-serif' }}>{totalTTC.toFixed(0)} MAD</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>TVA (20%)</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{tva.toFixed(0)} MAD</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>dont HT</span>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{totalHT.toFixed(0)} MAD</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: 'white' }}>Total TTC</span>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: '#43BCC9' }}>{totalTTC.toFixed(0)} MAD</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>dont TVA (20%)</span>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{tva.toFixed(0)} MAD</span>
               </div>
             </div>
 
