@@ -327,7 +327,7 @@ export default function AdminDashboard() {
             <ClientsTab customers={customers} bookings={bookings} />
           )}
           {activeTab === 'finances' && (
-            <FinancesTab financeBookings={financeBookings} financeLoading={financeLoading} />
+            <FinancesTab financeBookings={financeBookings} financeLoading={financeLoading} mechanics={mechanics} bookings={bookings} />
           )}
           {activeTab === 'reviews' && (
             <ReviewsTab />

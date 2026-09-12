@@ -7,18 +7,62 @@ import {
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import { SERVICES as PRICING_SERVICES, getTotalRevenuePerIntervention, type Zone } from '../../../data/pricing'
-import { type FinanceBooking } from '../adminShared'
+import { type FinanceBooking, type Booking, type ServiceDetail, normalizeDetailType } from '../adminShared'
 import { supabase } from '../../../lib/supabase'
-import { computeQuoteTotals, computeOfflineTotals, getBookingRevenueTTC, ttcToHT } from '../../../lib/bookingUtils'
+import { computeQuoteTotals, computeOfflineTotals, ttcToHT, getCustomerName, getCustomerPhone } from '../../../lib/bookingUtils'
+import {
+  type Invoice, invoiceTotals, invoiceLineItems, sumInvoiceTotals, isBillable,
+  insertInvoice, nextInvoiceNumber, printInvoiceDocument, formatInvoiceDate,
+  invoiceMoneyColumns as invoiceMoneyColumnsFrom,
+} from '../../../lib/invoices'
+import { useAuth } from '../../../hooks/useAuth'
+import { type Period, inPeriod, getPeriodLabel, PeriodPills } from './finances/period'
+import { PAYMENT_METHODS } from './finances/ui'
+import InvoicesSection from './finances/InvoicesSection'
+import MechanicPayrollSection from './finances/MechanicPayrollSection'
+import TvaPanel from './finances/TvaPanel'
 
 interface Props {
+  /** Completed platform bookings — used only to flag the ones never invoiced. */
   financeBookings: FinanceBooking[]
   financeLoading: boolean
+  mechanics: { id: string; full_name: string | null }[]
+  /** Recent bookings, for the "Réservation liée" picker. */
+  bookings: Booking[]
 }
 
-/** Manual devis/facture line. unitPriceTTC is TTC per unit — the price the client pays. */
-type InvoiceLine = { description: string; quantity: number; unitPriceTTC: number }
-type Period = 'month' | 'quarter' | 'year' | 'all'
+/** Manual devis/facture line. unitPriceTTC is TTC per unit — the price the client pays.
+ *  The type matters: only 'labor' lines feed the mechanic's 65% share. */
+type LineType = 'material' | 'labor' | 'discount'
+type InvoiceLine = { type: LineType; description: string; quantity: number; unitPriceTTC: number }
+
+const LINE_TYPES: { key: LineType; emoji: string; label: string; color: string; bg: string }[] = [
+  { key: 'material', emoji: '🔩', label: 'Pièce',        color: '#43BCC9', bg: 'rgba(67,188,201,0.15)' },
+  { key: 'labor',    emoji: '🔧', label: "Main d'œuvre", color: '#F0C040', bg: 'rgba(240,192,64,0.15)' },
+  { key: 'discount', emoji: '🎁', label: 'Remise',       color: '#FF6B6B', bg: 'rgba(255,107,107,0.15)' },
+]
+
+function todayISO(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function emptyInvoice() {
+  return {
+    clientName: '',
+    clientAddress: '',
+    clientPhone: '',
+    clientICE: '',
+    invoiceDate: todayISO(),
+    technicianName: '',
+    bookingId: null as string | null,
+    serviceName: '',
+    paymentStatus: 'unpaid' as 'unpaid' | 'paid',
+    paymentMethod: 'Espèces',
+    lines: [{ type: 'material', description: '', quantity: 1, unitPriceTTC: 0 }] as InvoiceLine[],
+    notes: '',
+  }
+}
 type ExpenseCategory = 'loyer' | 'salaires' | 'marketing' | 'transport' | 'tech' | 'admin' | 'insurance' | 'autre'
 
 interface Expense {
@@ -45,13 +89,6 @@ interface OfflineEntry {
   created_at: string
 }
 
-const PERIOD_OPTS: { key: Period; label: string }[] = [
-  { key: 'month',   label: 'Ce mois' },
-  { key: 'quarter', label: 'Ce trimestre' },
-  { key: 'year',    label: 'Cette année' },
-  { key: 'all',     label: 'Tout' },
-]
-
 const EXP_CATS: { key: ExpenseCategory; label: string; emoji: string; color: string }[] = [
   { key: 'loyer',     label: 'Loyer',        emoji: '🏢', color: '#43BCC9' },
   { key: 'salaires',  label: 'Salaires',     emoji: '👤', color: '#F0C040' },
@@ -63,50 +100,65 @@ const EXP_CATS: { key: ExpenseCategory; label: string; emoji: string; color: str
   { key: 'autre',     label: 'Autre',        emoji: '📦', color: 'rgba(255,255,255,0.5)' },
 ]
 
-// All booking money math comes from the shared TTC-first helpers in bookingUtils —
-// no local arithmetic here, so the P&L can never drift from the quote screens.
+// All money math comes from the shared TTC-first helpers (computeQuoteTotals via
+// lib/invoices, computeOfflineTotals) — the adapters below only reshape data.
 
-/** Revenue (TTC) for one booking. */
-function bookingRevenueTTC(b: any): number {
-  return getBookingRevenueTTC(b.service_details, b.amount_ttc)
+/** Manual lines → service_details shape, dropping untouched blank rows. */
+function invoiceLinesToDetails(lines: InvoiceLine[]): ServiceDetail[] {
+  return lines
+    .filter(l => l.description.trim() || l.unitPriceTTC > 0)
+    .map(l => ({ type: l.type, name: l.description.trim(), quantity: String(l.quantity), unit_price: l.unitPriceTTC }))
 }
-/** Materials COGS is HT: line items are TTC, so divide by 1.2. */
-function bookingMaterialsHT(b: any): number {
-  return ttcToHT(computeQuoteTotals(b.service_details, b.amount_ttc).materialsTTC)
+
+/**
+ * Pre-fill invoice lines from a linked booking's quote — only when that quote is in
+ * the TTC convention (its lines sum to the stored amount_ttc). Pre-cutover quotes
+ * stored HT unit prices; copying those as TTC would under-bill by 20%.
+ */
+function bookingInvoiceLines(b: Booking): InvoiceLine[] | null {
+  const details = (b.service_details ?? []).filter(d => normalizeDetailType(d.type) !== 'vat')
+  if (details.length === 0 || !b.amount_ttc) return null
+  if (Math.abs(computeQuoteTotals(details).totalTTC - b.amount_ttc) > 1) return null
+  return details.map(d => ({
+    type: normalizeDetailType(d.type) as LineType,
+    description: d.name,
+    quantity: parseFloat(d.quantity ?? '1') || 1,
+    unitPriceTTC: Number(d.unit_price) || 0,
+  }))
 }
-/** The mechanic's 65% of the HT labour base (TVA is never split). */
-function bookingMechanicShare(b: any): number {
-  return computeQuoteTotals(b.service_details, b.amount_ttc).mechanicShare
+
+/** Field-wise sum of computeOfflineTotals (pure addition). */
+function sumOffline(entries: OfflineEntry[]) {
+  return entries.reduce((a, e) => {
+    const o = computeOfflineTotals(e)
+    return {
+      totalTTC: a.totalTTC + o.totalTTC, totalHT: a.totalHT + o.totalHT, totalTVA: a.totalTVA + o.totalTVA,
+      materialsHT: a.materialsHT + o.materialsHT, labourHT: a.labourHT + o.labourHT,
+      mechanicShare: a.mechanicShare + o.mechanicShare, mecalikShare: a.mecalikShare + o.mecalikShare,
+    }
+  }, { totalTTC: 0, totalHT: 0, totalTVA: 0, materialsHT: 0, labourHT: 0, mechanicShare: 0, mecalikShare: 0 })
+}
+
+/** An invoice in the booking-shaped row the Grand Livre expects. */
+function invoiceAsLedgerEntry(i: Invoice) {
+  return {
+    id: i.id,
+    created_at: i.invoice_date,
+    service_name: i.service_name ?? '',
+    amount_ttc: invoiceTotals(i).totalTTC,
+    reference: i.invoice_number,
+    profiles: { full_name: i.customer_name },
+    service_details: invoiceLineItems(i),
+  }
 }
 
 function fmt(n: number) {
   return n.toLocaleString('fr-MA', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' MAD'
 }
 
-function inPeriod(dateStr: string, period: Period): boolean {
-  if (period === 'all') return true
-  const d = new Date(dateStr)
-  const now = new Date()
-  if (period === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-  if (period === 'year') return d.getFullYear() === now.getFullYear()
-  if (period === 'quarter') {
-    const q = Math.floor(now.getMonth() / 3)
-    const dq = Math.floor(d.getMonth() / 3)
-    return dq === q && d.getFullYear() === now.getFullYear()
-  }
-  return true
-}
-
-function getPeriodLabel(p: Period): string {
-  const now = new Date()
-  if (p === 'month')   return now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-  if (p === 'quarter') return `T${Math.floor(now.getMonth() / 3) + 1} ${now.getFullYear()}`
-  if (p === 'year')    return `Année ${now.getFullYear()}`
-  return 'Toutes périodes'
-}
-
-export default function FinancesTab({ financeBookings, financeLoading }: Props) {
+export default function FinancesTab({ financeBookings, financeLoading, mechanics, bookings }: Props) {
   const { i18n } = useTranslation()
+  const { user } = useAuth()
   const [selectedZone, setSelectedZone] = useState<Zone>('zone1')
   const [period, setPeriod] = useState<Period>('month')
 
@@ -155,24 +207,23 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     quoteNumber: `DEV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Date.now()).slice(-4)}`,
     quoteDate: new Date().toLocaleDateString('fr-MA'),
     validityDays: 30,
-    lines: [{ description: '', quantity: 1, unitPriceTTC: 0 }] as InvoiceLine[],
+    lines: [{ type: 'material', description: '', quantity: 1, unitPriceTTC: 0 }] as InvoiceLine[],
     notes: '',
   })
 
   // ── Invoice modal state ───────────────────────────────────────────────────
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
-  const [invoiceData, setInvoiceData] = useState({
-    clientName: '',
-    clientAddress: '',
-    clientPhone: '',
-    clientEmail: '',
-    clientICE: '',
-    invoiceNumber: `FAC-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
-    invoiceDate: new Date().toLocaleDateString('fr-MA'),
-    lines: [{ description: '', quantity: 1, unitPriceTTC: 0 }] as InvoiceLine[],
-    paymentMethod: 'Espèces',
-    notes: '',
-  })
+  const [invoiceData, setInvoiceData] = useState(emptyInvoice)
+  const [invoiceSaving, setInvoiceSaving] = useState(false)
+  const [invoiceError, setInvoiceError] = useState<string | null>(null)
+  const [nextNumberPreview, setNextNumberPreview] = useState('')
+  const [bookingSearch, setBookingSearch] = useState('')
+  const [linkNote, setLinkNote] = useState<string | null>(null)
+
+  // ── Invoices (persisted) ──────────────────────────────────────────────────
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [invoicesLoading, setInvoicesLoading] = useState(true)
+  const [invoicesError, setInvoicesError] = useState<string | null>(null)
 
   // ── Fetch data ────────────────────────────────────────────────────────────
   const fetchExpenses = useCallback(() => {
@@ -201,6 +252,26 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     return () => { supabase.removeChannel(channel) }
   }, [fetchExpenses])
 
+  const fetchInvoices = useCallback(async () => {
+    const { data, error } = await supabase.from('invoices').select('*').order('invoice_date', { ascending: false })
+    if (error) setInvoicesError(error.message)
+    else {
+      setInvoices((data as Invoice[]) ?? [])
+      setInvoicesError(null)
+    }
+    setInvoicesLoading(false)
+  }, [])
+
+  useEffect(() => { fetchInvoices() }, [fetchInvoices])
+
+  // Live updates: another admin creating/editing an invoice, or marking a mechanic paid.
+  useEffect(() => {
+    const channel = supabase.channel('finances-invoices-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => { fetchInvoices() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [fetchInvoices])
+
   // ── Shared input styles ───────────────────────────────────────────────────
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '9px 12px', borderRadius: '8px',
@@ -222,30 +293,21 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     const rows: string[][] = [
       ['Type', 'Date', 'Référence', 'Client', 'Service', 'TTC (MAD)', 'HT (MAD)', 'TVA (MAD)', 'Matériaux TTC (MAD)', "Main d'œuvre TTC (MAD)", 'Remise TTC (MAD)', 'Base MO HT (MAD)', 'Mécanicien 65% (MAD)', 'Profit MecaLIK 35% (MAD)'],
     ]
-    financeBookings.forEach((b: any) => {
-      const q = computeQuoteTotals(b.service_details, b.amount_ttc)
-      const ttc = getBookingRevenueTTC(b.service_details, b.amount_ttc)
-      const ht = ttcToHT(ttc)
-      rows.push(['Plateforme', new Date(b.created_at).toLocaleDateString('fr-MA'), b.reference || '', b.profiles?.full_name || '', b.service_name || '', ttc.toFixed(2), ht.toFixed(2), (ttc - ht).toFixed(2), q.materialsTTC.toFixed(2), q.labourTTC.toFixed(2), q.discountTTC.toFixed(2), q.labourHT.toFixed(2), q.mechanicShare.toFixed(2), q.mecalikShare.toFixed(2)])
+    const billable = invoices.filter(isBillable)
+    billable.forEach(inv => {
+      const t = invoiceTotals(inv)
+      rows.push(['Facture', formatInvoiceDate(inv.invoice_date), inv.invoice_number, inv.customer_name || '', inv.service_name || '', t.totalTTC.toFixed(2), t.totalHT.toFixed(2), t.totalTVA.toFixed(2), t.materialsTTC.toFixed(2), t.labourTTC.toFixed(2), t.discountTTC.toFixed(2), t.labourHT.toFixed(2), t.mechanicShare.toFixed(2), t.mecalikShare.toFixed(2)])
     })
     offlineEntries.forEach(e => {
       const o = computeOfflineTotals(e)
       rows.push(['Offline', e.date, 'OFFLINE', e.client_name || 'Client', e.service_name || '', o.totalTTC.toFixed(2), o.totalHT.toFixed(2), o.totalTVA.toFixed(2), (e.materials_cost || 0).toFixed(2), (e.labor_cost ?? 0).toFixed(2), '0.00', o.labourHT.toFixed(2), o.mechanicShare.toFixed(2), o.mecalikShare.toFixed(2)])
     })
-    const allTTC  = financeBookings.reduce((s, b: any) => s + getBookingRevenueTTC(b.service_details, b.amount_ttc), 0)
-                  + offlineEntries.reduce((s, e) => s + computeOfflineTotals(e).totalTTC, 0)
-    const allHT   = ttcToHT(allTTC)
-    const allMats = financeBookings.reduce((s, b: any) => s + computeQuoteTotals(b.service_details, b.amount_ttc).materialsTTC, 0)
-                  + offlineEntries.reduce((s, e) => s + (e.materials_cost || 0), 0)
-    const allLabHT = financeBookings.reduce((s, b: any) => s + computeQuoteTotals(b.service_details, b.amount_ttc).labourHT, 0)
-                   + offlineEntries.reduce((s, e) => s + computeOfflineTotals(e).labourHT, 0)
-    const allMech  = financeBookings.reduce((s, b: any) => s + computeQuoteTotals(b.service_details, b.amount_ttc).mechanicShare, 0)
-                   + offlineEntries.reduce((s, e) => s + computeOfflineTotals(e).mechanicShare, 0)
-    const allProfit = financeBookings.reduce((s, b: any) => s + computeQuoteTotals(b.service_details, b.amount_ttc).mecalikShare, 0)
-                    + offlineEntries.reduce((s, e) => s + computeOfflineTotals(e).mecalikShare, 0)
-    rows.push(['TOTAL', '', '', '', '', allTTC.toFixed(2), allHT.toFixed(2), (allTTC - allHT).toFixed(2), allMats.toFixed(2), '', '', allLabHT.toFixed(2), allMech.toFixed(2), allProfit.toFixed(2)])
+    const it = sumInvoiceTotals(billable)
+    const ot = sumOffline(offlineEntries)
+    const allMatsTTC = it.materialsTTC + offlineEntries.reduce((s, e) => s + (e.materials_cost || 0), 0)
+    rows.push(['TOTAL', '', '', '', '', (it.totalTTC + ot.totalTTC).toFixed(2), (it.totalHT + ot.totalHT).toFixed(2), (it.totalTVA + ot.totalTVA).toFixed(2), allMatsTTC.toFixed(2), '', '', (it.labourHT + ot.labourHT).toFixed(2), (it.mechanicShare + ot.mechanicShare).toFixed(2), (it.mecalikShare + ot.mecalikShare).toFixed(2)])
     const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url; a.download = `rapport-mecalik-${dateStr}.csv`
@@ -275,7 +337,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     const { generateLedger } = await import('../../../utils/generateLedger')
     generateLedger({
       periodLabel: getPeriodLabel(period),
-      bookings:    filteredBookings as any[],
+      bookings:    filteredInvoices.map(invoiceAsLedgerEntry),
       offline:     filteredOffline,
       expenses:    filteredExpenses,
     })
@@ -286,7 +348,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     generateVatDeclaration({
       quarter:  tvaQuarter,
       year:     tvaYear,
-      bookings: financeBookings as any[],
+      bookings: invoices.filter(isBillable).map(i => ({ created_at: i.invoice_date, amount_ttc: invoiceTotals(i).totalTTC })),
       offline:  offlineEntries,
       expenses,
     })
@@ -294,49 +356,123 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
   }
 
   // ── Invoice helpers ───────────────────────────────────────────────────────
-  // Adapter: the manual devis/facture line shape differs from service_details, so map
-  // onto it and reuse the shared TTC math rather than duplicating the formula.
-  const invoiceLineTotals = (lines: InvoiceLine[]) => computeQuoteTotals(
-    lines.map(l => ({
-      type: 'material' as const,
-      name: l.description,
-      quantity: String(l.quantity),
-      unit_price: l.unitPriceTTC,
-    })),
-  )
+  const invoiceLineTotals = (lines: InvoiceLine[]) => computeQuoteTotals(invoiceLinesToDetails(lines))
 
-  const { totalTTC, totalHT, totalTVA: tva } = invoiceLineTotals(invoiceData.lines)
-
-  const addLine    = () => setInvoiceData(p => ({ ...p, lines: [...p.lines, { description: '', quantity: 1, unitPriceTTC: 0 }] }))
+  const addLine    = () => setInvoiceData(p => ({ ...p, lines: [...p.lines, { type: 'material', description: '', quantity: 1, unitPriceTTC: 0 }] }))
   const removeLine = (i: number) => setInvoiceData(p => ({ ...p, lines: p.lines.filter((_, j) => j !== i) }))
   const updateLine = (i: number, field: keyof InvoiceLine, val: string | number) =>
     setInvoiceData(p => ({ ...p, lines: p.lines.map((l, j) => j === i ? { ...l, [field]: val } : l) }))
 
+  const openInvoiceModal = () => {
+    setInvoiceData(emptyInvoice())
+    setInvoiceError(null)
+    setBookingSearch('')
+    setLinkNote(null)
+    setNextNumberPreview('')
+    setShowInvoiceModal(true)
+    nextInvoiceNumber(new Date().getFullYear()).then(setNextNumberPreview).catch(() => setNextNumberPreview(''))
+  }
+
+  const linkBooking = (b: Booking) => {
+    const lines = bookingInvoiceLines(b)
+    const name = getCustomerName(b)
+    setInvoiceData(p => ({
+      ...p,
+      bookingId: b.id,
+      clientName: name !== 'Client' ? name : p.clientName,
+      clientPhone: getCustomerPhone(b) ?? p.clientPhone,
+      clientAddress: b.address || p.clientAddress,
+      technicianName: b.technician_name || p.technicianName,
+      serviceName: b.service_name || p.serviceName,
+      lines: lines ?? p.lines,
+    }))
+    setBookingSearch('')
+    setLinkNote(lines
+      ? `Client, technicien et ${lines.length} ligne(s) repris du devis.`
+      : b.service_details?.length
+        ? "Client et technicien repris. Lignes du devis non reprises (devis HT d'avant la bascule TTC) — saisissez les prix TTC."
+        : 'Client et technicien repris.')
+  }
+
+  /** Persist first, print second: an invoice that exists on paper but not in the
+   *  system is exactly the gap this closes. If the insert fails, no PDF. */
+  const saveInvoice = async () => {
+    if (invoiceSaving) return
+    const lines = invoiceLinesToDetails(invoiceData.lines)
+    const draft = computeQuoteTotals(lines)
+    const missing: string[] = []
+    if (!invoiceData.clientName.trim()) missing.push('nom du client')
+    if (!invoiceData.technicianName) missing.push('technicien')
+    if (!invoiceData.invoiceDate) missing.push('date de facture')
+    if (draft.totalTTC <= 0) missing.push('au moins une prestation chiffrée')
+    if (missing.length) { setInvoiceError(`Champs requis : ${missing.join(', ')}.`); return }
+
+    // Open the print window synchronously inside the click — after the await, the
+    // popup blocker would swallow it.
+    const printWin = window.open('', '_blank')
+    printWin?.document.write('<p style="font-family:Arial,sans-serif;padding:40px;color:#666">Enregistrement de la facture…</p>')
+
+    setInvoiceSaving(true)
+    setInvoiceError(null)
+    const { invoice, error } = await insertInvoice({
+      invoice_date:     invoiceData.invoiceDate,
+      booking_id:       invoiceData.bookingId,
+      customer_name:    invoiceData.clientName.trim(),
+      customer_phone:   invoiceData.clientPhone.trim() || null,
+      customer_address: invoiceData.clientAddress.trim() || null,
+      customer_ice:     invoiceData.clientICE.trim() || null,
+      service_name:     invoiceData.serviceName.trim() || null,
+      technician_name:  invoiceData.technicianName,
+      line_items:       lines,
+      ...invoiceMoneyColumnsFrom(lines),
+      payment_status:   invoiceData.paymentStatus,
+      paid_at:          invoiceData.paymentStatus === 'paid' ? new Date().toISOString() : null,
+      payment_method:   invoiceData.paymentMethod || null,
+      mechanic_paid:    false,
+      mechanic_paid_at: null,
+      notes:            invoiceData.notes.trim() || null,
+      created_by:       user?.id ?? null,
+    })
+    setInvoiceSaving(false)
+
+    if (error || !invoice) {
+      printWin?.close()
+      setInvoiceError(`La facture n'a pas été enregistrée — aucun PDF généré. ${error ?? ''}`)
+      return
+    }
+    printInvoiceDocument(invoice, printWin)
+    setInvoices(prev => [invoice, ...prev.filter(i => i.id !== invoice.id)])
+    setShowInvoiceModal(false)
+    fetchInvoices()
+  }
+
   const { totalTTC: quoteTotalTTC, totalHT: quoteTotalHT, totalTVA: quoteTva } = invoiceLineTotals(quoteData.lines)
 
-  const addQuoteLine    = () => setQuoteData(p => ({ ...p, lines: [...p.lines, { description: '', quantity: 1, unitPriceTTC: 0 }] }))
+  const addQuoteLine    = () => setQuoteData(p => ({ ...p, lines: [...p.lines, { type: 'material', description: '', quantity: 1, unitPriceTTC: 0 }] }))
   const removeQuoteLine = (i: number) => setQuoteData(p => ({ ...p, lines: p.lines.filter((_, j) => j !== i) }))
   const updateQuoteLine = (i: number, field: keyof InvoiceLine, val: string | number) =>
     setQuoteData(p => ({ ...p, lines: p.lines.map((l, j) => j === i ? { ...l, [field]: val } : l) }))
 
   // ── P&L computations (period-filtered) ───────────────────────────────────
-  const filteredBookings = financeBookings.filter(b => inPeriod(b.created_at, period))
+  // Revenue source of truth is the invoice — the legal document — plus offline cash
+  // jobs, which never get a formal invoice. Completed bookings no longer feed revenue
+  // directly: once invoiced, counting both would double the revenue.
+  const filteredInvoices = invoices.filter(isBillable).filter(i => inPeriod(i.invoice_date, period))
   const filteredOffline  = offlineEntries.filter(e => inPeriod(e.date, period))
   const filteredExpenses = expenses.filter(e => inPeriod(e.date, period))
 
-  // Revenue is TTC; COGS are HT (materials HT + the mechanic's 65% of the HT
-  // labour base). TVA is collected for the state and never enters COGS.
-  const platformRevTTC = filteredBookings.reduce((s, b: any) => s + bookingRevenueTTC(b), 0)
-  const offlineRevTTC  = filteredOffline.reduce((s, e) => s + computeOfflineTotals(e).totalTTC, 0)
+  const invTotals = sumInvoiceTotals(filteredInvoices)
+  const offTotals = sumOffline(filteredOffline)
+
+  // Revenue is HT; TVA is collected for the state and shown separately, never as revenue.
+  const platformRevTTC = invTotals.totalTTC
+  const offlineRevTTC  = offTotals.totalTTC
   const revTTC       = platformRevTTC + offlineRevTTC
-  const revHT        = ttcToHT(revTTC)
-  const tvaCollected = revTTC - revHT
+  const revHT        = invTotals.totalHT + offTotals.totalHT
+  const tvaCollected = invTotals.totalTVA + offTotals.totalTVA
 
-  const totalMats    = filteredBookings.reduce((s, b: any) => s + bookingMaterialsHT(b), 0)
-                     + filteredOffline.reduce((s, e) => s + computeOfflineTotals(e).materialsHT, 0)
-
-  const mechanicPayout = filteredBookings.reduce((s, b: any) => s + bookingMechanicShare(b), 0)
-                       + filteredOffline.reduce((s, e) => s + computeOfflineTotals(e).mechanicShare, 0)
+  const totalMats      = ttcToHT(invTotals.materialsTTC) + offTotals.materialsHT
+  const mechanicPayout = invTotals.mechanicShare + offTotals.mechanicShare
 
   const cogs           = totalMats + mechanicPayout
   const grossProfit    = revHT - cogs
@@ -345,6 +481,10 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
   const totalOpex  = filteredExpenses.reduce((s, e) => s + (e.amount_ttc || 0), 0)
   const netProfit  = grossProfit - totalOpex
   const netMargin  = revHT > 0 ? (netProfit / revHT * 100) : 0
+
+  // Completed bookings never invoiced are now invisible to revenue — surface them.
+  const invoicedBookingIds = new Set(invoices.map(i => i.booking_id).filter((id): id is string => !!id))
+  const uninvoicedBookings = financeBookings.filter(b => !invoicedBookingIds.has(b.id))
 
   // ── 12-month chart data ───────────────────────────────────────────────────
   const now = new Date()
@@ -358,13 +498,12 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     const d = new Date(thisYear, thisMonth - 11 + i, 1)
     const m = d.getMonth(), y = d.getFullYear()
     const inM = (s: string) => { const dd = new Date(s); return dd.getMonth() === m && dd.getFullYear() === y }
-    const mRevTTC = financeBookings.filter(b => inM(b.created_at)).reduce((s, b: any) => s + bookingRevenueTTC(b), 0)
-                  + offlineEntries.filter(e => inM(e.date)).reduce((s, e) => s + computeOfflineTotals(e).totalTTC, 0)
-    const mRevHT  = ttcToHT(mRevTTC)
-    const mMatsHT = financeBookings.filter(b => inM(b.created_at)).reduce((s, b: any) => s + bookingMaterialsHT(b), 0)
-                  + offlineEntries.filter(e => inM(e.date)).reduce((s, e) => s + computeOfflineTotals(e).materialsHT, 0)
-    const mMech   = financeBookings.filter(b => inM(b.created_at)).reduce((s, b: any) => s + bookingMechanicShare(b), 0)
-                  + offlineEntries.filter(e => inM(e.date)).reduce((s, e) => s + computeOfflineTotals(e).mechanicShare, 0)
+    const mInv = sumInvoiceTotals(invoices.filter(isBillable).filter(i => inM(i.invoice_date)))
+    const mOff = sumOffline(offlineEntries.filter(e => inM(e.date)))
+    const mRevTTC = mInv.totalTTC + mOff.totalTTC
+    const mRevHT  = mInv.totalHT + mOff.totalHT
+    const mMatsHT = ttcToHT(mInv.materialsTTC) + mOff.materialsHT
+    const mMech   = mInv.mechanicShare + mOff.mechanicShare
     const mOpex   = expenses.filter(e => inM(e.date)).reduce((s, e) => s + (e.amount_ttc || 0), 0)
     const mNet    = mRevHT - mMatsHT - mMech - mOpex
     return { month: monthLabels[m], revenueTTC: Math.round(mRevTTC), netProfit: Math.round(mNet) }
@@ -563,152 +702,6 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
     setTimeout(() => printWindow.print(), 500)
   }
 
-  const handlePrintInvoice = () => {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
-
-    const linesHtml = invoiceData.lines.map(l => `
-      <tr>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;">${l.description || '—'}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:center;">${l.quantity}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;">${l.unitPriceTTC.toFixed(0)} MAD</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;text-align:right;font-weight:600;">${(l.quantity * l.unitPriceTTC).toFixed(0)} MAD</td>
-      </tr>
-    `).join('')
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="fr">
-      <head>
-        <meta charset="UTF-8">
-        <title>Facture ${invoiceData.invoiceNumber} — MecaLIK</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: Arial, sans-serif; color: #1a1a1a; background: white; padding: 40px; }
-          @media print { body { padding: 20px; } .no-print { display: none; } }
-        </style>
-      </head>
-      <body>
-
-        <!-- Header -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;padding-bottom:24px;border-bottom:3px solid #43BCC9;">
-          <div style="display:flex;align-items:center;gap:14px;">
-            <img src="https://mecalik.com/icons/icon-192x192.png"
-                 style="width:56px;height:56px;border-radius:10px;object-fit:contain;background:#0A0A0A;padding:4px;"
-                 alt="MecaLIK Logo"
-            />
-            <div>
-              <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;line-height:1;">
-                Meca<span style="color:#43BCC9;">LIK</span>
-              </div>
-              <div style="font-size:11px;color:#666;margin-top:2px;letter-spacing:0.03em;">
-                Your car, your place. Our problem.
-              </div>
-            </div>
-          </div>
-          <div></div>
-        </div>
-
-        <!-- Invoice title + client info -->
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;gap:24px;">
-          <div style="flex:1;padding:16px 20px;background:#f8f9fa;border-radius:8px;border-left:4px solid #43BCC9;">
-            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:8px;">Facturé à</div>
-            <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${invoiceData.clientName || '—'}</div>
-            ${invoiceData.clientAddress ? `<div style="font-size:13px;color:#444;">${invoiceData.clientAddress}</div>` : ''}
-            ${invoiceData.clientPhone ? `<div style="font-size:13px;color:#444;">Tél : ${invoiceData.clientPhone}</div>` : ''}
-            ${invoiceData.clientEmail ? `<div style="font-size:13px;color:#444;">Email : ${invoiceData.clientEmail}</div>` : ''}
-            ${invoiceData.clientICE ? `<div style="font-size:13px;color:#444;">ICE : ${invoiceData.clientICE}</div>` : ''}
-          </div>
-          <div style="text-align:right;min-width:220px;">
-            <div style="font-size:32px;font-weight:800;color:#1a1a1a;margin-bottom:10px;">FACTURE</div>
-            <table style="font-size:13px;margin-left:auto;">
-              <tr>
-                <td style="color:#666;padding:3px 8px 3px 0;">N° Facture :</td>
-                <td style="font-weight:700;">${invoiceData.invoiceNumber}</td>
-              </tr>
-              <tr>
-                <td style="color:#666;padding:3px 8px 3px 0;">Date :</td>
-                <td style="font-weight:700;">${invoiceData.invoiceDate}</td>
-              </tr>
-            </table>
-          </div>
-        </div>
-
-        <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-          <thead>
-            <tr style="background:#0A0A0A;color:white;">
-              <th style="padding:12px;font-size:12px;text-align:left;text-transform:uppercase;letter-spacing:0.05em;border-radius:6px 0 0 6px;">Description</th>
-              <th style="padding:12px;font-size:12px;text-align:center;text-transform:uppercase;letter-spacing:0.05em;">Qté</th>
-              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;">P.U. TTC</th>
-              <th style="padding:12px;font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:0.05em;border-radius:0 6px 6px 0;">Total TTC</th>
-            </tr>
-          </thead>
-          <tbody>${linesHtml}</tbody>
-        </table>
-
-        <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
-          <div style="width:280px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;background:#f0fafa;border-radius:6px;padding:12px 16px;margin-bottom:4px;">
-              <span style="font-size:16px;font-weight:800;">Total TTC</span>
-              <span style="font-size:16px;font-weight:800;color:#43BCC9;">${totalTTC.toFixed(0)} MAD</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:6px 16px;">
-              <span style="font-size:12px;color:#888;">dont HT</span>
-              <span style="font-size:12px;color:#888;">${totalHT.toFixed(0)} MAD</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;padding:6px 16px;">
-              <span style="font-size:12px;color:#888;">dont TVA (20%)</span>
-              <span style="font-size:12px;color:#888;">${tva.toFixed(0)} MAD</span>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:40px;">
-          <div style="padding:16px;background:#f8f9fa;border-radius:8px;">
-            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:6px;">Mode de paiement</div>
-            <div style="font-size:14px;font-weight:600;">${invoiceData.paymentMethod}</div>
-          </div>
-          ${invoiceData.notes ? `
-          <div style="padding:16px;background:#f8f9fa;border-radius:8px;">
-            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#666;margin-bottom:6px;">Notes</div>
-            <div style="font-size:13px;color:#444;">${invoiceData.notes}</div>
-          </div>` : '<div></div>'}
-        </div>
-
-        <!-- System generated notice -->
-        <div style="text-align:center;margin:24px 0 16px;">
-          <span style="display:inline-block;padding:6px 16px;border-radius:20px;border:1px solid #43BCC9;font-size:11px;color:#43BCC9;letter-spacing:0.05em;">
-            ✦ Document généré électroniquement — Ne nécessite pas de cachet ni de signature
-          </span>
-        </div>
-
-        <!-- Footer -->
-        <div style="border-top:2px solid #f0f0f0;padding-top:20px;text-align:center;margin-top:40px;">
-          <div style="font-size:13px;color:#333;font-weight:600;margin-bottom:6px;">
-            +212 777 348 065 &nbsp;·&nbsp; hello@mecalik.com
-          </div>
-          <div style="font-size:12px;color:#555;margin-bottom:4px;">
-            82 ANG BD Abdelmoumen et Soumaya, Résidence Shahrazad 1 Etg 4 Appt 17, Casablanca, Maroc
-          </div>
-          <div style="font-size:11px;color:#888;">
-            MecaLIK SARL AU &nbsp;·&nbsp; ICE : 003942374000016 &nbsp;·&nbsp; RC : 726381 &nbsp;·&nbsp; IF : 72071701
-          </div>
-        </div>
-
-        <div class="no-print" style="text-align:center;margin-top:24px;">
-          <button onclick="window.print()" style="padding:12px 32px;background:#43BCC9;color:#0A0A0A;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
-            🖨️ Imprimer / Enregistrer en PDF
-          </button>
-        </div>
-
-      </body>
-      </html>
-    `)
-    printWindow.document.close()
-    printWindow.focus()
-    setTimeout(() => printWindow.print(), 500)
-  }
-
   return (
     <>
       {/* ══════════════════════════════════════════════════════════════ */}
@@ -721,35 +714,20 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
           📊 Compte de Résultat
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          {/* Period selector */}
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '3px', gap: '2px' }}>
-            {PERIOD_OPTS.map(p => (
-              <button
-                key={p.key}
-                onClick={() => setPeriod(p.key)}
-                style={{
-                  padding: '6px 12px', borderRadius: '6px', border: 'none',
-                  background: period === p.key ? '#43BCC9' : 'transparent',
-                  color: period === p.key ? '#0A0A0A' : 'rgba(255,255,255,0.5)',
-                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                  fontFamily: 'Outfit, sans-serif', transition: 'all 0.15s',
-                }}
-              >{p.label}</button>
-            ))}
-          </div>
+          <PeriodPills value={period} onChange={setPeriod} />
           <button onClick={downloadReport} style={{ padding: '9px 14px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>
             📊 CSV
           </button>
           <button onClick={() => setShowQuoteModal(true)} style={{ padding: '9px 14px', borderRadius: '8px', background: 'rgba(240,192,64,0.1)', border: '1px solid rgba(240,192,64,0.3)', color: '#F0C040', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>
             📋 Devis
           </button>
-          <button onClick={() => setShowInvoiceModal(true)} style={{ padding: '9px 16px', borderRadius: '8px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>
+          <button onClick={openInvoiceModal} style={{ padding: '9px 16px', borderRadius: '8px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>
             📄 Facture
           </button>
         </div>
       </div>
 
-      {financeLoading ? (
+      {financeLoading || invoicesLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
           <div className="w-8 h-8 rounded-full border-2 border-[#43BCC9] border-t-transparent animate-spin" />
         </div>
@@ -780,7 +758,7 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
                 Compte de résultat
               </div>
               {([
-                { label: 'CA TTC',                    value: revTTC,          color: 'white',                  indent: false, sep: false },
+                { label: 'CA TTC (factures + offline)', value: revTTC,          color: 'white',                  indent: false, sep: false },
                 { label: '− TVA collectée (20%)',     value: -tvaCollected,   color: '#F0C040',                indent: true,  sep: false },
                 { label: 'CA Hors Taxes',             value: revHT,           color: 'white',                  indent: false, sep: true,  bold: true },
                 { label: '− Matériaux HT (COGS)',     value: -totalMats,      color: 'rgba(255,255,255,0.5)',  indent: true,  sep: false },
@@ -837,6 +815,39 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
       )}
 
       {/* ══════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* FACTURES                                                      */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+
+      <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '24px 0' }} />
+
+      {uninvoicedBookings.length > 0 && (
+        <div style={{ padding: '10px 14px', borderRadius: '10px', marginBottom: '14px', background: 'rgba(240,192,64,0.07)', border: '1px solid rgba(240,192,64,0.25)', fontSize: '12px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
+          ⚠️ <strong style={{ color: '#F0C040' }}>{uninvoicedBookings.length} réservation{uninvoicedBookings.length > 1 ? 's' : ''} terminée{uninvoicedBookings.length > 1 ? 's' : ''} sans facture</strong> — elles ne comptent plus dans le chiffre d'affaires.
+          Créez la facture via « Nouvelle facture › Réservation liée ».
+        </div>
+      )}
+
+      <InvoicesSection
+        invoices={invoices}
+        mechanics={mechanics}
+        loading={invoicesLoading}
+        error={invoicesError}
+        onNew={openInvoiceModal}
+        onChanged={fetchInvoices}
+      />
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* PAIE MÉCANICIENS + TVA                                        */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+
+      <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '24px 0' }} />
+
+      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <MechanicPayrollSection invoices={invoices} onChanged={fetchInvoices} />
+        <TvaPanel invoices={filteredInvoices} expenses={filteredExpenses} periodLabel={getPeriodLabel(period)} />
+      </div>
+
       {/* RAPPORTS                                                      */}
       {/* ══════════════════════════════════════════════════════════════ */}
 
@@ -1372,92 +1383,230 @@ export default function FinancesTab({ financeBookings, financeLoading }: Props) 
       )}
 
       {/* ══════════════════════════════════════════════════════════════ */}
-      {/* INVOICE MODAL                                                */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      {showInvoiceModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '800px', background: '#111114', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', padding: '32px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>📄 Nouvelle Facture</h2>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>Remplissez les informations pour générer la facture</p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handlePrintInvoice} style={{ padding: '9px 18px', borderRadius: '8px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>🖨️ Imprimer</button>
-                <button onClick={() => setShowInvoiceModal(false)} style={{ padding: '9px 14px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>✕</button>
-              </div>
-            </div>
+      {/* INVOICE MODAL — persisted to public.invoices, then printed     */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {showInvoiceModal && (() => {
+        const draft = invoiceLineTotals(invoiceData.lines)
+        const q = bookingSearch.trim().toLowerCase()
+        const bookingMatches = q
+          ? bookings
+              .filter(b => b.status !== 'cancelled' && ((b.reference ?? '').toLowerCase().includes(q) || getCustomerName(b).toLowerCase().includes(q)))
+              .slice(0, 8)
+          : []
+        const linked = invoiceData.bookingId ? bookings.find(b => b.id === invoiceData.bookingId) ?? null : null
+        const invoicedIds = new Set(invoices.map(i => i.booking_id).filter((id): id is string => !!id))
+        const mechanicNames = mechanics.map(m => m.full_name).filter((n): n is string => !!n)
+        if (invoiceData.technicianName && !mechanicNames.includes(invoiceData.technicianName)) mechanicNames.unshift(invoiceData.technicianName)
+        const closeModal = () => { if (!invoiceSaving) setShowInvoiceModal(false) }
+        const sectionTitle: React.CSSProperties = { fontSize: '13px', fontWeight: 700, color: '#43BCC9', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 12px' }
+        const grid: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '12px', overflowY: 'auto' }}>
+            <div style={{ width: '100%', maxWidth: '800px', background: '#111114', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', padding: 'clamp(16px, 4vw, 32px)', margin: '8px 0 24px' }}>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
-              <div><label style={labelStyle}>N° Facture</label><input value={invoiceData.invoiceNumber} onChange={e => setInvoiceData(p => ({ ...p, invoiceNumber: e.target.value }))} style={inputStyle} /></div>
-              <div><label style={labelStyle}>Date</label><input value={invoiceData.invoiceDate} onChange={e => setInvoiceData(p => ({ ...p, invoiceDate: e.target.value }))} style={inputStyle} /></div>
-            </div>
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', gap: '12px' }}>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'white', margin: '0 0 4px' }}>📄 Nouvelle Facture</h2>
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', margin: 0 }}>
+                    N° attribué à l'enregistrement
+                    {nextNumberPreview && <> — prochain : <span style={{ fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)' }}>{nextNumberPreview}</span></>}
+                  </p>
+                </div>
+                <button onClick={closeModal} disabled={invoiceSaving} style={{ padding: '9px 14px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>✕</button>
+              </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#43BCC9', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>Informations Client</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div><label style={labelStyle}>Nom / Société</label><input value={invoiceData.clientName} onChange={e => setInvoiceData(p => ({ ...p, clientName: e.target.value }))} placeholder="Transport Express Casablanca" style={inputStyle} /></div>
-                <div><label style={labelStyle}>Téléphone</label><input value={invoiceData.clientPhone} onChange={e => setInvoiceData(p => ({ ...p, clientPhone: e.target.value }))} placeholder="06 XX XX XX XX" style={inputStyle} /></div>
+              {/* Facture */}
+              <div style={{ ...grid, marginBottom: '24px' }}>
+                <div>
+                  <label style={labelStyle}>Date de facture *</label>
+                  <input type="date" value={invoiceData.invoiceDate} onChange={e => setInvoiceData(p => ({ ...p, invoiceDate: e.target.value }))} style={{ ...inputStyle, colorScheme: 'dark' }} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Statut de paiement</label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {([['unpaid', 'Non payé', '#F0C040', 'rgba(240,192,64,0.12)'], ['paid', 'Payé', '#00DD88', 'rgba(0,221,136,0.12)']] as const).map(([key, label, color, bg]) => {
+                      const active = invoiceData.paymentStatus === key
+                      return (
+                        <button key={key} onClick={() => setInvoiceData(p => ({ ...p, paymentStatus: key }))} style={{
+                          flex: 1, padding: '9px 6px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700, fontFamily: 'Outfit, sans-serif',
+                          border: `1px solid ${active ? color : 'rgba(255,255,255,0.1)'}`,
+                          background: active ? bg : 'rgba(255,255,255,0.03)',
+                          color: active ? color : 'rgba(255,255,255,0.4)',
+                        }}>{label}</button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>Mode de paiement</label>
+                  <select value={invoiceData.paymentMethod} onChange={e => setInvoiceData(p => ({ ...p, paymentMethod: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
+                    {PAYMENT_METHODS.map(m => <option key={m}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Intervention */}
+              <h3 style={sectionTitle}>Intervention</h3>
+              <div style={{ ...grid, marginBottom: linkNote ? '8px' : '24px' }}>
+                <div>
+                  <label style={labelStyle}>Technicien *</label>
+                  <select value={invoiceData.technicianName} onChange={e => setInvoiceData(p => ({ ...p, technicianName: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
+                    <option value="">— Choisir le technicien —</option>
+                    {mechanicNames.map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>Requis — sa part (65% de la MO HT) en dépend</div>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Réservation liée (optionnel)</label>
+                  {linked ? (
+                    <>
+                      <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(67,188,201,0.08)', borderColor: 'rgba(67,188,201,0.3)' }}>
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontFamily: 'monospace', color: '#43BCC9' }}>{linked.reference ?? linked.id.slice(0, 8)}</span> · {getCustomerName(linked)}
+                        </span>
+                        <button onClick={() => { setInvoiceData(p => ({ ...p, bookingId: null })); setLinkNote(null) }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 0 }}>✕</button>
+                      </div>
+                      {invoicedIds.has(linked.id) && <div style={{ fontSize: '11px', color: '#F0C040', marginTop: '4px' }}>⚠️ Cette réservation a déjà une facture.</div>}
+                    </>
+                  ) : (
+                    <div style={{ position: 'relative' }}>
+                      <input value={bookingSearch} onChange={e => setBookingSearch(e.target.value)} placeholder="Réf. MK-… ou nom du client" style={inputStyle} />
+                      {q && (
+                        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 5, background: '#1a1a1f', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', maxHeight: '240px', overflowY: 'auto', boxShadow: '0 12px 30px rgba(0,0,0,0.5)' }}>
+                          {bookingMatches.length === 0 ? (
+                            <div style={{ padding: '10px 12px', fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Aucune réservation trouvée</div>
+                          ) : bookingMatches.map(b => (
+                            <button key={b.id} onClick={() => linkBooking(b)} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', background: 'none', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'white', fontSize: '12.5px', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>
+                              <span style={{ fontFamily: 'monospace', color: '#43BCC9' }}>{b.reference ?? b.id.slice(0, 8)}</span> · {getCustomerName(b)}
+                              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
+                                {b.service_name}{b.technician_name ? ` · ${b.technician_name}` : ''}{invoicedIds.has(b.id) ? ' · déjà facturée' : ''}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Prestation</label>
+                  <input value={invoiceData.serviceName} onChange={e => setInvoiceData(p => ({ ...p, serviceName: e.target.value }))} placeholder="Ex: Vidange & Filtres" style={inputStyle} />
+                </div>
+              </div>
+              {linkNote && <div style={{ fontSize: '11px', color: '#43BCC9', marginBottom: '24px' }}>ℹ️ {linkNote}</div>}
+
+              {/* Client */}
+              <h3 style={sectionTitle}>Informations Client</h3>
+              <div style={{ ...grid, marginBottom: '24px' }}>
+                <div><label style={labelStyle}>Nom / Société *</label><input value={invoiceData.clientName} onChange={e => setInvoiceData(p => ({ ...p, clientName: e.target.value }))} placeholder="Transport Express Casablanca" style={inputStyle} /></div>
+                <div><label style={labelStyle}>Téléphone</label><input type="tel" inputMode="tel" value={invoiceData.clientPhone} onChange={e => setInvoiceData(p => ({ ...p, clientPhone: e.target.value }))} placeholder="06 XX XX XX XX" style={inputStyle} /></div>
                 <div><label style={labelStyle}>Adresse</label><input value={invoiceData.clientAddress} onChange={e => setInvoiceData(p => ({ ...p, clientAddress: e.target.value }))} placeholder="Casablanca, Maroc" style={inputStyle} /></div>
-                <div><label style={labelStyle}>Email</label><input value={invoiceData.clientEmail} onChange={e => setInvoiceData(p => ({ ...p, clientEmail: e.target.value }))} placeholder="contact@entreprise.ma" style={inputStyle} /></div>
                 <div><label style={labelStyle}>ICE (optionnel)</label><input value={invoiceData.clientICE} onChange={e => setInvoiceData(p => ({ ...p, clientICE: e.target.value }))} placeholder="ICE de l'entreprise" style={inputStyle} /></div>
               </div>
-            </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#43BCC9', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>Prestations</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px' }}>
-                {['Description', 'Qté', 'P.U. TTC (MAD)', 'Total TTC', ''].map(h => (
-                  <div key={h} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
-                ))}
-              </div>
-              {invoiceData.lines.map((line, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 110px 100px 32px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                  <input value={line.description} onChange={e => updateLine(i, 'description', e.target.value)} placeholder="Vidange & Filtres — Toyota Hilux" style={inputStyle} />
-                  <input value={line.quantity} type="number" min="1" onChange={e => updateLine(i, 'quantity', parseFloat(e.target.value) || 1)} style={inputStyle} />
-                  <div>
-                    <input value={line.unitPriceTTC} type="number" min="0" onChange={e => updateLine(i, 'unitPriceTTC', parseFloat(e.target.value) || 0)} style={inputStyle} />
-                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', lineHeight: 1.25 }}>Prix client, TVA incluse</div>
+              {/* Prestations */}
+              <h3 style={sectionTitle}>Prestations</h3>
+              {invoiceData.lines.map((line, i) => {
+                const lineTotal = line.quantity * line.unitPriceTTC
+                return (
+                  <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '10px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                        {LINE_TYPES.map(lt => {
+                          const active = line.type === lt.key
+                          return (
+                            <button key={lt.key} onClick={() => updateLine(i, 'type', lt.key)} title={lt.label} style={{
+                              padding: '7px 9px', borderRadius: '7px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 600,
+                              fontFamily: 'Outfit, sans-serif', whiteSpace: 'nowrap',
+                              background: active ? lt.bg : 'rgba(255,255,255,0.04)',
+                              color: active ? lt.color : 'rgba(255,255,255,0.35)',
+                            }}>{lt.emoji} {lt.label}</button>
+                          )
+                        })}
+                      </div>
+                      <input value={line.description} onChange={e => updateLine(i, 'description', e.target.value)} placeholder="Vidange & Filtres — Toyota Hilux" style={{ ...inputStyle, flex: '1 1 200px', width: 'auto' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                      <div style={{ width: '80px' }}>
+                        <label style={labelStyle}>Qté</label>
+                        <input value={line.quantity} type="number" min="1" inputMode="decimal" onChange={e => updateLine(i, 'quantity', parseFloat(e.target.value) || 1)} style={inputStyle} />
+                      </div>
+                      <div style={{ flex: '1 1 140px' }}>
+                        <label style={labelStyle}>P.U. TTC (MAD)</label>
+                        <input value={line.unitPriceTTC} type="number" min="0" inputMode="decimal" onChange={e => updateLine(i, 'unitPriceTTC', parseFloat(e.target.value) || 0)} style={inputStyle} />
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '3px', lineHeight: 1.25 }}>Prix client, TVA incluse</div>
+                      </div>
+                      <div style={{ flex: '1 1 110px', textAlign: 'right' }}>
+                        <label style={{ ...labelStyle, textAlign: 'right' }}>Total TTC</label>
+                        <div style={{ fontSize: '15px', fontWeight: 700, color: line.type === 'discount' ? '#FF6B6B' : '#43BCC9', padding: '8px 0' }}>
+                          {line.type === 'discount' ? '−' : ''}{lineTotal.toFixed(2)} MAD
+                        </div>
+                      </div>
+                      {invoiceData.lines.length > 1 && (
+                        <button onClick={() => removeLine(i)} style={{ alignSelf: 'center', background: 'rgba(255,68,68,0.1)', border: 'none', color: '#FF4444', cursor: 'pointer', fontSize: '18px', lineHeight: 1, width: '32px', height: '32px', borderRadius: '8px' }}>×</button>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#43BCC9', padding: '0 4px' }}>{(line.quantity * line.unitPriceTTC).toFixed(0)} MAD</div>
-                  {invoiceData.lines.length > 1 ? (
-                    <button onClick={() => removeLine(i)} style={{ background: 'none', border: 'none', color: '#FF4444', cursor: 'pointer', fontSize: '20px', lineHeight: 1, padding: 0 }}>×</button>
-                  ) : <div />}
-                </div>
-              ))}
+                )
+              })}
               <button onClick={addLine} style={{ padding: '8px 14px', borderRadius: '8px', marginTop: '4px', background: 'rgba(67,188,201,0.08)', border: '1px dashed rgba(67,188,201,0.3)', color: '#43BCC9', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>+ Ajouter une ligne</button>
-            </div>
 
-            <div style={{ marginLeft: 'auto', width: '280px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: 'white' }}>TOTAL TTC</span>
-                <span style={{ fontSize: '20px', fontWeight: 800, color: '#43BCC9', fontFamily: 'Space Grotesk, sans-serif' }}>{totalTTC.toFixed(0)} MAD</span>
+              {/* Totals — TTC leads; HT and TVA are components of it */}
+              <div style={{ width: '100%', maxWidth: '320px', margin: '20px 0 24px auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: 'white' }}>TOTAL TTC</span>
+                  <span style={{ fontSize: '20px', fontWeight: 800, color: '#43BCC9', fontFamily: 'Space Grotesk, sans-serif' }}>{draft.totalTTC.toFixed(2)} MAD</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>dont HT</span>
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{draft.totalHT.toFixed(2)} MAD</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>dont TVA (20%)</span>
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{draft.totalTVA.toFixed(2)} MAD</span>
+                </div>
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '6px 0' }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>Part technicien (65% MO HT)</span>
+                  <span style={{ fontSize: '12px', color: '#FF6B6B', fontWeight: 600 }}>{draft.mechanicShare.toFixed(2)} MAD</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>Profit MecaLIK (35%)</span>
+                  <span style={{ fontSize: '12px', color: '#43BCC9', fontWeight: 600 }}>{draft.mecalikShare.toFixed(2)} MAD</span>
+                </div>
+                {draft.totalTTC > 0 && draft.labourTTC === 0 && (
+                  <div style={{ fontSize: '11px', color: '#F0C040', marginTop: '6px', lineHeight: 1.4 }}>
+                    ⚠️ Aucune ligne « Main d'œuvre » — la part technicien sera de 0 MAD.
+                  </div>
+                )}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>dont HT</span>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{totalHT.toFixed(0)} MAD</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>dont TVA (20%)</span>
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{tva.toFixed(0)} MAD</span>
-              </div>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={labelStyle}>Mode de paiement</label>
-                <select value={invoiceData.paymentMethod} onChange={e => setInvoiceData(p => ({ ...p, paymentMethod: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
-                  <option>Espèces</option><option>Virement bancaire</option><option>Chèque</option><option>Carte bancaire</option>
-                </select>
-              </div>
-              <div>
+              {/* Notes */}
+              <div style={{ marginBottom: '20px' }}>
                 <label style={labelStyle}>Notes / Observations</label>
                 <textarea value={invoiceData.notes} onChange={e => setInvoiceData(p => ({ ...p, notes: e.target.value }))} placeholder="Paiement à 30 jours..." rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
               </div>
+
+              {invoiceError && (
+                <div style={{ padding: '12px 14px', borderRadius: '10px', marginBottom: '16px', background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.35)', color: '#FF8888', fontSize: '13px', lineHeight: 1.45 }}>
+                  {invoiceError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <button onClick={closeModal} disabled={invoiceSaving} style={{ padding: '11px 18px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}>Annuler</button>
+                <button onClick={saveInvoice} disabled={invoiceSaving} style={{ padding: '11px 22px', borderRadius: '10px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, cursor: invoiceSaving ? 'wait' : 'pointer', fontFamily: 'Outfit, sans-serif', opacity: invoiceSaving ? 0.7 : 1 }}>
+                  {invoiceSaving ? 'Enregistrement…' : '💾 Enregistrer & générer la facture'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </>
   )
 }

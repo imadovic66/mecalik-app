@@ -119,7 +119,7 @@ export function generatePLReport(data: PLReportData): void {
 
   // ── REVENUS ────────────────────────────────────────────────────
   sectionBar('REVENUS')
-  row('Réservations plateforme', data.platformRevTTC, { indent: true })
+  row('Factures émises', data.platformRevTTC, { indent: true })
   row('Interventions offline',   data.offlineRevTTC,   { indent: true })
   sep()
   row('TOTAL REVENUS TTC', data.revTTC,       { bold: true, textColor: TEAL })
