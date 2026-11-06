@@ -11,17 +11,17 @@ const SERVICE_SCHEMAS = [
   {
     serviceType: 'Vidange à Domicile',
     description: 'Vidange moteur complète avec remplacement du filtre à huile d\'origine. Vérification des niveaux incluse. Prix confirmé selon votre modèle avant intervention.',
-    minPrice: 250,
+    minPrice: 805,
   },
   {
     serviceType: 'Remplacement Batterie à Domicile',
     description: 'Diagnostic complet de votre batterie, remplacement si nécessaire. Toutes marques, tous gabarits. Notre technicien vient avec les batteries les plus courantes en stock.',
-    minPrice: 210,
+    minPrice: 870,
   },
   {
     serviceType: 'Diagnostic Auto à Domicile',
     description: "Lecture complète des codes erreur OBD, bilan de l'état général du véhicule. Rapport détaillé fourni. Idéal avant un achat de voiture d'occasion ou en cas de voyant allumé.",
-    minPrice: 220,
+    minPrice: 250,
   },
   {
     serviceType: 'Urgence & Dépannage à Domicile',

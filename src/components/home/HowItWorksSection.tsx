@@ -140,9 +140,9 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                   <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <div className="text-xs uppercase tracking-wide mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>{t('landing.quoteDetail')}</div>
                     {[
-                      { labelKey: 'landing.quoteLabour',    value: '180 MAD' },
-                      { labelKey: 'landing.quoteMotorOil',  value: '220 MAD' },
-                      { labelKey: 'landing.quoteOilFilter', value: '45 MAD' },
+                      { labelKey: 'landing.quoteLabour',    value: '250 MAD' },
+                      { labelKey: 'landing.quoteMotorOil',  value: '520 MAD' },
+                      { labelKey: 'landing.quoteOilFilter', value: '35 MAD' },
                       { labelKey: 'landing.quoteTravel',    value: '0 MAD' },
                     ].map(row => (
                       <div key={row.labelKey} className="flex justify-between py-1.5">
@@ -152,7 +152,7 @@ export default function HowItWorksSection({ onBookNow }: Props) {
                     ))}
                     <div className="flex justify-between pt-3 mt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
                       <span className="text-sm font-bold" style={{ color: 'white' }}>{t('landing.quoteTotalTTC')}</span>
-                      <span className="text-base font-bold" style={{ color: 'var(--mk-action)' }}>445 MAD</span>
+                      <span className="text-base font-bold" style={{ color: 'var(--mk-action)' }}>805 MAD</span>
                     </div>
                   </div>
                   <div className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>{t('landing.quoteGuaranteed')}</div>

@@ -12,21 +12,21 @@ export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export const SERVICE_PRICES: Record<string, { fr: string; en: string }> = {
   'lavage auto':          { fr: 'À partir de 150 MAD', en: 'From 150 MAD' },
   'car wash':             { fr: 'À partir de 150 MAD', en: 'From 150 MAD' },
-  'vidange':              { fr: 'À partir de 250 MAD', en: 'From 250 MAD' },
-  'vidange & filtres':    { fr: 'À partir de 250 MAD', en: 'From 250 MAD' },
-  'oil change & filters': { fr: 'À partir de 250 MAD', en: 'From 250 MAD' },
-  'batterie':             { fr: 'À partir de 210 MAD', en: 'From 210 MAD' },
-  'battery':              { fr: 'À partir de 210 MAD', en: 'From 210 MAD' },
+  'vidange':              { fr: 'À partir de 805 MAD', en: 'From 805 MAD' },
+  'vidange & filtres':    { fr: 'À partir de 805 MAD', en: 'From 805 MAD' },
+  'oil change & filters': { fr: 'À partir de 805 MAD', en: 'From 805 MAD' },
+  'batterie':             { fr: 'À partir de 870 MAD', en: 'From 870 MAD' },
+  'battery':              { fr: 'À partir de 870 MAD', en: 'From 870 MAD' },
   'pneus':                { fr: 'À partir de 200 MAD', en: 'From 200 MAD' },
   'tyres':                { fr: 'À partir de 200 MAD', en: 'From 200 MAD' },
-  'diagnostic':           { fr: 'À partir de 220 MAD', en: 'From 220 MAD' },
-  'diagnostic simple':    { fr: 'À partir de 220 MAD', en: 'From 220 MAD' },
-  'urgence':              { fr: 'Sur devis', en: 'On quote' },
-  'urgence & dépannage':  { fr: 'Sur devis', en: 'On quote' },
-  'emergency & roadside': { fr: 'Sur devis', en: 'On quote' },
+  'diagnostic':           { fr: 'À partir de 250 MAD', en: 'From 250 MAD' },
+  'diagnostic simple':    { fr: 'À partir de 250 MAD', en: 'From 250 MAD' },
+  'urgence':              { fr: 'À partir de 300 MAD', en: 'From 300 MAD' },
+  'urgence & dépannage':  { fr: 'À partir de 300 MAD', en: 'From 300 MAD' },
+  'emergency & roadside': { fr: 'À partir de 300 MAD', en: 'From 300 MAD' },
   // Legacy keys kept for bookings placed before the "Urgence 24/7" → "Urgence & Dépannage" rename
-  'urgence 24/7':         { fr: 'Sur devis', en: 'On quote' },
-  'emergency 24/7':       { fr: 'Sur devis', en: 'On quote' },
+  'urgence 24/7':         { fr: 'À partir de 300 MAD', en: 'From 300 MAD' },
+  'emergency 24/7':       { fr: 'À partir de 300 MAD', en: 'From 300 MAD' },
 }
 
 export const BOOKING_STATUSES = [

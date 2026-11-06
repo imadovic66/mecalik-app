@@ -67,11 +67,20 @@ export default function Signup() {
           try {
             const booking = JSON.parse(raw)
             await supabase.from('bookings').insert({
-              user_id:       data.user.id,
-              service_name:  booking.service,
-              address:       booking.address,
-              address_notes: booking.notes || null,
-              status:        'pending',
+              user_id:          data.user.id,
+              service_name:     booking.service_name || booking.service,
+              address:          booking.address,
+              address_notes:    booking.address_notes ?? (booking.notes || null),
+              status:           'pending',
+              source:           'platform',
+              package_id:       booking.package_id ?? null,
+              vehicle_model_id: booking.vehicle_model_id ?? null,
+              vehicle_label:    booking.vehicle_label ?? null,
+              vehicle_tier:     booking.vehicle_tier ?? null,
+              slot_type:        booking.slot_type ?? null,
+              preferred_date:   booking.preferred_date ?? null,
+              preferred_window: booking.preferred_window ?? null,
+              symptom:          booking.symptom ?? null,
             })
             sessionStorage.removeItem('pendingBooking')
           } catch (e) {

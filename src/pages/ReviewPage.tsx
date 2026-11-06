@@ -58,10 +58,7 @@ export default function ReviewPage() {
   useEffect(() => {
     if (!token) { setNotFound(true); setLoading(false); return }
     supabase
-      .from('bookings')
-      .select('id, reference, service_name, technician_name, completed_at, rating, review_submitted_at')
-      .eq('review_token', token)
-      .single()
+      .rpc('get_review_booking', { p_token: token })
       .then(({ data, error }) => {
         if (error || !data) { setNotFound(true) } else { setBooking(data as ReviewBooking) }
         setLoading(false)
@@ -72,17 +69,11 @@ export default function ReviewPage() {
     if (rating === 0 || !token) return
     setSubmitting(true)
     setSubmitError('')
-    const { error } = await supabase
-      .from('bookings')
-      .update({
-        rating,
-        rating_comment: comment.trim() || null,
-        reviewer_name: name.trim() || null,
-        review_submitted_at: new Date().toISOString(),
-      })
-      .eq('review_token', token)
+    const { data: ok, error } = await supabase.rpc('submit_review', {
+      p_token: token, p_rating: rating, p_comment: comment.trim() || null, p_name: name.trim() || null,
+    })
 
-    if (error) {
+    if (error || !ok) {
       setSubmitError('Une erreur est survenue. Veuillez réessayer.')
       setSubmitting(false)
       return

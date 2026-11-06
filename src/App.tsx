@@ -9,7 +9,6 @@ import Home from './pages/Home'
 import Services from './pages/Services'
 import Fleet from './pages/Fleet'
 import About from './pages/About'
-import QuoteCalculator from './pages/QuoteCalculator'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
 import CustomerDashboard from './pages/dashboard/CustomerDashboard'
@@ -78,7 +77,7 @@ function AppShell() {
           <Route path="/tarifs"   element={<PublicRoute><Tarifs /></PublicRoute>} />
           <Route path="/flottes"  element={<PublicRoute><Flottes /></PublicRoute>} />
           <Route path="/faq"      element={<PublicRoute><FAQ /></PublicRoute>} />
-          <Route path="/devis"    element={<QuoteCalculator />} />
+          <Route path="/devis"    element={<Navigate to="/tarifs" replace />} />
           <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup"   element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/booking/:id" element={<BookingConfirmation />} />

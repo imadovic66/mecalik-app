@@ -429,11 +429,13 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                     <option value="completed">{t('status.completed')}</option>
                     <option value="cancelled">{t('status.cancelled')}</option>
                   </select>
-                  {/* Amount inline input */}
+                  {/* Amount inline input — falls back to the firm catalogue price */}
+                  <div onClick={e => e.stopPropagation()}>
                   <input
                     type="number"
                     defaultValue={booking.amount_ttc ?? ''}
-                    placeholder="MAD"
+                    placeholder={booking.price_quoted_ttc ? String(booking.price_quoted_ttc) : 'MAD'}
+                    title={booking.price_breakdown?.package ? `Prix ferme : ${booking.price_quoted_ttc} MAD — ${booking.price_breakdown.package}` : undefined}
                     onClick={e => e.stopPropagation()}
                     onBlur={async e => {
                       const val = parseFloat(e.target.value)
@@ -450,6 +452,10 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                       outline: 'none', fontFamily: 'inherit', padding: '2px 0',
                     }}
                   />
+                  {booking.price_quoted_ttc != null && !booking.amount_ttc && (
+                    <div style={{ fontSize: '9px', color: 'rgba(67,188,201,0.8)', marginTop: '2px', whiteSpace: 'nowrap' }}>ferme {booking.price_quoted_ttc}</div>
+                  )}
+                  </div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
                     {new Date(booking.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })}
                   </div>
@@ -481,6 +487,16 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                     .reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
                   return (
                     <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      {(booking.price_quoted_ttc != null || booking.vehicle_label || booking.symptom || booking.preferred_window) && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '14px', padding: '10px 12px', background: 'rgba(67,188,201,0.05)', border: '1px solid rgba(67,188,201,0.15)', borderRadius: '8px' }}>
+                          {booking.reference && <span>Réf <b style={{ color: 'white' }}>{booking.reference}</b></span>}
+                          {booking.price_quoted_ttc != null && <span>Prix ferme <b style={{ color: '#43BCC9' }}>{booking.price_quoted_ttc} MAD TTC</b>{booking.price_breakdown?.package ? ` · ${booking.price_breakdown.package}` : ''}</span>}
+                          {booking.vehicle_label && <span>Véhicule <b style={{ color: 'white' }}>{booking.vehicle_label}</b>{booking.vehicle_tier ? ` (${booking.vehicle_tier})` : ''}</span>}
+                          {booking.symptom && <span>Problème <b style={{ color: 'white' }}>{booking.symptom}</b></span>}
+                          <span>Créneau <b style={{ color: 'white' }}>{booking.slot_type === 'urgent' ? 'Dès que possible' : `${booking.preferred_date ?? ''} ${booking.preferred_window ?? ''}`}</b></span>
+                          {booking.dispatch_alert_at && booking.status === 'pending' && <span style={{ color: '#FF9900' }}>⏰ non acceptée après 15 min</span>}
+                        </div>
+                      )}
                       {isQuotePending && (
                         <div style={{ fontSize: '13px', fontWeight: 700, color: '#F0C040', marginBottom: '14px' }}>
                           Devis soumis par {booking.technician_name || '—'} · {relativeTime(booking.quote_submitted_at)}

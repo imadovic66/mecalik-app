@@ -26,6 +26,7 @@ import ClientsTab        from './tabs/ClientsTab'
 import FinancesTab       from './tabs/FinancesTab'
 import ReviewsTab        from './tabs/ReviewsTab'
 import NotificationsTab  from './tabs/NotificationsTab'
+import CatalogTab        from './tabs/CatalogTab'
 
 export default function AdminDashboard() {
   const { user, profile, signOut } = useAuth()
@@ -196,6 +197,7 @@ export default function AdminDashboard() {
     { tab: 'bookings',      icon: <ShoppingBag size={18} />,     label: t('admin.reservations')  },
     { tab: 'customers',     icon: <Users size={18} />,           label: t('admin.clients')       },
     { tab: 'finances',      icon: <TrendingUp size={18} />,      label: t('admin.finances')      },
+    { tab: 'catalog',       icon: <Tag size={18} />,             label: t('admin.catalog')       },
     { tab: 'reviews',       icon: <Star size={18} />,            label: t('admin.reviews')       },
     { tab: 'notifications', icon: <Bell size={18} />,            label: t('admin.notifications') },
   ]
@@ -220,6 +222,7 @@ export default function AdminDashboard() {
             { tab: 'bookings'      as Tab, labelKey: 'admin.reservations',  icon: ShoppingBag     },
             { tab: 'customers'     as Tab, labelKey: 'admin.clients',       icon: Users           },
             { tab: 'finances'      as Tab, labelKey: 'admin.finances',      icon: TrendingUp      },
+            { tab: 'catalog'       as Tab, labelKey: 'admin.catalog',       icon: Tag             },
             { tab: 'reviews'       as Tab, labelKey: 'admin.reviews',       icon: Star            },
             { tab: 'notifications' as Tab, labelKey: 'admin.notifications', icon: Bell            },
           ] as const).map(item => {
@@ -329,6 +332,7 @@ export default function AdminDashboard() {
           {activeTab === 'finances' && (
             <FinancesTab financeBookings={financeBookings} financeLoading={financeLoading} mechanics={mechanics} bookings={bookings} />
           )}
+          {activeTab === 'catalog' && <CatalogTab />}
           {activeTab === 'reviews' && (
             <ReviewsTab />
           )}

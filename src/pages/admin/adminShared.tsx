@@ -54,6 +54,13 @@ export type Booking = {
   source?: string | null
   address_notes?: string | null
   slot_type?: string | null
+  price_quoted_ttc?: number | null
+  price_breakdown?: { package?: string; total_ttc?: number } | null
+  vehicle_tier?: string | null
+  preferred_window?: string | null
+  symptom?: string | null
+  dispatch_alert_at?: string | null
+  accepted_at?: string | null
 }
 
 export type Customer = {
@@ -85,7 +92,7 @@ export type FinanceBooking = {
   service_details?: ServiceDetail[] | null
 }
 
-export type Tab = 'overview' | 'bookings' | 'customers' | 'finances' | 'reviews' | 'notifications'
+export type Tab = 'overview' | 'bookings' | 'customers' | 'finances' | 'catalog' | 'reviews' | 'notifications'
 
 export const STATUS_CONFIG = {
   pending:       { label: 'En attente',          color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },

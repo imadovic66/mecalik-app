@@ -3,30 +3,28 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { GOOGLE_REVIEW_URL } from '../lib/constants'
 import SEO from '../components/SEO'
-
-const SUPABASE_URL = 'https://nggvlwiisvvjczpyccfj.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nZ3Zsd2lpc3Z2amN6cHljY2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTA3ODksImV4cCI6MjA5MDYyNjc4OX0.qjYAD4YVjEMANIVXfvfbj5O6VvkXqagwZIo_6sbrQ6Y'
+import { supabase } from '../lib/supabase'
 
 const STATUS_STEPS = ['pending', 'confirmed', 'on_the_way', 'in_progress', 'completed']
 
 const SERVICE_PRICES: Record<string, string> = {
   'lavage auto':          'À partir de 150 MAD',
   'car wash':             'From 150 MAD',
-  'vidange':              'À partir de 250 MAD',
-  'vidange & filtres':    'À partir de 250 MAD',
-  'oil change & filters': 'From 250 MAD',
-  'batterie':             'À partir de 210 MAD',
-  'battery':              'From 210 MAD',
+  'vidange':              'À partir de 805 MAD',
+  'vidange & filtres':    'À partir de 805 MAD',
+  'oil change & filters': 'From 805 MAD',
+  'batterie':             'À partir de 870 MAD',
+  'battery':              'From 870 MAD',
   'pneus':                'À partir de 200 MAD',
   'tyres':                'From 200 MAD',
-  'diagnostic':           'À partir de 220 MAD',
-  'diagnostic simple':    'À partir de 220 MAD',
-  'urgence':              'Sur devis',
-  'urgence & dépannage':  'Sur devis',
-  'emergency & roadside': 'On quote',
+  'diagnostic':           'À partir de 250 MAD',
+  'diagnostic simple':    'À partir de 250 MAD',
+  'urgence':              'À partir de 300 MAD',
+  'urgence & dépannage':  'À partir de 300 MAD',
+  'emergency & roadside': 'From 300 MAD',
   // Legacy keys kept for bookings placed before the "Urgence 24/7" → "Urgence & Dépannage" rename
-  'urgence 24/7':         'Sur devis',
-  'emergency 24/7':       'On quote',
+  'urgence 24/7':         'À partir de 300 MAD',
+  'emergency 24/7':       'From 300 MAD',
 }
 
 export default function TrackBooking() {
@@ -41,8 +39,9 @@ export default function TrackBooking() {
   const navigate = useNavigate()
 
   const getPrice = (b: any): string => {
-    if (b.status === 'pending') return isFr ? 'En cours de confirmation' : 'Pending confirmation'
     if (b.amount_ttc) return `${b.amount_ttc} MAD`
+    if (b.price_quoted_ttc) return `${b.price_quoted_ttc} MAD TTC${b.package ? ' · ' + b.package : ''}`
+    if (b.status === 'pending') return isFr ? 'En cours de confirmation' : 'Pending confirmation'
     const key = (b.service_name || '').toLowerCase().trim()
     return SERVICE_PRICES[key] || (isFr ? 'Prix à confirmer' : 'Price to confirm')
   }
@@ -55,7 +54,7 @@ export default function TrackBooking() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlRef])
 
-  const isGuestBooking = booking?.notes_admin?.includes('Guest booking')
+  const isGuestBooking = !!booking?.is_guest
 
   useEffect(() => {
     if (booking?.status === 'completed' && isGuestBooking) {
@@ -69,23 +68,13 @@ export default function TrackBooking() {
     setError('')
     setBooking(null)
     try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/bookings?reference=eq.${encodeURIComponent(refToSearch.trim())}&select=reference,service_name,status,address,technician_name,technician_phone,created_at,notes_admin,amount_ttc,rating,rating_comment`,
-        {
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          }
-        }
-      )
-      const data = await res.json()
-      if (!res.ok) throw new Error(JSON.stringify(data))
-      if (!data || data.length === 0) {
+      const { data, error: rpcError } = await supabase.rpc('track_booking', { p_reference: refToSearch.trim() })
+      if (rpcError) throw rpcError
+      if (!data) {
         setError(isFr ? 'Aucune réservation trouvée avec cette référence.' : 'No booking found with this reference.')
         return
       }
-      setBooking(data[0])
+      setBooking(data)
     } catch (err: any) {
       if (import.meta.env.DEV) console.error('TrackBooking error:', err)
       setError(isFr ? 'Erreur de connexion. Réessayez.' : 'Connection error. Please try again.')
@@ -116,7 +105,7 @@ export default function TrackBooking() {
   const statusInfo = booking ? getStatusInfo(booking.status) : null
   const currentStep = STATUS_STEPS.indexOf(booking?.status)
 
-  const guestName = booking?.notes_admin?.match(/Nom:\s*([^|]+)/)?.[1]?.trim()
+  const guestName: string | undefined = undefined
 
   return (
     <div style={{ minHeight: '100vh', background: '#0A0A0A', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px', fontFamily: 'Outfit, sans-serif' }}>

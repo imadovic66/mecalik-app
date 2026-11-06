@@ -2,6 +2,7 @@
  *  pipeline (assign → mechanic quote → admin approve → devis) as website bookings. */
 
 import { useEffect, useMemo, useState } from 'react'
+import { loadCatalog, fmtMAD, type PackagePrice } from '../../../lib/catalog'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../hooks/useAuth'
 import { WHATSAPP_NUMBER } from '../../../lib/constants'
@@ -68,6 +69,9 @@ export default function NewBookingModal({ mechanics, bookings, onClose, onCreate
   const [address, setAddress] = useState('')
   const [addressNotes, setAddressNotes] = useState('')
   const [mechanicId, setMechanicId] = useState('')
+  const [packages, setPackages] = useState<PackagePrice[]>([])
+  const [packageId, setPackageId] = useState('')
+  useEffect(() => { loadCatalog().then(c => setPackages(c.packages)).catch(() => setPackages([])) }, [])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [created, setCreated] = useState<{ reference: string; serviceLabel: string } | null>(null)
@@ -124,6 +128,7 @@ export default function NewBookingModal({ mechanics, bookings, onClose, onCreate
         technician_name: selectedMechanic?.full_name ?? null,
         status:         selectedMechanic ? 'confirmed' : 'pending',
         source:         channel,
+        package_id:     packageId || null,
         created_by:     user.id,
         user_id:        null,
       })
@@ -256,13 +261,27 @@ export default function NewBookingModal({ mechanics, bookings, onClose, onCreate
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <label style={labelStyle}>Service *</label>
-                <select value={serviceId} onChange={e => setServiceId(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                <select value={serviceId} onChange={e => { setServiceId(e.target.value); setPackageId('') }} style={{ ...inputStyle, cursor: 'pointer' }}>
                   <option value="">— Choisir un service —</option>
                   {ALL_SERVICES.map(s => (
                     <option key={s.id} value={s.id} style={{ background: '#121212' }}>{s.label}</option>
                   ))}
                 </select>
               </div>
+
+              {packages.some(p => p.service_slug === serviceId) && (
+                <div>
+                  <label style={labelStyle}>Formule — prix ferme</label>
+                  <select value={packageId} onChange={e => setPackageId(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                    <option value="">— Sans formule (prix à fixer) —</option>
+                    {packages.filter(p => p.service_slug === serviceId).map(p => (
+                      <option key={p.package_id} value={p.package_id} style={{ background: '#121212' }}>
+                        {p.name_fr}{p.tier ? ` · taille ${p.tier}` : ''}{p.fuel ? ` · ${p.fuel}` : ''} — {p.price_mode === 'from' ? 'dès ' : ''}{fmtMAD(p.total_ttc)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label style={labelStyle}>Urgence</label>
