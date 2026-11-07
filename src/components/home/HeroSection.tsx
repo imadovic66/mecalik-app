@@ -108,6 +108,14 @@ export default function HeroSection({ onBookNow }: Props) {
                 {t('landing.heroCta')}
                 <ArrowRight size={16} className="group-hover:translate-x-0.5" style={{ transition: 'transform 0.2s' }} />
               </button>
+              <a href="/signup"
+                className="flex items-center gap-2 px-7 py-4 rounded-full font-semibold text-sm transition-colors"
+                style={{ border: '1px solid rgba(67,188,201,0.5)', color: 'var(--mk-action)', background: 'rgba(67,188,201,0.04)', textDecoration: 'none' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(67,188,201,0.1)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(67,188,201,0.04)')}
+              >
+                {t('nav.signup')}
+              </a>
             </div>
 
             {/* Trust micro-row */}

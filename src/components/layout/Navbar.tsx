@@ -91,6 +91,11 @@ export default function Navbar() {
               style={{ color: 'rgba(255,255,255,0.55)' }}>
               {t('nav.login')}
             </Link>
+            <Link to="/signup"
+              className="hidden xl:flex items-center whitespace-nowrap font-semibold px-5 py-2.5 rounded-full text-sm transition-colors"
+              style={{ border: '1px solid rgba(67,188,201,0.5)', color: 'var(--mk-action)' }}>
+              {t('nav.signup')}
+            </Link>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
               className="flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition-colors"
@@ -122,9 +127,21 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <Link to="/login" className="block text-sm py-2" style={{ color: 'var(--mk-action)' }}>
+              <Link to="/login" className="block text-sm py-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 {t('nav.login')}
               </Link>
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => { setMobileOpen(false); window.dispatchEvent(new CustomEvent('openBooking')) }}
+                  className="flex-1 font-semibold px-4 py-2.5 rounded-full text-sm"
+                  style={{ background: 'var(--mk-action)', color: '#080808' }}>
+                  {t('nav.quickQuote')}
+                </button>
+                <Link to="/signup" onClick={() => setMobileOpen(false)}
+                  className="flex-1 text-center font-semibold px-4 py-2.5 rounded-full text-sm"
+                  style={{ border: '1px solid rgba(67,188,201,0.5)', color: 'var(--mk-action)' }}>
+                  {t('nav.signup')}
+                </Link>
+              </div>
             </div>
           </div>
         )}
