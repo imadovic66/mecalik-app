@@ -235,6 +235,17 @@ export default function MechanicDashboard() {
           </div>
         </div>
 
+        {/* ═══ iPHONE: notifications only work from the home-screen app ═══ */}
+        {!supported && /iPhone|iPad|iPod/i.test(navigator.userAgent) && !(window.navigator as Navigator & { standalone?: boolean }).standalone && (
+          <div style={{
+            margin: '12px 16px 0', padding: '12px 16px', borderRadius: '12px',
+            background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.3)',
+            color: '#F0C040', fontSize: '13px', lineHeight: 1.5,
+          }}>
+            📲 <b>Pour recevoir les nouvelles interventions sur iPhone</b> : dans Safari, touchez <b>Partager</b> (carré avec flèche) → <b>Sur l'écran d'accueil</b>. Ouvrez ensuite MecaLIK depuis l'icône et activez les notifications.
+          </div>
+        )}
+
         {/* ═══ PUSH NOTIFICATION PROMPT ═══ */}
         {supported && !subscribed && (
           <div style={{
