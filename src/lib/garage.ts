@@ -32,7 +32,8 @@ export type CarBundle = {
   bookings: { reference: string; service_name: string; status: string; created_at: string; price: number | null }[]
 }
 export type GarageData = {
-  garage: { id: string; name: string | null; phone: string | null; linked: boolean; is_mine: boolean; token: string }
+  garage: { id: string; name: string | null; phone: string | null; linked: boolean; is_mine: boolean; token: string
+    email: string | null; account_email: string | null; notify_email: boolean }
   cars: CarBundle[]
 }
 
@@ -64,6 +65,7 @@ const ERRORS: Record<string, string> = {
   mecalik_entry_locked: 'Les interventions MecaLIK ne peuvent pas être modifiées.',
   garage_linked_to_other_account: 'Ce garage est déjà lié à un autre compte.',
   too_large: 'Fichier trop lourd (8 Mo maximum).',
+  invalid_email: 'Adresse email invalide.',
   bad_type: 'Format accepté : photo (JPG, PNG) ou PDF.',
   too_many_files: 'Maximum 10 fichiers par document.',
 }
@@ -88,6 +90,7 @@ export const garageApi = (token: string | null) => ({
   saveMaintenance: (p: Record<string, unknown>) => call<string>('garage_save_maintenance', { p_token: token, p }),
   saveLog:         (p: Record<string, unknown>) => call<string>('garage_save_log', { p_token: token, p }),
   deleteLog:       (id: string) => call<boolean>('garage_delete_log', { p_token: token, p_id: id }),
+  setContact:      (email: string | null, notify: boolean) => call<boolean>('garage_set_contact', { p_token: token, p_email: email, p_notify: notify }),
 })
 
 export const linkGarageToAccount = (token: string) => call<boolean>('garage_link_account', { p_token: token })

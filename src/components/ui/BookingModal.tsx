@@ -91,6 +91,7 @@ export default function BookingModal() {
   const [phone, setPhone]               = useState('')
   const [address, setAddress]           = useState('')
   const [addressNotes, setAddressNotes] = useState('')
+  const [email, setEmail]               = useState('')
   const [asap, setAsap]                 = useState(true)
   const [prefDate, setPrefDate]         = useState('')
   const [prefWindow, setPrefWindow]     = useState('')
@@ -251,12 +252,12 @@ export default function BookingModal() {
     let quoted: number | null = price
     try {
       const f = bookingFields()
-      const { data, error: rpcError } = await supabase.rpc('create_guest_booking', {
+      const { data, error: rpcError } = await supabase.rpc('create_guest_booking_v2', {
         p_service_name: f.service_name, p_address: f.address, p_address_notes: f.address_notes,
         p_customer_name: name, p_customer_phone: phone,
         p_package_id: f.package_id, p_vehicle_model_id: f.vehicle_model_id, p_vehicle_label: f.vehicle_label,
         p_vehicle_tier: f.vehicle_tier, p_slot_type: f.slot_type, p_preferred_date: f.preferred_date,
-        p_preferred_window: f.preferred_window, p_symptom: f.symptom,
+        p_preferred_window: f.preferred_window, p_symptom: f.symptom, p_email: email.trim() || null,
       })
       if (rpcError) throw rpcError
       const res = data as { reference: string; price_quoted_ttc: number | null; garage_token?: string | null } | null
@@ -616,6 +617,15 @@ export default function BookingModal() {
               <FieldWrapper icon={<MapPin size={14} color="rgba(255,255,255,0.4)" />}>
                 <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder={t('booking.addressPlaceholder')} style={inputStyle} />
               </FieldWrapper>
+
+              {!user && (
+                <>
+                  <FieldLabel>{isFr ? 'Email (optionnel, pour vos rappels)' : 'Email (optional, for reminders)'}</FieldLabel>
+                  <FieldWrapper icon={<span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>@</span>}>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" style={inputStyle} />
+                  </FieldWrapper>
+                </>
+              )}
 
               <FieldLabel>{t('booking.addressNotes')}</FieldLabel>
               <textarea value={addressNotes} onChange={e => setAddressNotes(e.target.value)} placeholder={t('booking.addressNotesPlaceholder')} rows={2}

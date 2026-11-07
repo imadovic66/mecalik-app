@@ -101,6 +101,8 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
         </div>
       )}
 
+      <ReminderSettings garage={g} busy={busy} onSave={(email, notify) => run(() => api.setContact(email, notify), notify ? 'Rappels par email activés ✓' : 'Rappels par email désactivés')} />
+
       {/* Empty state */}
       {data.cars.length === 0 && (
         <div style={{ ...card, textAlign: 'center', padding: '40px 20px' }}>
@@ -363,6 +365,32 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
 }
 
 // ── Sub-components ───────────────────────────────────────────────────────────
+
+function ReminderSettings({ garage, busy, onSave }: { garage: GarageData['garage']; busy: boolean; onSave: (email: string | null, notify: boolean) => void }) {
+  const current = garage.email || garage.account_email || ''
+  const [open, setOpen] = useState(false)
+  const [email, setEmail] = useState(garage.email ?? '')
+  const active = garage.notify_email && !!current
+  return (
+    <div style={{ ...card, padding: '12px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '16px' }}>🔔</span>
+        <div style={{ flex: 1, minWidth: '180px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+          {active ? <>Rappels par email activés : <b style={{ color: 'white' }}>{current}</b></>
+            : current ? 'Rappels par email désactivés' : 'Recevez vos rappels (papiers, entretien) par email'}
+        </div>
+        <button onClick={() => setOpen(!open)} style={btnSmall}>{open ? 'Fermer' : current ? 'Modifier' : 'Activer'}</button>
+      </div>
+      {open && (
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px', alignItems: 'center' }}>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={garage.account_email || 'votre@email.com'} style={{ ...input, flex: '1 1 220px' }} />
+          <button disabled={busy || (!email.trim() && !garage.account_email)} onClick={() => { onSave(email.trim() || null, true); setOpen(false) }} style={btnPrimary}>Activer</button>
+          {garage.notify_email && current && <button disabled={busy} onClick={() => { onSave(null, false); setOpen(false) }} style={btnGhost}>Désactiver</button>}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function CategoryTotals({ history }: { history: LogEntry[] }) {
   const since = new Date(); since.setFullYear(since.getFullYear() - 1)

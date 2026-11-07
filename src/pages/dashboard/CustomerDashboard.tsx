@@ -5,12 +5,13 @@ import { useTranslation } from 'react-i18next'
 import { supabase, type Car } from '../../lib/supabase'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
 import {
-  ChevronRight, MapPin, Plus, Phone, Bell,
+  ChevronRight, MapPin, Plus, Phone,
   Droplet, Battery, Search, AlertTriangle,
   Home, Clock as ClockIcon, Car as CarIcon, User, Wrench, ArrowRight, ChevronDown,
 } from 'lucide-react'
 import AddCarModal from '../../components/ui/AddCarModal'
 import GarageAlertsCard from '../../components/garage/GarageAlertsCard'
+import NotificationBell from '../../components/ui/NotificationBell'
 import { serviceIdFromName } from '../../lib/serviceUtils'
 import { isServiceComingSoon } from '../../data/serviceStatus'
 
@@ -180,22 +181,7 @@ export default function CustomerDashboard() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <LanguageSwitcher />
-            <button style={{
-              width: '40px', height: '40px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '12px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', position: 'relative',
-            }}>
-              <Bell size={16} color="rgba(255,255,255,0.7)" />
-              <span style={{
-                position: 'absolute', top: 8, right: 8,
-                width: '7px', height: '7px',
-                background: '#FF4444', borderRadius: '50%',
-                border: '2px solid #0A0A0A',
-              }} />
-            </button>
+            <NotificationBell />
           </div>
         </div>
 
