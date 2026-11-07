@@ -6,9 +6,9 @@ import { useAuth } from '../../hooks/useAuth'
 import { loadCatalog, type VehicleModel } from '../../lib/catalog'
 import { WHATSAPP_NUMBER } from '../../lib/constants'
 import {
-  garageApi, garageError, linkGarageToAccount, DOC_TYPES, CATEGORIES,
+  garageApi, garageError, linkGarageToAccount, DOC_TYPES, CATEGORIES, signDocFiles, uploadDocFile, deleteDocFile,
   fmtKm, fmtMoney, fmtDate, daysText, carName, docLabel, dueText, STATUS_COLOR, STATUS_LABEL,
-  type GarageData, type CarBundle, type Car, type Doc, type DocType, type Maint, type LogEntry, type Category,
+  type GarageData, type CarBundle, type Car, type Doc, type DocType, type Maint, type LogEntry, type Category, type DocFile,
 } from '../../lib/garage'
 
 type Tab = 'apercu' | 'papiers' | 'entretien' | 'historique'
@@ -211,6 +211,7 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
                         </div>
                         {d.days_left != null && <div style={{ fontSize: '12px', color: col, marginTop: '2px' }}>{d.days_left < 0 ? `Expiré ${daysText(d.days_left)}` : `Expire ${daysText(d.days_left)}`}</div>}
                         {(d.provider || d.reference) && <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>{[d.provider, d.reference].filter(Boolean).join(' · ')}</div>}
+                        {!!d.files?.length && <div style={{ fontSize: '12px', color: 'var(--mk-action)', marginTop: '4px' }}>📎 {d.files.length} photo{d.files.length > 1 ? 's' : ''}</div>}
                       </>
                     ) : <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>Non renseigné — {t.hint.toLowerCase()}</div>}
                   </button>
@@ -309,8 +310,11 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
           onSave={km => run(() => api.saveCar({ ...bundle.car, mileage: km }), 'Kilométrage enregistré ✓')} />
       )}
       {modal?.kind === 'doc' && bundle && (
-        <DocModal doc={modal.doc} busy={busy} onClose={() => setModal(null)}
-          onSave={d => run(() => api.saveDocument({ ...d, car_id: bundle.car.id }), 'Document enregistré ✓')}
+        <DocModal doc={modal.doc} token={token} busy={busy} onClose={() => { setModal(null); reload() }}
+          onSave={(d, pending) => run(async () => {
+            const id = await api.saveDocument({ ...d, car_id: bundle.car.id })
+            for (const f of pending) await uploadDocFile(token, id, f)
+          }, pending.length ? 'Document et photo enregistrés ✓' : 'Document enregistré ✓')}
           onDelete={modal.doc.id ? () => run(() => api.deleteDocument(modal.doc.id!), 'Document supprimé') : undefined} />
       )}
       {modal?.kind === 'done' && (
@@ -416,10 +420,38 @@ function KmModal({ current, busy, onClose, onSave }: { current: number | null; b
   )
 }
 
-function DocModal({ doc, busy, onClose, onSave, onDelete }: { doc: Partial<Doc> & { doc_type: DocType }; busy: boolean; onClose: () => void; onSave: (d: Partial<Doc>) => void; onDelete?: () => void }) {
+function DocModal({ doc, token, busy, onClose, onSave, onDelete }: { doc: Partial<Doc> & { doc_type: DocType }; token: string | null; busy: boolean; onClose: () => void; onSave: (d: Partial<Doc>, pending: File[]) => void; onDelete?: () => void }) {
   const [f, setF] = useState<Partial<Doc>>(doc)
+  const [files, setFiles] = useState<DocFile[]>([])
+  const [pending, setPending] = useState<File[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [fileError, setFileError] = useState('')
   const set = (k: keyof Doc, v: unknown) => setF(prev => ({ ...prev, [k]: v }))
   const meta = DOC_TYPES.find(t => t.id === doc.doc_type)
+
+  useEffect(() => {
+    if (!doc.id || !doc.files?.length) return
+    signDocFiles(token, doc.id).then(setFiles).catch(() => setFileError("Impossible d'afficher les photos."))
+  }, [doc.id, doc.files?.length, token])
+
+  const pick = async (list: FileList | null) => {
+    if (!list?.length) return
+    setFileError('')
+    const picked = Array.from(list)
+    if (!doc.id) { setPending(p => [...p, ...picked]); return }
+    setUploading(true)
+    try {
+      for (const file of picked) await uploadDocFile(token, doc.id, file)
+      setFiles(await signDocFiles(token, doc.id))
+    } catch (e) { setFileError(garageError(e)) }
+    finally { setUploading(false) }
+  }
+  const remove = async (path: string) => {
+    if (!doc.id) return
+    try { await deleteDocFile(token, doc.id, path); setFiles(await signDocFiles(token, doc.id)) }
+    catch (e) { setFileError(garageError(e)) }
+  }
+
   return (
     <Sheet title={meta?.label ?? 'Document'} onClose={onClose}>
       {meta && <Muted>{meta.hint}.</Muted>}
@@ -431,7 +463,32 @@ function DocModal({ doc, busy, onClose, onSave, onDelete }: { doc: Partial<Doc> 
         <Field label="Montant payé (MAD)"><input type="number" value={f.amount ?? ''} onChange={e => set('amount', e.target.value)} style={input} /></Field>
         <Field label="Notes" wide><input value={f.notes ?? ''} onChange={e => set('notes', e.target.value)} style={input} /></Field>
       </Grid>
-      <Footer busy={busy} canSave onSave={() => onSave(f)} onDelete={onDelete} deleteLabel="Supprimer" />
+
+      <div style={{ marginTop: '14px' }}>
+        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Photos du document</span>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+          {files.map(file => (
+            <div key={file.path} style={{ position: 'relative', width: '84px', height: '84px', borderRadius: '10px', overflow: 'hidden', background: '#151515', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <a href={file.url ?? '#'} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', height: '100%' }}>
+                {file.type.startsWith('image/') && file.url
+                  ? <img src={file.url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white', fontSize: '12px', fontWeight: 700 }}>PDF</span>}
+              </a>
+              <button onClick={() => remove(file.path)} aria-label="Supprimer" style={{ position: 'absolute', top: '4px', right: '4px', width: '22px', height: '22px', borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.7)', color: 'white', cursor: 'pointer', fontSize: '12px' }}>×</button>
+            </div>
+          ))}
+          {pending.map((file, i) => (
+            <div key={i} style={{ width: '84px', height: '84px', borderRadius: '10px', background: '#151515', border: '1px dashed rgba(67,188,201,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--mk-action)', textAlign: 'center', padding: '4px', boxSizing: 'border-box', overflow: 'hidden' }}>{file.name}</div>
+          ))}
+          <label style={{ width: '84px', height: '84px', borderRadius: '10px', border: '1px dashed rgba(255,255,255,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>
+            <span style={{ fontSize: '20px' }}>{uploading ? '⏳' : '📷'}</span>{uploading ? 'Envoi…' : 'Ajouter'}
+            <input type="file" accept="image/*,application/pdf" multiple disabled={uploading} onChange={e => { pick(e.target.files); e.target.value = '' }} style={{ display: 'none' }} />
+          </label>
+        </div>
+        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '6px' }}>Stockées de façon privée. Seuls vous et MecaLIK pouvez les voir.</div>
+        {fileError && <div style={{ fontSize: '12px', color: '#FF6B6B', marginTop: '6px' }}>{fileError}</div>}
+      </div>
+      <Footer busy={busy || uploading} canSave onSave={() => onSave(f, pending)} onDelete={onDelete} deleteLabel="Supprimer" />
     </Sheet>
   )
 }

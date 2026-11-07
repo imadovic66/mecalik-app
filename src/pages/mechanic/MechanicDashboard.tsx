@@ -55,6 +55,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 
 // quote_pending has no direct action here — see the read-only panel in the job card instead
 const NEXT_STATUS: Record<string, { label: string; next: string; color: string; icon: string }> = {
+  pending:     { label: '✅ Accepter l\'intervention',     next: 'confirmed',   color: '#43BCC9', icon: 'check'  },
   confirmed:   { label: '🚗 Je suis en route',            next: 'on_the_way',  color: '#F0C040', icon: 'car'    },
   quote_sent:  { label: '🔧 Démarrer l\'intervention',     next: 'in_progress', color: '#43BCC9', icon: 'wrench' },
   in_progress: { label: '✅ Terminer l\'intervention',     next: 'completed',   color: '#00DD88', icon: 'check'  },
@@ -76,6 +77,8 @@ export default function MechanicDashboard() {
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [quoteEditorJob, setQuoteEditorJob] = useState<Booking | null>(null)
+  const [odoJob, setOdoJob]         = useState<Booking | null>(null)
+  const [odoValue, setOdoValue]     = useState('')
 
   // ── Auth guard (imperative) ──
   useEffect(() => {
@@ -123,9 +126,10 @@ export default function MechanicDashboard() {
     setLoading(false)
   }
 
-  const updateStatus = async (bookingId: string, newStatus: string) => {
+  const updateStatus = async (bookingId: string, newStatus: string, odometer?: number | null) => {
     setUpdatingId(bookingId)
-    const updates: Record<string, string> = { status: newStatus }
+    const updates: Record<string, string | number> = { status: newStatus }
+    if (odometer != null && odometer > 0) updates.odometer = Math.round(odometer)
     if (newStatus === 'in_progress') updates.confirmed_at  = new Date().toISOString()
     if (newStatus === 'completed')   updates.completed_at  = new Date().toISOString()
     await supabase.from('bookings').update(updates).eq('id', bookingId)
@@ -473,7 +477,7 @@ export default function MechanicDashboard() {
                             )}
                             {nextAction && (
                               <button
-                                onClick={() => updateStatus(job.id, nextAction.next)}
+                                onClick={() => nextAction.next === 'completed' ? (setOdoValue(''), setOdoJob(job)) : updateStatus(job.id, nextAction.next)}
                                 disabled={isUpdating}
                                 style={{
                                   width: '100%', marginTop: '10px', padding: '13px',
@@ -734,6 +738,30 @@ export default function MechanicDashboard() {
           ::-webkit-scrollbar { display: none; }
         `}</style>
       </div>
+
+      {odoJob && (
+        <>
+          <div onClick={() => setOdoJob(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200 }} />
+          <div style={{ position: 'fixed', left: '50%', bottom: 0, transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: '#0F0F0F', borderTopLeftRadius: '20px', borderTopRightRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', padding: '20px 18px 30px', zIndex: 201, boxSizing: 'border-box' }}>
+            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 700, color: 'white' }}>Kilométrage au compteur</div>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)', margin: '6px 0 14px', lineHeight: 1.5 }}>
+              Lisez le compteur du véhicule avant de clôturer. Il sert à calculer le prochain entretien du client.
+            </div>
+            <input type="number" inputMode="numeric" autoFocus value={odoValue} onChange={e => setOdoValue(e.target.value)} placeholder="Ex : 128450"
+              style={{ width: '100%', boxSizing: 'border-box', background: '#151515', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px', color: 'white', padding: '14px', fontSize: '22px', fontWeight: 700, fontFamily: 'inherit', outline: 'none' }} />
+            <button
+              disabled={!odoValue || Number(odoValue) <= 0 || updatingId === odoJob.id}
+              onClick={async () => { const j = odoJob; setOdoJob(null); await updateStatus(j.id, 'completed', Number(odoValue)) }}
+              style={{ width: '100%', marginTop: '14px', padding: '14px', borderRadius: '12px', border: 'none', fontWeight: 700, fontSize: '15px', fontFamily: 'Space Grotesk, sans-serif', cursor: 'pointer', background: odoValue && Number(odoValue) > 0 ? '#00DD88' : 'rgba(255,255,255,0.06)', color: odoValue && Number(odoValue) > 0 ? '#080808' : 'rgba(255,255,255,0.3)' }}>
+              ✅ Terminer l'intervention
+            </button>
+            <button onClick={async () => { const j = odoJob; setOdoJob(null); await updateStatus(j.id, 'completed', null) }}
+              style={{ width: '100%', marginTop: '8px', padding: '10px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              Compteur illisible — terminer sans kilométrage
+            </button>
+          </div>
+        </>
+      )}
 
       {quoteEditorJob && user && (
         <QuoteEditor

@@ -61,6 +61,7 @@ export type Booking = {
   symptom?: string | null
   dispatch_alert_at?: string | null
   completed_at?: string | null
+  odometer?: number | null
   accepted_at?: string | null
 }
 

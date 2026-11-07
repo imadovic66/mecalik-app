@@ -12,7 +12,9 @@ export type Maint = {
 export type Doc = {
   id: string; car_id: string; doc_type: DocType; reference: string | null; provider: string | null
   issue_date: string | null; expiry_date: string | null; amount: number | null; notes: string | null; days_left: number | null
+  files?: DocFile[]
 }
+export type DocFile = { path: string; name: string; type: string; size: number; uploaded_at: string; url?: string | null }
 export type LogEntry = {
   id: string; car_id: string; service_name: string; service_date: string; mileage: number | null; provider: string | null
   cost: number | null; notes: string | null; source: 'mecalik' | 'external' | null; category: Category | null
@@ -61,6 +63,9 @@ const ERRORS: Record<string, string> = {
   car_not_in_garage: "Ce véhicule n'appartient pas à ce garage.",
   mecalik_entry_locked: 'Les interventions MecaLIK ne peuvent pas être modifiées.',
   garage_linked_to_other_account: 'Ce garage est déjà lié à un autre compte.',
+  too_large: 'Fichier trop lourd (8 Mo maximum).',
+  bad_type: 'Format accepté : photo (JPG, PNG) ou PDF.',
+  too_many_files: 'Maximum 10 fichiers par document.',
 }
 export function garageError(e: unknown): string {
   const msg = (e as { message?: string })?.message || String(e)
@@ -125,3 +130,37 @@ export const waNumber = (phone: string | null | undefined) => {
   return d
 }
 export const garageUrl = (token: string) => `https://mecalik.com/garage/${token}`
+
+// ── Photos / PDFs of papers (private storage, short-lived links) ──
+async function docsFn(body: Record<string, unknown>) {
+  const { data, error } = await supabase.functions.invoke('garage-docs', { body })
+  if (error) throw error
+  if (data?.error) throw new Error(data.error)
+  return (data?.files ?? []) as DocFile[]
+}
+export const signDocFiles = (token: string | null, docId: string) => docsFn({ action: 'sign', token, doc_id: docId })
+export const deleteDocFile = (token: string | null, docId: string, path: string) => docsFn({ action: 'delete', token, doc_id: docId, path })
+
+const readAsDataUrl = (b: Blob) => new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(b) })
+
+/** Phone photos are large: resize to 1600 px and re-encode as JPEG before upload. PDFs go as-is. */
+async function prepareFile(file: File): Promise<{ base64: string; type: string; name: string }> {
+  if (file.type === 'application/pdf') {
+    if (file.size > 8 * 1024 * 1024) throw new Error('too_large')
+    return { base64: await readAsDataUrl(file), type: file.type, name: file.name }
+  }
+  const url = URL.createObjectURL(file)
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url })
+    const scale = Math.min(1, 1600 / Math.max(img.width, img.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale)
+    canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+    const blob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('encode')), 'image/jpeg', 0.82))
+    return { base64: await readAsDataUrl(blob), type: 'image/jpeg', name: file.name.replace(/\.[^.]+$/, '') + '.jpg' }
+  } finally { URL.revokeObjectURL(url) }
+}
+export async function uploadDocFile(token: string | null, docId: string, file: File) {
+  const f = await prepareFile(file)
+  return docsFn({ action: 'upload', token, doc_id: docId, file_base64: f.base64, file_type: f.type, file_name: f.name })
+}
