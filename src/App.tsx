@@ -11,6 +11,8 @@ import Fleet from './pages/Fleet'
 import About from './pages/About'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 import CustomerDashboard from './pages/dashboard/CustomerDashboard'
 import BookingConfirmation from './pages/dashboard/BookingConfirmation'
 import FleetDashboard from './pages/fleet/FleetDashboard'
@@ -80,6 +82,8 @@ function AppShell() {
           <Route path="/devis"    element={<Navigate to="/tarifs" replace />} />
           <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup"   element={<PublicRoute><Signup /></PublicRoute>} />
+          <Route path="/mot-de-passe-oublie" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+          <Route path="/nouveau-mot-de-passe" element={<ResetPassword />} />
           <Route path="/booking/:id" element={<BookingConfirmation />} />
           <Route path="/dashboard" element={
             <ProtectedRoute requiredRole="customer"><CustomerDashboard /></ProtectedRoute>

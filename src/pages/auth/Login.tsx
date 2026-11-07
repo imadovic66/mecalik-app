@@ -123,6 +123,11 @@ export default function Login() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              <div className="text-right mt-2">
+                <Link to="/mot-de-passe-oublie" className="text-xs hover:underline" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  Mot de passe oublié ?
+                </Link>
+              </div>
             </div>
 
             <button
