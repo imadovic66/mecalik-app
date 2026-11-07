@@ -94,6 +94,13 @@ export default function AdminDashboard() {
 
   useEffect(() => { if (user) fetchData() }, [user, fetchData])
 
+  // New sign-ups appear without reloading the page: refresh the client list each time the Clients tab is opened
+  useEffect(() => {
+    if (activeTab !== 'customers' || !user) return
+    supabase.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setCustomers(data) })
+  }, [activeTab, user])
+
   useEffect(() => {
     supabase.from('profiles').select('id, full_name').eq('role', 'mechanic')
       .then(({ data }) => setMechanics(data || []))
