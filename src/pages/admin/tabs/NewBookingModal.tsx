@@ -271,7 +271,7 @@ export default function NewBookingModal({ mechanics, bookings, onClose, onCreate
 
               {packages.some(p => p.service_slug === serviceId) && (
                 <div>
-                  <label style={labelStyle}>Formule — prix ferme</label>
+                  <label style={labelStyle}>Formule — prix estimé</label>
                   <select value={packageId} onChange={e => setPackageId(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
                     <option value="">— Sans formule (prix à fixer) —</option>
                     {packages.filter(p => p.service_slug === serviceId).map(p => (

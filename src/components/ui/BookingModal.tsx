@@ -202,7 +202,7 @@ export default function BookingModal() {
 
   const buildWhatsAppMessage = (bookingRef: string, finalPrice: number | null) => {
     const priceLine = finalPrice
-      ? `\n💰 *${isFr ? 'Prix' : 'Price'} :* ${priceIsFrom ? (isFr ? 'dès ' : 'from ') : ''}${fmtMAD(finalPrice)} TTC${selectedPackage ? ` (${selectedPackage.name_fr})` : ''}`
+      ? `\n💰 *${isFr ? 'Prix estimé' : 'Estimated price'} :* ${priceIsFrom ? (isFr ? 'dès ' : 'from ') : '≈ '}${fmtMAD(finalPrice)} TTC${selectedPackage ? ` (${selectedPackage.name_fr})` : ''}\n_${isFr ? 'Prix exact à confirmer avant intervention' : 'Exact price to be confirmed before the service'}_`
       : ''
     const trackingLine = bookingRef
       ? `\n\n📋 *${isFr ? 'Référence' : 'Reference'} :* ${bookingRef}\n🔗 *${isFr ? 'Suivi' : 'Track'} :* https://mecalik.com/track/${bookingRef}`
@@ -336,7 +336,7 @@ export default function BookingModal() {
   const titles = [
     '',
     t('booking.chooseService'),
-    isFr ? 'Votre véhicule et votre prix' : 'Your car and your price',
+    isFr ? 'Votre véhicule et votre estimation' : 'Your car and your estimate',
     isFr ? 'Où et quand ?' : 'Where and when?',
     t('booking.confirmed'),
   ]
@@ -371,7 +371,7 @@ export default function BookingModal() {
             {step < 4 && (
               <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
                 {step === 1
-                  ? (isFr ? 'Prix fixe affiché avant de réserver' : 'Fixed price shown before you book')
+                  ? (isFr ? 'Prix estimé affiché avant de réserver' : 'Estimated price shown before you book')
                   : (isFr ? "Paiement après l'intervention" : 'Pay after the service')}
               </div>
             )}
@@ -533,7 +533,7 @@ export default function BookingModal() {
                           </div>
                           <div style={{ textAlign: 'right', flexShrink: 0 }}>
                             {p.price_mode === 'from' && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)' }}>{isFr ? 'dès' : 'from'}</div>}
-                            <div style={{ fontSize: '16px', fontWeight: 800, color: sel ? 'var(--mk-action)' : 'white' }}>{fmtMAD(p.total_ttc)}</div>
+                            <div style={{ fontSize: '16px', fontWeight: 800, color: sel ? 'var(--mk-action)' : 'white', whiteSpace: 'nowrap' }}>{p.price_mode === 'from' ? '' : '≈ '}{fmtMAD(p.total_ttc)}</div>
                             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)' }}>TTC</div>
                           </div>
                         </button>
@@ -552,7 +552,7 @@ export default function BookingModal() {
                       ))}
                       <Row l={isFr ? "Main-d'œuvre et déplacement MecaLIK" : 'MecaLIK labour and travel'} r={fmtMAD(selectedPackage.service_fee_ttc)} />
                       <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: '6px', paddingTop: '6px' }}>
-                        <Row l="Total TTC" r={fmtMAD(selectedPackage.total_ttc)} bold />
+                        <Row l={isFr ? 'Total estimé TTC' : 'Estimated total incl. VAT'} r={'≈ ' + fmtMAD(selectedPackage.total_ttc)} bold />
                       </div>
                     </div>
                   )}
@@ -567,7 +567,7 @@ export default function BookingModal() {
               )}
               {needsTier && !tier && catalog && (
                 <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
-                  {isFr ? 'Choisissez votre véhicule pour voir le prix exact.' : 'Choose your car to see the exact price.'}
+                  {isFr ? 'Choisissez votre véhicule pour voir le prix estimé.' : 'Choose your car to see the estimated price.'}
                 </div>
               )}
             </div>
@@ -627,15 +627,20 @@ export default function BookingModal() {
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(67,188,201,0.12)', border: '2px solid var(--mk-action)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>✓</div>
               <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.6 }}>
                 {isFr
-                  ? 'Votre réservation est enregistrée. Un technicien vous est attribué et vous confirme sur WhatsApp.'
-                  : 'Your booking is saved. A technician is assigned and will confirm on WhatsApp.'}
+                  ? 'Votre réservation est enregistrée. Un technicien vous est attribué et vous confirme le prix exact sur WhatsApp.'
+                  : 'Your booking is saved. A technician is assigned and will confirm the exact price on WhatsApp.'}
               </p>
               <div style={{ width: '100%', padding: '16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}>
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>{t('booking.yourReference')}</div>
                 <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--mk-action)', letterSpacing: '0.05em', fontFamily: 'Space Grotesk, monospace' }}>{bookingReference || '—'}</div>
                 {confirmedPrice != null && (
                   <div style={{ marginTop: '10px', fontSize: '15px', color: 'white', fontWeight: 700 }}>
-                    {priceIsFrom ? (isFr ? 'Dès ' : 'From ') : (isFr ? 'Prix ferme : ' : 'Firm price: ')}{fmtMAD(confirmedPrice)} TTC
+                    {isFr ? 'Prix estimé : ' : 'Estimated price: '}{priceIsFrom ? (isFr ? 'dès ' : 'from ') : '≈ '}{fmtMAD(confirmedPrice)} TTC
+                  </div>
+                )}
+                {confirmedPrice != null && (
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', marginTop: '4px' }}>
+                    {isFr ? "Le prix exact vous est confirmé avant l'intervention." : 'The exact price is confirmed before the service.'}
                   </div>
                 )}
                 <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginTop: '4px' }}>{slotText}</div>
@@ -668,9 +673,9 @@ export default function BookingModal() {
             {(step === 2 || step === 3) && price != null && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
-                  {priceIsFrom ? (isFr ? 'Prix de départ' : 'Starting price') : (isFr ? 'Prix ferme, payé après le service' : 'Firm price, paid after the service')}
+                  {isFr ? "Prix estimé · exact confirmé avant l'intervention" : 'Estimated · exact price confirmed before the service'}
                 </span>
-                <span style={{ fontSize: '18px', fontWeight: 800, color: 'white' }}>{priceIsFrom ? (isFr ? 'dès ' : 'from ') : ''}{fmtMAD(price)}</span>
+                <span style={{ fontSize: '18px', fontWeight: 800, color: 'white', whiteSpace: 'nowrap' }}>{priceIsFrom ? (isFr ? 'dès ' : 'from ') : '≈ '}{fmtMAD(price)}</span>
               </div>
             )}
 

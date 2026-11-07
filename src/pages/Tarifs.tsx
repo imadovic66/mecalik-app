@@ -45,17 +45,17 @@ export default function Tarifs() {
   }, [catalog, tier])
 
   const steps = isFr
-    ? ['Choisissez le service et votre voiture.', 'Le prix exact s\'affiche avant de réserver.', 'Un technicien vous est attribué et vient chez vous.', 'Vous payez après l\'intervention.']
-    : ['Choose the service and your car.', 'The exact price shows before you book.', 'A technician is assigned and comes to you.', 'You pay after the service.']
+    ? ['Choisissez le service et votre voiture : le prix estimé s\'affiche.', 'Le technicien vous confirme le prix exact avant de commencer.', 'Il vient chez vous et réalise l\'intervention.', 'Vous payez après l\'intervention.']
+    : ['Choose the service and your car: the estimate shows.', 'The technician confirms the exact price before starting.', 'He comes to you and does the work.', 'You pay after the service.']
   const guarantees = isFr
-    ? ['Prix fixe affiché avant réservation', 'Pièces au prix catalogue, détail visible', 'Rien de plus sans votre accord', 'Paiement après le service']
-    : ['Fixed price shown before booking', 'Parts at catalogue price, details visible', 'Nothing extra without your approval', 'Pay after the service']
+    ? ['Estimation affichée avant réservation', 'Prix exact confirmé avant intervention', 'Rien de plus sans votre accord', 'Paiement après le service']
+    : ['Estimate shown before booking', 'Exact price confirmed before the service', 'Nothing extra without your approval', 'Pay after the service']
 
   return (
     <main style={{ background: '#0A0A0A', color: 'white', fontFamily: 'Outfit, sans-serif', minHeight: '100vh', paddingTop: '80px' }}>
       <SEO
-        title="Tarifs fixes — Mécanicien à domicile Casablanca | MecaLIK"
-        description="Prix fixes affichés avant de réserver : vidange dès 805 MAD, batterie posée dès 870 MAD, diagnostic 250 MAD. Pièces au prix catalogue, paiement après le service."
+        title="Tarifs — Mécanicien à domicile Casablanca | MecaLIK"
+        description="Prix indicatifs affichés avant de réserver : vidange environ 805 MAD, batterie posée environ 870 MAD, diagnostic environ 250 MAD. Prix exact confirmé avant l'intervention, paiement après le service."
         path="/tarifs"
         jsonLd={BREADCRUMB_SCHEMA}
       />
@@ -64,12 +64,12 @@ export default function Tarifs() {
       <section style={{ padding: '72px 5% 40px', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={pill}>{isFr ? 'Tarifs' : 'Pricing'}</div>
         <h1 style={{ fontSize: 'clamp(34px,5vw,60px)', fontWeight: 800, marginBottom: '18px', lineHeight: 1.1 }}>
-          {isFr ? 'Prix fixes. Affichés avant de réserver.' : 'Fixed prices. Shown before you book.'}
+          {isFr ? 'Des prix clairs, affichés avant de réserver.' : 'Clear prices, shown before you book.'}
         </h1>
         <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.6)', maxWidth: '640px', lineHeight: 1.7 }}>
           {isFr
-            ? 'Chaque prix = les pièces au prix catalogue + la main-d\'œuvre MecaLIK. Déplacement inclus. Choisissez la taille de votre voiture pour voir votre prix.'
-            : 'Every price = parts at catalogue price + MecaLIK labour. Travel included. Pick your car size to see your price.'}
+            ? 'Prix indicatifs : pièces + main-d\'œuvre MecaLIK, déplacement inclus. Le prix exact dépend de votre véhicule et vous est confirmé avant l\'intervention.'
+            : 'Indicative prices: parts + MecaLIK labour, travel included. The exact price depends on your car and is confirmed before the service.'}
         </p>
       </section>
 
@@ -120,7 +120,7 @@ export default function Tarifs() {
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           {p.price_mode === 'from' && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>{isFr ? 'dès' : 'from'}</div>}
-                          <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--mk-action)' }}>{fmtMAD(p.total_ttc)}</div>
+                          <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--mk-action)', whiteSpace: 'nowrap' }}>{p.price_mode === 'from' ? '' : '≈ '}{fmtMAD(p.total_ttc)}</div>
                           <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)' }}>TTC</div>
                         </div>
                       </div>
@@ -136,8 +136,8 @@ export default function Tarifs() {
         )}
         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', marginTop: '18px', lineHeight: 1.6 }}>
           {isFr
-            ? 'Urgence : le prix couvre le déplacement et le premier diagnostic. Si une pièce est nécessaire, elle vous est proposée au prix catalogue et vous validez avant toute intervention. Pneus et lavage : bientôt disponibles.'
-            : 'Emergency: the price covers travel and the first diagnosis. If a part is needed, it is offered at catalogue price and you approve before any work. Tyres and car wash: coming soon.'}
+            ? 'Prix indicatifs TTC, à confirmer selon votre véhicule. Urgence : le prix couvre le déplacement et le premier diagnostic. Si une pièce est nécessaire, elle vous est proposée au prix catalogue et vous validez avant toute intervention. Pneus et lavage : bientôt disponibles.'
+            : 'Indicative prices incl. VAT, confirmed for your car. Emergency: the price covers travel and the first diagnosis. If a part is needed, it is offered at catalogue price and you approve before any work. Tyres and car wash: coming soon.'}
         </p>
       </section>
 
@@ -186,7 +186,7 @@ export default function Tarifs() {
 
       {/* CTA */}
       <section style={{ padding: '64px 5% 80px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '34px', fontWeight: 800, marginBottom: '14px' }}>{isFr ? 'Voyez votre prix en 30 secondes' : 'See your price in 30 seconds'}</h2>
+        <h2 style={{ fontSize: '34px', fontWeight: 800, marginBottom: '14px' }}>{isFr ? 'Votre estimation en 30 secondes' : 'Your estimate in 30 seconds'}</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '28px', fontSize: '17px' }}>{isFr ? 'Sans engagement. Paiement après le service.' : 'No commitment. Pay after the service.'}</p>
         <button onClick={() => openBooking()} style={{ background: 'var(--mk-action)', color: '#0A0A0A', padding: '16px 36px', borderRadius: '14px', fontWeight: 800, border: 'none', fontSize: '16px', cursor: 'pointer', fontFamily: 'inherit' }}>
           {isFr ? 'Réserver maintenant' : 'Book now'}

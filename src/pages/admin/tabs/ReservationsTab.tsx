@@ -435,7 +435,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                     type="number"
                     defaultValue={booking.amount_ttc ?? ''}
                     placeholder={booking.price_quoted_ttc ? String(booking.price_quoted_ttc) : 'MAD'}
-                    title={booking.price_breakdown?.package ? `Prix ferme : ${booking.price_quoted_ttc} MAD — ${booking.price_breakdown.package}` : undefined}
+                    title={booking.price_breakdown?.package ? `Prix estimé : ${booking.price_quoted_ttc} MAD — ${booking.price_breakdown.package}` : undefined}
                     onClick={e => e.stopPropagation()}
                     onBlur={async e => {
                       const val = parseFloat(e.target.value)
@@ -453,7 +453,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                     }}
                   />
                   {booking.price_quoted_ttc != null && !booking.amount_ttc && (
-                    <div style={{ fontSize: '9px', color: 'rgba(67,188,201,0.8)', marginTop: '2px', whiteSpace: 'nowrap' }}>ferme {booking.price_quoted_ttc}</div>
+                    <div style={{ fontSize: '9px', color: 'rgba(67,188,201,0.8)', marginTop: '2px', whiteSpace: 'nowrap' }}>estimé {booking.price_quoted_ttc}</div>
                   )}
                   </div>
                   <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
@@ -490,7 +490,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                       {(booking.price_quoted_ttc != null || booking.vehicle_label || booking.symptom || booking.preferred_window) && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '14px', padding: '10px 12px', background: 'rgba(67,188,201,0.05)', border: '1px solid rgba(67,188,201,0.15)', borderRadius: '8px' }}>
                           {booking.reference && <span>Réf <b style={{ color: 'white' }}>{booking.reference}</b></span>}
-                          {booking.price_quoted_ttc != null && <span>Prix ferme <b style={{ color: '#43BCC9' }}>{booking.price_quoted_ttc} MAD TTC</b>{booking.price_breakdown?.package ? ` · ${booking.price_breakdown.package}` : ''}</span>}
+                          {booking.price_quoted_ttc != null && <span>Prix estimé <b style={{ color: '#43BCC9' }}>{booking.price_quoted_ttc} MAD TTC</b>{booking.price_breakdown?.package ? ` · ${booking.price_breakdown.package}` : ''}</span>}
                           {booking.vehicle_label && <span>Véhicule <b style={{ color: 'white' }}>{booking.vehicle_label}</b>{booking.vehicle_tier ? ` (${booking.vehicle_tier})` : ''}</span>}
                           {booking.symptom && <span>Problème <b style={{ color: 'white' }}>{booking.symptom}</b></span>}
                           <span>Créneau <b style={{ color: 'white' }}>{booking.slot_type === 'urgent' ? 'Dès que possible' : `${booking.preferred_date ?? ''} ${booking.preferred_window ?? ''}`}</b></span>

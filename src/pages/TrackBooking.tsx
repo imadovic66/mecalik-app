@@ -40,7 +40,7 @@ export default function TrackBooking() {
 
   const getPrice = (b: any): string => {
     if (b.amount_ttc) return `${b.amount_ttc} MAD`
-    if (b.price_quoted_ttc) return `${b.price_quoted_ttc} MAD TTC${b.package ? ' · ' + b.package : ''}`
+    if (b.price_quoted_ttc) return `${isFr ? 'Estimation' : 'Estimate'} ≈ ${b.price_quoted_ttc} MAD TTC${b.package ? ' · ' + b.package : ''}`
     if (b.status === 'pending') return isFr ? 'En cours de confirmation' : 'Pending confirmation'
     const key = (b.service_name || '').toLowerCase().trim()
     return SERVICE_PRICES[key] || (isFr ? 'Prix à confirmer' : 'Price to confirm')
