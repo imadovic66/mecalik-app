@@ -71,7 +71,7 @@ export function generateMechanicStatement(data: StatementData): void {
     doc.text('DATE', cols.date, y)
     doc.text('CLIENT', cols.client, y)
     doc.text('MO HT', cols.labour, y, { align: 'right' })
-    doc.text('PART 65%', cols.share, y, { align: 'right' })
+    doc.text('PART TECH.', cols.share, y, { align: 'right' })
     doc.text('STATUT', cols.status - 2, y, { align: 'right' })
   }
 
@@ -120,7 +120,7 @@ export function generateMechanicStatement(data: StatementData): void {
     y += bold ? 8 : 6.5
   }
   totalRow("Total main d'œuvre HT", money(data.totals.labourHT))
-  totalRow('Total part technicien (65%)', money(data.totals.share), true)
+  totalRow('Total part technicien', money(data.totals.share), true)
   totalRow('Déjà payé', money(data.totals.paid), false, [0, 150, 90])
   doc.setDrawColor(200, 200, 200)
   doc.setLineWidth(0.3)

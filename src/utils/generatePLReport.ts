@@ -130,7 +130,7 @@ export function generatePLReport(data: PLReportData): void {
   // ── COÛT DES SERVICES ──────────────────────────────────────────
   sectionBar('COÛT DES SERVICES (COGS)')
   row('Matériaux',            -data.totalMats,       { indent: true })
-  row('Part mécaniciens (65%)', -data.mechanicPayout, { indent: true })
+  row('Part mécaniciens', -data.mechanicPayout, { indent: true })
   sep()
   row('TOTAL COGS', -(data.totalMats + data.mechanicPayout), { bold: true, textColor: RED })
   y += 4

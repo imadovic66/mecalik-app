@@ -481,7 +481,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                     materialsTTC: matTotal, labourTTC: labTotal, discountTTC: discTotal,
                     totalTTC: quoteTTC, totalHT: quoteHT, totalTVA: quoteTVA,
                     labourHT, mechanicShare: mechanicPayout, mecalikShare: mecalikProfit,
-                  } = computeQuoteTotals(details, booking.amount_ttc)
+                  } = computeQuoteTotals(details, booking.amount_ttc, booking.completed_at ?? null)
                   const vatTotal = details
                     .filter(d => normalizeDetailType(d.type) === 'vat')
                     .reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)

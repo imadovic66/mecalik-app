@@ -60,6 +60,7 @@ export type Booking = {
   preferred_window?: string | null
   symptom?: string | null
   dispatch_alert_at?: string | null
+  completed_at?: string | null
   accepted_at?: string | null
 }
 

@@ -1,5 +1,5 @@
 /** Paie mécaniciens — what MecaLIK owes each technician, grouped from invoices.
- *  Each technician's due is the sum of their 65% share of the HT labour base
+ *  Each technician's due is the sum of their share of the HT labour base (rate by invoice date)
  *  (via computeQuoteTotals), split into already-paid and still-owed. */
 
 import { useMemo, useState } from 'react'
@@ -186,7 +186,7 @@ export default function MechanicPayrollSection({ invoices, onChanged }: Props) {
                     <table style={{ width: '100%', minWidth: '560px', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr>
-                          {['', 'N° facture', 'Date', 'Client', 'MO HT', 'Part 65%'].map((h, i) => (
+                          {['', 'N° facture', 'Date', 'Client', 'MO HT', 'Part tech.'].map((h, i) => (
                             <th key={i} style={{ padding: '6px 8px', fontSize: '10px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: i >= 4 ? 'right' : 'left', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 }}>{h}</th>
                           ))}
                         </tr>

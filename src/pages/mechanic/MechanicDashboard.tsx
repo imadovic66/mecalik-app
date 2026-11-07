@@ -157,13 +157,13 @@ export default function MechanicDashboard() {
   const historyJobs   = bookings.filter(b => ['completed', 'cancelled'].includes(b.status))
   const completedJobs = bookings.filter(b => b.status === 'completed')
 
-  const totalEarnings = completedJobs.reduce((s, b) => s + getMechanicShare(b.service_details, b.amount_ttc), 0)
+  const totalEarnings = completedJobs.reduce((s, b) => s + getMechanicShare(b.service_details, b.amount_ttc, b.completed_at), 0)
   const now = new Date()
   const thisMonthCompleted = completedJobs.filter(b => {
     const d = new Date(b.created_at)
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
   })
-  const thisMonthEarnings = thisMonthCompleted.reduce((s, b) => s + getMechanicShare(b.service_details, b.amount_ttc), 0)
+  const thisMonthEarnings = thisMonthCompleted.reduce((s, b) => s + getMechanicShare(b.service_details, b.amount_ttc, b.completed_at), 0)
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Technicien'
   const ratedJobs = completedJobs.filter(b => b.rating)
@@ -388,7 +388,7 @@ export default function MechanicDashboard() {
                             {job.amount_ttc && (
                               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                 <div style={{ fontSize: '16px', fontWeight: 700, color: '#00DD88', fontFamily: 'Space Grotesk, sans-serif' }}>
-                                  {Math.round(getMechanicShare(job.service_details, job.amount_ttc))} MAD
+                                  {Math.round(getMechanicShare(job.service_details, job.amount_ttc, job.completed_at))} MAD
                                 </div>
                                 <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>{i18nT('mechanic.yourPart')}</div>
                               </div>
@@ -519,7 +519,7 @@ export default function MechanicDashboard() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {historyJobs.map(job => {
                     const status = STATUS_CONFIG[job.status] || STATUS_CONFIG.completed
-                    const earned = job.amount_ttc ? Math.round(getMechanicShare(job.service_details, job.amount_ttc)) : null
+                    const earned = job.amount_ttc ? Math.round(getMechanicShare(job.service_details, job.amount_ttc, job.completed_at)) : null
                     return (
                       <div key={job.id} style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -602,7 +602,7 @@ export default function MechanicDashboard() {
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
                         <div style={{ fontSize: '14px', fontWeight: 700, color: '#00DD88', fontFamily: 'Space Grotesk, sans-serif' }}>
-                          +{Math.round(getMechanicShare(job.service_details, job.amount_ttc))} MAD
+                          +{Math.round(getMechanicShare(job.service_details, job.amount_ttc, job.completed_at))} MAD
                         </div>
                         <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
                           {i18nT('mechanic.on')} {job.amount_ttc} MAD

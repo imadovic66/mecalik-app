@@ -89,7 +89,7 @@ export default function CatalogTab() {
       {/* Services */}
       <div style={box}>
         <h2 style={h2}>Main-d'œuvre par service</h2>
-        <p style={sub}>Frais MecaLIK TTC (déplacement inclus). Le mécanicien touche 65% du HT, MecaLIK 35%.</p>
+        <p style={sub}>Frais MecaLIK TTC (déplacement inclus). Le mécanicien touche 50% de la main-d'œuvre HT, MecaLIK 50% (depuis le 3 nov. 2026).</p>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr><th style={th}>Service</th><th style={th}>Frais TTC</th><th style={th}>Mécanicien HT</th><th style={th}>MecaLIK HT</th><th style={th}>Type de prix</th><th style={th}>Actif</th></tr></thead>
@@ -101,8 +101,8 @@ export default function CatalogTab() {
                     <input type="number" defaultValue={s.service_fee_ttc} style={input}
                       onBlur={e => { const v = Number(e.target.value); if (v >= 0 && v !== s.service_fee_ttc) save('catalog_services', s.id, { service_fee_ttc: v }) }} />
                   </td>
-                  <td style={td}>{fmtMAD(s.service_fee_ttc / 1.2 * 0.65)}</td>
-                  <td style={td}>{fmtMAD(s.service_fee_ttc / 1.2 * 0.35)}</td>
+                  <td style={td}>{fmtMAD(s.service_fee_ttc / 1.2 * 0.5)}</td>
+                  <td style={td}>{fmtMAD(s.service_fee_ttc / 1.2 * 0.5)}</td>
                   <td style={td}>
                     <select defaultValue={s.price_mode} style={input} onChange={e => save('catalog_services', s.id, { price_mode: e.target.value })}>
                       <option value="fixed">Prix fixe</option><option value="from">À partir de</option><option value="quote">Sur devis</option>

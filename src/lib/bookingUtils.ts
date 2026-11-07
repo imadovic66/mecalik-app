@@ -1,6 +1,6 @@
 /** Shared pricing/payout math and customer-identity resolution for bookings.
- *  Single source of truth for "mechanic's 65% share" — used by the mechanic's
- *  job card, the quote editor, the Gains tab, and the admin approval panel. */
+ *  Single source of truth for the mechanic / MecaLIK split of the HT labour base — used by
+ *  the mechanic's job card, the quote editor, the Gains tab, and the admin approval panel. */
 
 import { normalizeDetailType, type ServiceDetail } from '../pages/admin/adminShared'
 
@@ -87,13 +87,30 @@ export type QuoteTotals = {
   totalHT: number
   /** totalTTC − totalHT */
   totalTVA: number
-  /** The HT labour base the 65/35 split runs on */
+  /** The HT labour base the mechanic/MecaLIK split runs on */
   labourHT: number
-  /** labourHT × 0.65 */
+  /** labourHT × mechanic rate */
   mechanicShare: number
-  /** labourHT × 0.35 */
+  /** labourHT × MecaLIK rate */
   mecalikShare: number
 }
+
+/**
+ * Mechanic share of the HT labour base, by date of the work (completed job or invoice date).
+ * From 3 Nov 2026 (booking MK-798825 onward): 50% mechanic / 50% MecaLIK. Before: 65% / 35%.
+ * No date = work not done yet → current rule.
+ */
+export const SPLIT_RULES: { from: string; mechanic: number }[] = [
+  { from: '2026-11-03', mechanic: 0.50 },
+  { from: '0000-01-01', mechanic: 0.65 },
+]
+export function mechanicRate(asOf?: string | Date | null): number {
+  const day = asOf ? (typeof asOf === 'string' ? asOf : asOf.toISOString()).slice(0, 10) : '9999-12-31'
+  return (SPLIT_RULES.find(r => day >= r.from) ?? SPLIT_RULES[SPLIT_RULES.length - 1]).mechanic
+}
+/** "50%" style label for the rule in force on a date (default: today). */
+export const mechanicRateLabel = (asOf?: string | Date | null) => `${Math.round(mechanicRate(asOf) * 100)}%`
+export const mecalikRateLabel  = (asOf?: string | Date | null) => `${Math.round((1 - mechanicRate(asOf)) * 100)}%`
 
 function lineTotal(d: ServiceDetail): number {
   return (Number(d.unit_price) || 0) * (parseFloat(String(d.quantity ?? '1')) || 1)
@@ -117,7 +134,9 @@ function sumByType(details: ServiceDetail[] | null | undefined, type: string): n
 export function computeQuoteTotals(
   details: ServiceDetail[] | null | undefined,
   amountTtc?: number | null,
+  asOf?: string | Date | null,
 ): QuoteTotals {
+  const rate = mechanicRate(asOf)
   const materialsTTC = sumByType(details, 'material')
   const labourTTC    = sumByType(details, 'labor')
   const discountTTC  = sumByType(details, 'discount')
@@ -145,8 +164,8 @@ export function computeQuoteTotals(
     totalHT,
     totalTVA,
     labourHT,
-    mechanicShare: labourHT * 0.65,
-    mecalikShare:  labourHT * 0.35,
+    mechanicShare: labourHT * rate,
+    mecalikShare:  labourHT * (1 - rate),
   }
 }
 
@@ -174,6 +193,7 @@ export function computeOfflineTotals(entry: {
   amount_ttc?: number | null
   materials_cost?: number | null
   labor_cost?: number | null
+  date?: string | null
 }): { totalTTC: number; totalHT: number; totalTVA: number; materialsHT: number; labourHT: number; mechanicShare: number; mecalikShare: number } {
   const totalTTC     = entry.amount_ttc ?? 0
   const totalHT      = ttcToHT(totalTTC)
@@ -186,17 +206,17 @@ export function computeOfflineTotals(entry: {
     : Math.max(0, totalHT - materialsHT)
   return {
     totalTTC, totalHT, totalTVA, materialsHT, labourHT,
-    mechanicShare: labourHT * 0.65,
-    mecalikShare:  labourHT * 0.35,
+    mechanicShare: labourHT * mechanicRate(entry.date),
+    mecalikShare:  labourHT * (1 - mechanicRate(entry.date)),
   }
 }
 
-/** The mechanic's 65% share of the HT labour base. */
-export function getMechanicShare(details: ServiceDetail[] | null | undefined, amountTtc: number | null | undefined): number {
-  return computeQuoteTotals(details, amountTtc).mechanicShare
+/** The mechanic's share of the HT labour base (rate by date of the work). */
+export function getMechanicShare(details: ServiceDetail[] | null | undefined, amountTtc: number | null | undefined, asOf?: string | Date | null): number {
+  return computeQuoteTotals(details, amountTtc, asOf).mechanicShare
 }
 
-/** MecaLIK's 35% share of the HT labour base. */
-export function getMecalikProfit(details: ServiceDetail[] | null | undefined, amountTtc: number | null | undefined): number {
-  return computeQuoteTotals(details, amountTtc).mecalikShare
+/** MecaLIK's share of the HT labour base (rate by date of the work). */
+export function getMecalikProfit(details: ServiceDetail[] | null | undefined, amountTtc: number | null | undefined, asOf?: string | Date | null): number {
+  return computeQuoteTotals(details, amountTtc, asOf).mecalikShare
 }

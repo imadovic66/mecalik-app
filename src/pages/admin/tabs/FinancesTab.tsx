@@ -9,7 +9,7 @@ import {
 import { SERVICES as PRICING_SERVICES, getTotalRevenuePerIntervention, type Zone } from '../../../data/pricing'
 import { type FinanceBooking, type Booking, type ServiceDetail, normalizeDetailType } from '../adminShared'
 import { supabase } from '../../../lib/supabase'
-import { computeQuoteTotals, computeOfflineTotals, ttcToHT, getCustomerName, getCustomerPhone } from '../../../lib/bookingUtils'
+import { computeQuoteTotals, computeOfflineTotals, ttcToHT, getCustomerName, getCustomerPhone, mechanicRateLabel, mecalikRateLabel } from '../../../lib/bookingUtils'
 import {
   type Invoice, invoiceTotals, invoiceLineItems, sumInvoiceTotals, isBillable,
   insertInvoice, nextInvoiceNumber, printInvoiceDocument, formatInvoiceDate,
@@ -32,7 +32,7 @@ interface Props {
 }
 
 /** Manual devis/facture line. unitPriceTTC is TTC per unit — the price the client pays.
- *  The type matters: only 'labor' lines feed the mechanic's 65% share. */
+ *  The type matters: only 'labor' lines feed the mechanic's share. */
 type LineType = 'material' | 'labor' | 'discount'
 type InvoiceLine = { type: LineType; description: string; quantity: number; unitPriceTTC: number }
 
@@ -291,7 +291,7 @@ export default function FinancesTab({ financeBookings, financeLoading, mechanics
   const downloadReport = () => {
     const dateStr = new Date().toLocaleDateString('fr-MA').replace(/\//g, '-')
     const rows: string[][] = [
-      ['Type', 'Date', 'Référence', 'Client', 'Service', 'TTC (MAD)', 'HT (MAD)', 'TVA (MAD)', 'Matériaux TTC (MAD)', "Main d'œuvre TTC (MAD)", 'Remise TTC (MAD)', 'Base MO HT (MAD)', 'Mécanicien 65% (MAD)', 'Profit MecaLIK 35% (MAD)'],
+      ['Type', 'Date', 'Référence', 'Client', 'Service', 'TTC (MAD)', 'HT (MAD)', 'TVA (MAD)', 'Matériaux TTC (MAD)', "Main d'œuvre TTC (MAD)", 'Remise TTC (MAD)', 'Base MO HT (MAD)', 'Part mécanicien (MAD)', 'Profit MecaLIK (MAD)'],
     ]
     const billable = invoices.filter(isBillable)
     billable.forEach(inv => {
@@ -399,7 +399,7 @@ export default function FinancesTab({ financeBookings, financeLoading, mechanics
   const saveInvoice = async () => {
     if (invoiceSaving) return
     const lines = invoiceLinesToDetails(invoiceData.lines)
-    const draft = computeQuoteTotals(lines)
+    const draft = computeQuoteTotals(lines, undefined, invoiceData.invoiceDate || null)
     const missing: string[] = []
     if (!invoiceData.clientName.trim()) missing.push('nom du client')
     if (!invoiceData.technicianName) missing.push('technicien')
@@ -424,7 +424,7 @@ export default function FinancesTab({ financeBookings, financeLoading, mechanics
       service_name:     invoiceData.serviceName.trim() || null,
       technician_name:  invoiceData.technicianName,
       line_items:       lines,
-      ...invoiceMoneyColumnsFrom(lines),
+      ...invoiceMoneyColumnsFrom(lines, invoiceData.invoiceDate),
       payment_status:   invoiceData.paymentStatus,
       paid_at:          invoiceData.paymentStatus === 'paid' ? new Date().toISOString() : null,
       payment_method:   invoiceData.paymentMethod || null,
@@ -762,7 +762,7 @@ export default function FinancesTab({ financeBookings, financeLoading, mechanics
                 { label: '− TVA collectée (20%)',     value: -tvaCollected,   color: '#F0C040',                indent: true,  sep: false },
                 { label: 'CA Hors Taxes',             value: revHT,           color: 'white',                  indent: false, sep: true,  bold: true },
                 { label: '− Matériaux HT (COGS)',     value: -totalMats,      color: 'rgba(255,255,255,0.5)',  indent: true,  sep: false },
-                { label: '− Part mécaniciens (65%)',  value: -mechanicPayout, color: '#FF6B6B',               indent: true,  sep: false },
+                { label: '− Part mécaniciens',  value: -mechanicPayout, color: '#FF6B6B',               indent: true,  sep: false },
                 { label: 'Marge Brute',               value: grossProfit,     color: grossProfit >= 0 ? '#43BCC9' : '#FF4444', indent: false, sep: true, bold: true, pct: grossMargin },
                 { label: "− Charges d'exploitation", value: -totalOpex,      color: 'rgba(255,255,255,0.5)',  indent: true,  sep: false },
                 { label: 'Résultat Net',              value: netProfit,       color: netProfit >= 0 ? '#00DD88' : '#FF4444',   indent: false, sep: true, bold: true, pct: netMargin },
@@ -1093,7 +1093,7 @@ export default function FinancesTab({ financeBookings, financeLoading, mechanics
         <div style={{ marginBottom: '24px' }}>
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 1fr 80px 80px 110px 90px 32px', gap: '8px', padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
-              {['Date', 'Client', 'Service', 'TTC', 'Matériaux TTC', 'Mécanicien (65%)', 'Profit (35%)', ''].map(h => (
+              {['Date', 'Client', 'Service', 'TTC', 'Matériaux TTC', 'Part mécanicien', 'Profit MecaLIK', ''].map(h => (
                 <div key={h} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</div>
               ))}
             </div>
@@ -1175,8 +1175,8 @@ export default function FinancesTab({ financeBookings, financeLoading, mechanics
                       { label: '🔩 Matériaux (TTC)',      value: (newEntry.materials_cost || 0).toFixed(0) + ' MAD', color: '#43BCC9' },
                       { label: "🔧 Main d'œuvre (TTC)",   value: (newEntry.labor_cost || 0).toFixed(0) + ' MAD',     color: '#F0C040' },
                       { label: "Base MO retenue (HT)",     value: o.labourHT.toFixed(0) + ' MAD',                     color: 'rgba(255,255,255,0.7)' },
-                      { label: 'Part mécanicien (65%)',   value: mechPayoutPreview.toFixed(0) + ' MAD',              color: '#FF6B6B' },
-                      { label: '→ Profit MecaLIK (35%)', value: profitPreview.toFixed(0) + ' MAD',                 color: '#43BCC9', bold: true },
+                      { label: `Part mécanicien (${mechanicRateLabel(newEntry.date)})`,   value: mechPayoutPreview.toFixed(0) + ' MAD',              color: '#FF6B6B' },
+                      { label: `→ Profit MecaLIK (${mecalikRateLabel(newEntry.date)})`, value: profitPreview.toFixed(0) + ' MAD',                 color: '#43BCC9', bold: true },
                     ] as { label: string; value: string; color: string; bold?: boolean }[]).map((row, ri) => (
                       <div key={ri} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
                         <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{row.label}</span>

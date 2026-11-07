@@ -77,8 +77,8 @@ export function invoiceLineItems(
 }
 
 /** Every money figure for one invoice — via the shared quote math. */
-export function invoiceTotals(inv: Pick<Invoice, 'line_items' | 'materials_ttc' | 'labour_ttc' | 'total_ttc'>): QuoteTotals {
-  return computeQuoteTotals(invoiceLineItems(inv))
+export function invoiceTotals(inv: Pick<Invoice, 'line_items' | 'materials_ttc' | 'labour_ttc' | 'total_ttc'> & { invoice_date?: string | null }): QuoteTotals {
+  return computeQuoteTotals(invoiceLineItems(inv), undefined, inv.invoice_date ?? null)
 }
 
 const ZERO_TOTALS: QuoteTotals = {
@@ -107,8 +107,8 @@ export function sumInvoiceTotals(invs: Invoice[]): QuoteTotals {
 const round2 = (n: number) => Math.round(n * 100) / 100
 
 /** The denormalised money columns stored on an invoice row, computed from its lines. */
-export function invoiceMoneyColumns(lines: ServiceDetail[]) {
-  const t = computeQuoteTotals(lines)
+export function invoiceMoneyColumns(lines: ServiceDetail[], invoiceDate?: string | null) {
+  const t = computeQuoteTotals(lines, undefined, invoiceDate ?? null)
   return {
     total_ttc:      round2(t.totalTTC),
     total_ht:       round2(t.totalHT),

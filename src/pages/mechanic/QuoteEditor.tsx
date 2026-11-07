@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { normalizeDetailType, type ServiceDetail, type ServiceDetailType } from '../admin/adminShared'
-import { computeQuoteTotals, getCustomerName, getCustomerPhone } from '../../lib/bookingUtils'
+import { computeQuoteTotals, mechanicRateLabel, getCustomerName, getCustomerPhone } from '../../lib/bookingUtils'
 
 type EditorBooking = {
   id: string
@@ -318,7 +318,7 @@ export default function QuoteEditor({ booking, userId, onClose, onSubmitted }: P
               </div>
 
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', textAlign: 'right', marginTop: '6px' }}>
-                Votre part (65% de la main d'œuvre HT) : {Math.round(mechanicShare)} MAD
+                Votre part ({mechanicRateLabel()} de la main d'œuvre HT) : {Math.round(mechanicShare)} MAD
               </div>
             </div>
 
