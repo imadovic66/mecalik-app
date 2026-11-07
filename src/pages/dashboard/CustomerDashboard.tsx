@@ -10,6 +10,7 @@ import {
   Home, Clock as ClockIcon, Car as CarIcon, User, Wrench, ArrowRight, ChevronDown,
 } from 'lucide-react'
 import AddCarModal from '../../components/ui/AddCarModal'
+import GarageAlertsCard from '../../components/garage/GarageAlertsCard'
 import { serviceIdFromName } from '../../lib/serviceUtils'
 import { isServiceComingSoon } from '../../data/serviceStatus'
 
@@ -390,6 +391,8 @@ export default function CustomerDashboard() {
               </div>
             )
           })()}
+
+          <GarageAlertsCard />
 
           {/* ── MY GARAGE ─────────────────────────────────────────── */}
           <section style={{ marginBottom: '28px' }}>

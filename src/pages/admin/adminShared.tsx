@@ -93,7 +93,7 @@ export type FinanceBooking = {
   service_details?: ServiceDetail[] | null
 }
 
-export type Tab = 'overview' | 'bookings' | 'customers' | 'finances' | 'catalog' | 'reviews' | 'notifications'
+export type Tab = 'overview' | 'bookings' | 'customers' | 'vehicles' | 'finances' | 'catalog' | 'reviews' | 'notifications'
 
 export const STATUS_CONFIG = {
   pending:       { label: 'En attente',          color: '#F0C040', bg: 'rgba(240,192,64,0.1)',  border: 'rgba(240,192,64,0.25)'  },

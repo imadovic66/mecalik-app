@@ -15,7 +15,6 @@ import CustomerDashboard from './pages/dashboard/CustomerDashboard'
 import BookingConfirmation from './pages/dashboard/BookingConfirmation'
 import FleetDashboard from './pages/fleet/FleetDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
-import MyCars from './pages/dashboard/MyCars'
 import MyHistory from './pages/dashboard/MyHistory'
 import MyProfile from './pages/dashboard/MyProfile'
 import MechanicDashboard from './pages/mechanic/MechanicDashboard'
@@ -24,6 +23,7 @@ import Tarifs from './pages/Tarifs'
 import Flottes from './pages/Flottes'
 import FAQ from './pages/FAQ'
 import TrackBooking from './pages/TrackBooking'
+import GaragePage, { MyGarage } from './pages/GaragePage'
 import ReviewPage from './pages/ReviewPage'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
@@ -85,7 +85,7 @@ function AppShell() {
             <ProtectedRoute requiredRole="customer"><CustomerDashboard /></ProtectedRoute>
           } />
           <Route path="/dashboard/voitures" element={
-            <ProtectedRoute requiredRole="customer"><MyCars /></ProtectedRoute>
+            <ProtectedRoute requiredRole="customer"><MyGarage /></ProtectedRoute>
           } />
           <Route path="/dashboard/historique" element={
             <ProtectedRoute requiredRole="customer"><MyHistory /></ProtectedRoute>
@@ -96,6 +96,7 @@ function AppShell() {
           <Route path="/fleet-dashboard" element={
             <ProtectedRoute><FleetDashboard /></ProtectedRoute>
           } />
+          <Route path="/garage/:token" element={<GaragePage />} />
           <Route path="/track/:reference?" element={<TrackBooking />} />
           <Route path="/suivi/:reference?" element={<TrackBooking />} />
           <Route path="/avis/:token" element={<ReviewPage />} />
@@ -106,7 +107,7 @@ function AppShell() {
         </Routes>
 
         {!isDashboard && <Footer />}
-        {!isDashboard && <WhatsAppFAB />}
+        {!isDashboard && !location.pathname.startsWith('/garage') && <WhatsAppFAB />}
 
         {/* BookingModal is self-contained — listens for openBooking events internally */}
         <BookingModal />

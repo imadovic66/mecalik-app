@@ -11,7 +11,7 @@ import {
   LayoutDashboard, ShoppingBag, Users, TrendingUp,
   LogOut, RefreshCw, X,
   Wrench, Phone, MapPin, Calendar, MessageSquare, Tag, Star,
-  Bell,
+  Bell, Car,
 } from 'lucide-react'
 import { notifyCustomerByWhatsApp, getNotifiableStatuses } from '../../utils/whatsappNotify'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
@@ -27,6 +27,7 @@ import FinancesTab       from './tabs/FinancesTab'
 import ReviewsTab        from './tabs/ReviewsTab'
 import NotificationsTab  from './tabs/NotificationsTab'
 import CatalogTab        from './tabs/CatalogTab'
+import VehiclesTab       from './tabs/VehiclesTab'
 
 export default function AdminDashboard() {
   const { user, profile, signOut } = useAuth()
@@ -196,6 +197,7 @@ export default function AdminDashboard() {
     { tab: 'overview',      icon: <LayoutDashboard size={18} />, label: t('admin.overview')      },
     { tab: 'bookings',      icon: <ShoppingBag size={18} />,     label: t('admin.reservations')  },
     { tab: 'customers',     icon: <Users size={18} />,           label: t('admin.clients')       },
+    { tab: 'vehicles',      icon: <Car size={18} />,             label: t('admin.vehicles')      },
     { tab: 'finances',      icon: <TrendingUp size={18} />,      label: t('admin.finances')      },
     { tab: 'catalog',       icon: <Tag size={18} />,             label: t('admin.catalog')       },
     { tab: 'reviews',       icon: <Star size={18} />,            label: t('admin.reviews')       },
@@ -221,6 +223,7 @@ export default function AdminDashboard() {
             { tab: 'overview'      as Tab, labelKey: 'admin.overview',      icon: LayoutDashboard },
             { tab: 'bookings'      as Tab, labelKey: 'admin.reservations',  icon: ShoppingBag     },
             { tab: 'customers'     as Tab, labelKey: 'admin.clients',       icon: Users           },
+            { tab: 'vehicles'      as Tab, labelKey: 'admin.vehicles',      icon: Car             },
             { tab: 'finances'      as Tab, labelKey: 'admin.finances',      icon: TrendingUp      },
             { tab: 'catalog'       as Tab, labelKey: 'admin.catalog',       icon: Tag             },
             { tab: 'reviews'       as Tab, labelKey: 'admin.reviews',       icon: Star            },
@@ -333,6 +336,7 @@ export default function AdminDashboard() {
             <FinancesTab financeBookings={financeBookings} financeLoading={financeLoading} mechanics={mechanics} bookings={bookings} />
           )}
           {activeTab === 'catalog' && <CatalogTab />}
+          {activeTab === 'vehicles' && <VehiclesTab />}
           {activeTab === 'reviews' && (
             <ReviewsTab />
           )}

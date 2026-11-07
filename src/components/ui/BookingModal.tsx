@@ -67,6 +67,7 @@ export default function BookingModal() {
   const [step, setStep]                         = useState(1)
   const [bookingReference, setBookingReference] = useState('')
   const [confirmedPrice, setConfirmedPrice]     = useState<number | null>(null)
+  const [garageToken, setGarageToken]           = useState<string | null>(null)
   const [selectedService, setSelectedService]   = useState<string>('')
 
   // Catalogue
@@ -189,7 +190,7 @@ export default function BookingModal() {
 
   const reset = () => {
     setStep(1); setSelectedService(''); setError(''); setPackageId(''); setSymptom('')
-    setShowBreakdown(false); setConfirmedPrice(null)
+    setShowBreakdown(false); setConfirmedPrice(null); setGarageToken(null)
   }
   const close = () => { setIsOpen(false); reset() }
 
@@ -258,8 +259,9 @@ export default function BookingModal() {
         p_preferred_window: f.preferred_window, p_symptom: f.symptom,
       })
       if (rpcError) throw rpcError
-      const res = data as { reference: string; price_quoted_ttc: number | null } | null
+      const res = data as { reference: string; price_quoted_ttc: number | null; garage_token?: string | null } | null
       reference = res?.reference ?? null
+      setGarageToken(res?.garage_token ?? null)
       if (res?.price_quoted_ttc != null) quoted = Number(res.price_quoted_ttc)
     } catch (err) {
       if (import.meta.env.DEV) console.error('Failed to save guest booking', err)
@@ -649,6 +651,12 @@ export default function BookingModal() {
                 <a href={`/track/${bookingReference}`} target="_blank" rel="noopener noreferrer"
                   style={{ width: '100%', padding: '13px', borderRadius: '10px', background: 'var(--mk-action)', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}>
                   🔍 {t('booking.trackBooking')}
+                </a>
+              )}
+              {garageToken && (
+                <a href={`/garage/${garageToken}`} target="_blank" rel="noopener noreferrer"
+                  style={{ width: '100%', padding: '13px', borderRadius: '10px', background: 'transparent', border: '1px solid rgba(67,188,201,0.4)', color: 'var(--mk-action)', fontSize: '14px', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}>
+                  🚗 {isFr ? 'Ouvrir mon garage (papiers, entretien, rappels)' : 'Open my garage (papers, maintenance, reminders)'}
                 </a>
               )}
               <button onClick={() => openWhatsApp(buildWhatsAppMessage(bookingReference, confirmedPrice))} style={{ ...linkBtn, color: 'var(--mk-success)', display: 'inline-flex', alignItems: 'center' }}>
