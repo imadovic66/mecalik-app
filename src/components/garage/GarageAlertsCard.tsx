@@ -26,16 +26,16 @@ export default function GarageAlertsCard() {
       border: `1px solid ${items.some(i => i.red) ? 'rgba(255,107,107,0.3)' : 'rgba(240,192,64,0.3)'}`,
       borderRadius: '14px', padding: '14px 16px',
     }}>
-      <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', marginBottom: '6px' }}>
+      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--c-text)', marginBottom: '6px' }}>
         🚗 Mon garage {items.length > 0 ? `· ${items.length} point${items.length > 1 ? 's' : ''} à surveiller` : ''}
       </div>
       {items.slice(0, 3).map((i, k) => (
-        <div key={k} style={{ fontSize: '12px', color: i.red ? '#FF6B6B' : '#F0C040', lineHeight: 1.6 }}>• {i.text}</div>
+        <div key={k} style={{ fontSize: '12px', color: i.red ? 'var(--c-danger-text)' : 'var(--c-warn)', lineHeight: 1.6 }}>• {i.text}</div>
       ))}
       {items.length === 0 && missing > 0 && (
-        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Ajoutez vos papiers et votre kilométrage pour recevoir des rappels.</div>
+        <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.6)' }}>Ajoutez vos papiers et votre kilométrage pour recevoir des rappels.</div>
       )}
-      <div style={{ fontSize: '12px', color: 'var(--mk-action)', marginTop: '6px', fontWeight: 600 }}>Ouvrir mon garage →</div>
+      <div style={{ fontSize: '12px', color: 'var(--c-link)', marginTop: '6px', fontWeight: 600 }}>Ouvrir mon garage →</div>
     </button>
   )
 }

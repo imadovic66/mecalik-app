@@ -1,6 +1,8 @@
 /** "Mon garage" — the customer's cars, papers, maintenance plan, history and expenses.
  *  token = private link for guests; null = logged-in customer (session). Same screen for both. */
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCustTheme } from '../../lib/custTheme'
+import { ThemeButton } from '../ui/ThemeToggle'
 import { Plus, X, Check, Pencil, Trash2, Gauge, ArrowLeft, FileText, Wrench, History, LayoutGrid, Link2 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { loadCatalog, type VehicleModel } from '../../lib/catalog'
@@ -61,13 +63,13 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
 
   const bundle: CarBundle | undefined = data?.cars.find(c => c.car.id === carId)
 
-  if (loading) return <PageShell onBack={onBack}><div style={{ color: 'rgba(255,255,255,0.5)', padding: '60px 0', textAlign: 'center' }}>Chargement de votre garage…</div></PageShell>
+  if (loading) return <PageShell onBack={onBack}><div style={{ color: 'rgba(var(--c-fg-rgb),0.5)', padding: '60px 0', textAlign: 'center' }}>Chargement de votre garage…</div></PageShell>
   if (error) return (
     <PageShell onBack={onBack}>
       <div style={{ ...card, textAlign: 'center', padding: '40px 20px' }}>
         <div style={{ fontSize: '32px', marginBottom: '10px' }}>🔒</div>
-        <div style={{ color: 'white', fontWeight: 600, marginBottom: '6px' }}>{error}</div>
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Demandez votre lien à MecaLIK sur WhatsApp.</div>
+        <div style={{ color: 'var(--c-text)', fontWeight: 600, marginBottom: '6px' }}>{error}</div>
+        <div style={{ color: 'rgba(var(--c-fg-rgb),0.5)', fontSize: '13px' }}>Demandez votre lien à MecaLIK sur WhatsApp.</div>
         <button onClick={() => askMecalik('Bonjour, je souhaite recevoir le lien de mon garage MecaLIK.')} style={{ ...btnPrimary, marginTop: '16px' }}>Demander mon lien</button>
       </div>
     </PageShell>
@@ -82,8 +84,8 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: '12px', color: 'var(--mk-action)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>Mon garage</div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'white', margin: '4px 0 0' }}>{g.name ? `Bonjour ${g.name.split(' ')[0]}` : 'Vos véhicules'}</h1>
+          <div style={{ fontSize: '12px', color: 'var(--c-link)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>Mon garage</div>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--c-text)', margin: '4px 0 0' }}>{g.name ? `Bonjour ${g.name.split(' ')[0]}` : 'Vos véhicules'}</h1>
         </div>
         <button onClick={() => setModal({ kind: 'car', car: null })} style={btnGhost}><Plus size={14} /> Ajouter un véhicule</button>
       </div>
@@ -91,13 +93,13 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
       {token && user && profile?.role === 'customer' && !g.is_mine && !g.linked && (
         <div style={{ ...card, borderColor: 'rgba(67,188,201,0.35)', background: 'rgba(67,188,201,0.06)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <Link2 size={16} color="var(--mk-action)" />
-          <div style={{ flex: 1, minWidth: '200px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>Rattachez ce garage à votre compte pour le retrouver sans lien.</div>
+          <div style={{ flex: 1, minWidth: '200px', fontSize: '13px', color: 'rgba(var(--c-fg-rgb),0.8)' }}>Rattachez ce garage à votre compte pour le retrouver sans lien.</div>
           <button disabled={busy} onClick={() => run(() => linkGarageToAccount(token), 'Garage rattaché à votre compte ✓')} style={btnPrimary}>Rattacher</button>
         </div>
       )}
       {token && !user && (
-        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '14px' }}>
-          🔒 Lien privé : ne le partagez pas. Vous pouvez aussi <a href="/signup" style={{ color: 'var(--mk-action)' }}>créer un compte</a>.
+        <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.4)', marginBottom: '14px' }}>
+          🔒 Lien privé : ne le partagez pas. Vous pouvez aussi <a href="/signup" style={{ color: 'var(--c-link)' }}>créer un compte</a>.
         </div>
       )}
 
@@ -107,8 +109,8 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
       {data.cars.length === 0 && (
         <div style={{ ...card, textAlign: 'center', padding: '40px 20px' }}>
           <div style={{ fontSize: '36px', marginBottom: '8px' }}>🚗</div>
-          <div style={{ color: 'white', fontWeight: 600, marginBottom: '6px' }}>Ajoutez votre premier véhicule</div>
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '16px' }}>Papiers, entretien, kilométrage et dépenses au même endroit, avec des rappels.</div>
+          <div style={{ color: 'var(--c-text)', fontWeight: 600, marginBottom: '6px' }}>Ajoutez votre premier véhicule</div>
+          <div style={{ color: 'rgba(var(--c-fg-rgb),0.5)', fontSize: '13px', marginBottom: '16px' }}>Papiers, entretien, kilométrage et dépenses au même endroit, avec des rappels.</div>
           <button onClick={() => setModal({ kind: 'car', car: null })} style={btnPrimary}><Plus size={14} /> Ajouter</button>
         </div>
       )}
@@ -133,14 +135,14 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
           <div style={{ ...card, display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'rgba(67,188,201,0.1)', border: '1px solid rgba(67,188,201,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🚗</div>
             <div style={{ flex: 1, minWidth: '180px' }}>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'white' }}>{carName(bundle.car)}</div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--c-text)' }}>{carName(bundle.car)}</div>
+              <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.5)', marginTop: '2px' }}>
                 {[bundle.car.license_plate, bundle.car.fuel_type, bundle.car.color].filter(Boolean).join(' · ') || 'Complétez la fiche du véhicule'}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Kilométrage{bundle.est_km != null && bundle.car.mileage != null && bundle.est_km !== bundle.car.mileage ? ' estimé' : ''}</div>
-              <div style={{ fontSize: '18px', fontWeight: 800, color: 'white' }}>{fmtKm(bundle.est_km ?? bundle.car.mileage)}</div>
+              <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.4)' }}>Kilométrage{bundle.est_km != null && bundle.car.mileage != null && bundle.est_km !== bundle.car.mileage ? ' estimé' : ''}</div>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--c-text)' }}>{fmtKm(bundle.est_km ?? bundle.car.mileage)}</div>
               <button onClick={() => setModal({ kind: 'km' })} style={linkBtn}><Gauge size={12} /> Mettre à jour</button>
             </div>
             <button onClick={() => setModal({ kind: 'car', car: bundle.car })} style={iconBtn} title="Modifier"><Pencil size={14} /></button>
@@ -164,10 +166,10 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
                 <SectionTitle>À surveiller</SectionTitle>
                 {alerts.length === 0 && <Muted>Rien d'urgent. Renseignez vos papiers et votre dernier entretien pour recevoir des rappels.</Muted>}
                 {alerts.map((a, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderTop: i ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderTop: i ? '1px solid rgba(var(--c-fg-rgb),0.05)' : 'none' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: a.color, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '14px', color: 'white', fontWeight: 600 }}>{a.title}</div>
+                      <div style={{ fontSize: '14px', color: 'var(--c-text)', fontWeight: 600 }}>{a.title}</div>
                       <div style={{ fontSize: '12px', color: a.color }}>{a.sub}</div>
                     </div>
                     {a.action && <button onClick={a.action.fn} style={btnSmall}>{a.action.label}</button>}
@@ -184,9 +186,9 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
                 <div style={card}>
                   <SectionTitle>Réservations en cours</SectionTitle>
                   {bundle.bookings.map(b => (
-                    <a key={b.reference} href={`/track/${b.reference}`} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', color: 'white', textDecoration: 'none', fontSize: '13px' }}>
-                      <span>{b.service_name} · <span style={{ color: 'rgba(255,255,255,0.5)' }}>{b.reference}</span></span>
-                      <span style={{ color: 'var(--mk-action)' }}>Suivre →</span>
+                    <a key={b.reference} href={`/track/${b.reference}`} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', color: 'var(--c-text)', textDecoration: 'none', fontSize: '13px' }}>
+                      <span>{b.service_name} · <span style={{ color: 'rgba(var(--c-fg-rgb),0.5)' }}>{b.reference}</span></span>
+                      <span style={{ color: 'var(--c-link)' }}>Suivre →</span>
                     </a>
                   ))}
                 </div>
@@ -199,33 +201,33 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
               {DOC_TYPES.map(t => {
                 const d = bundle.documents.find(x => x.doc_type === t.id)
-                const col = d?.days_left == null ? 'rgba(255,255,255,0.35)' : d.days_left < 0 ? '#FF6B6B' : d.days_left <= 30 ? '#F0C040' : '#00DD88'
+                const col = d?.days_left == null ? 'rgba(var(--c-fg-rgb),0.35)' : d.days_left < 0 ? 'var(--c-danger-text)' : d.days_left <= 30 ? 'var(--c-warn)' : 'var(--c-success-text)'
                 return (
                   <button key={t.id} onClick={() => setModal({ kind: 'doc', doc: d ?? { doc_type: t.id, car_id: bundle.car.id } })} style={{ ...card, textAlign: 'left', cursor: 'pointer', margin: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '15px', fontWeight: 700, color: 'white' }}>{t.label}</span>
-                      <Pencil size={13} color="rgba(255,255,255,0.4)" />
+                      <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--c-text)' }}>{t.label}</span>
+                      <Pencil size={13} color="rgba(var(--c-fg-rgb),0.4)" />
                     </div>
                     {d ? (
                       <>
-                        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginTop: '8px' }}>
-                          {d.expiry_date ? <>Échéance <b style={{ color: 'white' }}>{fmtDate(d.expiry_date)}</b></> : 'Sans échéance'}
+                        <div style={{ fontSize: '13px', color: 'rgba(var(--c-fg-rgb),0.7)', marginTop: '8px' }}>
+                          {d.expiry_date ? <>Échéance <b style={{ color: 'var(--c-text)' }}>{fmtDate(d.expiry_date)}</b></> : 'Sans échéance'}
                         </div>
                         {d.days_left != null && <div style={{ fontSize: '12px', color: col, marginTop: '2px' }}>{d.days_left < 0 ? `Expiré ${daysText(d.days_left)}` : `Expire ${daysText(d.days_left)}`}</div>}
-                        {(d.provider || d.reference) && <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>{[d.provider, d.reference].filter(Boolean).join(' · ')}</div>}
-                        {!!d.files?.length && <div style={{ fontSize: '12px', color: 'var(--mk-action)', marginTop: '4px' }}>📎 {d.files.length} photo{d.files.length > 1 ? 's' : ''}</div>}
+                        {(d.provider || d.reference) && <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.4)', marginTop: '4px' }}>{[d.provider, d.reference].filter(Boolean).join(' · ')}</div>}
+                        {!!d.files?.length && <div style={{ fontSize: '12px', color: 'var(--c-link)', marginTop: '4px' }}>📎 {d.files.length} photo{d.files.length > 1 ? 's' : ''}</div>}
                       </>
-                    ) : <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>Non renseigné — {t.hint.toLowerCase()}</div>}
+                    ) : <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.4)', marginTop: '8px' }}>Non renseigné — {t.hint.toLowerCase()}</div>}
                   </button>
                 )
               })}
               {bundle.documents.filter(d => d.doc_type === 'autre').map(d => (
                 <button key={d.id} onClick={() => setModal({ kind: 'doc', doc: d })} style={{ ...card, textAlign: 'left', cursor: 'pointer', margin: 0 }}>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'white' }}>{d.reference || 'Autre document'}</div>
-                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '6px' }}>{d.expiry_date ? `Échéance ${fmtDate(d.expiry_date)}` : 'Sans échéance'}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--c-text)' }}>{d.reference || 'Autre document'}</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.5)', marginTop: '6px' }}>{d.expiry_date ? `Échéance ${fmtDate(d.expiry_date)}` : 'Sans échéance'}</div>
                 </button>
               ))}
-              <button onClick={() => setModal({ kind: 'doc', doc: { doc_type: 'autre', car_id: bundle.car.id } })} style={{ ...card, margin: 0, cursor: 'pointer', color: 'var(--mk-action)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderStyle: 'dashed' }}>
+              <button onClick={() => setModal({ kind: 'doc', doc: { doc_type: 'autre', car_id: bundle.car.id } })} style={{ ...card, margin: 0, cursor: 'pointer', color: 'var(--c-link)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderStyle: 'dashed' }}>
                 <Plus size={14} /> Autre document
               </button>
             </div>
@@ -240,15 +242,15 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
               </div>
               <Muted>Intervalles indicatifs : adaptez-les au carnet de votre véhicule. « Fait » met à jour la prochaine échéance.</Muted>
               {bundle.maintenance.map((m, i) => (
-                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0', borderTop: i ? '1px solid rgba(255,255,255,0.05)' : 'none', flexWrap: 'wrap' }}>
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 0', borderTop: i ? '1px solid rgba(var(--c-fg-rgb),0.05)' : 'none', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', color: '#0A0A0A', background: STATUS_COLOR[m.status], minWidth: '70px', textAlign: 'center' }}>{STATUS_LABEL[m.status]}</span>
                   <div style={{ flex: 1, minWidth: '160px' }}>
-                    <div style={{ fontSize: '14px', color: 'white', fontWeight: 600 }}>{m.label}</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+                    <div style={{ fontSize: '14px', color: 'var(--c-text)', fontWeight: 600 }}>{m.label}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.5)' }}>
                       {m.status === 'unknown' ? 'Dernier remplacement inconnu' : `Fait le ${fmtDate(m.last_done_date)}${m.last_done_km != null ? ` à ${fmtKm(m.last_done_km)}` : ''}`}
                       {' · '}{[m.interval_km ? `tous les ${fmtKm(m.interval_km)}` : '', m.interval_months ? `${m.interval_months} mois` : ''].filter(Boolean).join(' / ')}
                     </div>
-                    {m.status !== 'unknown' && <div style={{ fontSize: '12px', color: STATUS_COLOR[m.status] }}>Prochain : {dueText(m)}</div>}
+                    {m.status !== 'unknown' && <div style={{ fontSize: '12px', color: STATUS_TEXT[m.status] }}>Prochain : {dueText(m)}</div>}
                   </div>
                   <button onClick={() => setModal({ kind: 'done', m })} style={btnSmall}><Check size={12} /> Fait</button>
                   {(m.status === 'soon' || m.status === 'overdue') && (
@@ -281,17 +283,17 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
                 const cat = CATEGORIES.find(c => c.id === h.category) ?? CATEGORIES[CATEGORIES.length - 1]
                 const isMk = h.source === 'mecalik'
                 return (
-                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderTop: i ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderTop: i ? '1px solid rgba(var(--c-fg-rgb),0.05)' : 'none' }}>
                     <span style={{ fontSize: '18px', width: '24px', textAlign: 'center' }}>{cat.icon}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '14px', color: 'white', fontWeight: 600 }}>
+                      <div style={{ fontSize: '14px', color: 'var(--c-text)', fontWeight: 600 }}>
                         {h.service_name}{isMk && <span style={{ marginLeft: '6px', fontSize: '10px', color: '#0A0A0A', background: 'var(--mk-action)', borderRadius: '4px', padding: '1px 5px', fontWeight: 700 }}>MecaLIK</span>}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>
+                      <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.45)' }}>
                         {[fmtDate(h.service_date), h.mileage != null ? fmtKm(h.mileage) : '', h.liters ? `${h.liters} L` : '', h.provider || ''].filter(Boolean).join(' · ')}
                       </div>
                     </div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'white', whiteSpace: 'nowrap' }}>{h.cost != null ? fmtMoney(h.cost) : ''}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--c-text)', whiteSpace: 'nowrap' }}>{h.cost != null ? fmtMoney(h.cost) : ''}</div>
                     {!isMk && <button onClick={() => setModal({ kind: 'log', log: h })} style={iconBtn} title="Modifier"><Pencil size={13} /></button>}
                   </div>
                 )
@@ -335,7 +337,7 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
       )}
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.12)', color: 'white', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', zIndex: 200 }}>{toast}</div>
+        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', background: 'var(--c-surface2)', border: '1px solid rgba(var(--c-fg-rgb),0.12)', color: 'var(--c-text)', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', zIndex: 200 }}>{toast}</div>
       )}
     </PageShell>
   )
@@ -345,21 +347,21 @@ export default function Garage({ token, onBack }: { token: string | null; onBack
     for (const d of b.documents) {
       if (d.days_left == null || d.days_left > 30) continue
       out.push({ title: docLabel(d.doc_type), sub: d.days_left < 0 ? `Expiré ${daysText(d.days_left)}` : `Expire ${daysText(d.days_left)} (${fmtDate(d.expiry_date)})`,
-        color: d.days_left < 0 ? '#FF6B6B' : '#F0C040', level: d.days_left < 0 ? 'red' : 'amber',
+        color: d.days_left < 0 ? 'var(--c-danger-text)' : 'var(--c-warn)', level: d.days_left < 0 ? 'red' : 'amber',
         action: { label: 'Mettre à jour', fn: () => { setCarId(b.car.id); setModal({ kind: 'doc', doc: d }) } } })
     }
     for (const m of b.maintenance) {
       if (m.status !== 'overdue' && m.status !== 'soon') continue
-      out.push({ title: m.label, sub: dueText(m), color: STATUS_COLOR[m.status], level: m.status === 'overdue' ? 'red' : 'amber',
+      out.push({ title: m.label, sub: dueText(m), color: STATUS_TEXT[m.status], level: m.status === 'overdue' ? 'red' : 'amber',
         action: BOOKABLE[m.item] ? { label: 'Réserver', fn: () => openBooking(BOOKABLE[m.item]) } : { label: 'Devis', fn: () => askMecalik(`Bonjour, je voudrais un devis pour : ${m.label} — ${carName(b.car)}.`) } })
     }
     for (const t of DOC_TYPES.filter(t => t.id !== 'carte_grise')) {
-      if (!b.documents.some(d => d.doc_type === t.id)) out.push({ title: `${t.label} non renseignée`, sub: 'Ajoutez la date pour être prévenu à temps', color: 'rgba(255,255,255,0.4)', level: 'info',
+      if (!b.documents.some(d => d.doc_type === t.id)) out.push({ title: `${t.label} non renseignée`, sub: 'Ajoutez la date pour être prévenu à temps', color: 'rgba(var(--c-fg-rgb),0.4)', level: 'info',
         action: { label: 'Ajouter', fn: () => { setCarId(b.car.id); setModal({ kind: 'doc', doc: { doc_type: t.id, car_id: b.car.id } }) } } })
     }
-    if (b.car.mileage == null) out.push({ title: 'Kilométrage inconnu', sub: "Indispensable pour calculer l'entretien", color: 'rgba(255,255,255,0.4)', level: 'info', action: { label: 'Renseigner', fn: () => setModal({ kind: 'km' }) } })
+    if (b.car.mileage == null) out.push({ title: 'Kilométrage inconnu', sub: "Indispensable pour calculer l'entretien", color: 'rgba(var(--c-fg-rgb),0.4)', level: 'info', action: { label: 'Renseigner', fn: () => setModal({ kind: 'km' }) } })
     const vid = b.maintenance.find(m => m.item === 'vidange')
-    if (vid && vid.status === 'unknown') out.push({ title: 'Dernière vidange inconnue', sub: 'Indiquez quand elle a été faite', color: 'rgba(255,255,255,0.4)', level: 'info', action: { label: 'Renseigner', fn: () => setModal({ kind: 'done', m: vid }) } })
+    if (vid && vid.status === 'unknown') out.push({ title: 'Dernière vidange inconnue', sub: 'Indiquez quand elle a été faite', color: 'rgba(var(--c-fg-rgb),0.4)', level: 'info', action: { label: 'Renseigner', fn: () => setModal({ kind: 'done', m: vid }) } })
     return out.sort((a, b2) => ({ red: 0, amber: 1, info: 2 }[a.level] - { red: 0, amber: 1, info: 2 }[b2.level]))
   }
 }
@@ -375,8 +377,8 @@ function ReminderSettings({ garage, busy, onSave }: { garage: GarageData['garage
     <div style={{ ...card, padding: '12px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '16px' }}>🔔</span>
-        <div style={{ flex: 1, minWidth: '180px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
-          {active ? <>Rappels par email activés : <b style={{ color: 'white' }}>{current}</b></>
+        <div style={{ flex: 1, minWidth: '180px', fontSize: '13px', color: 'rgba(var(--c-fg-rgb),0.8)' }}>
+          {active ? <>Rappels par email activés : <b style={{ color: 'var(--c-text)' }}>{current}</b></>
             : current ? 'Rappels par email désactivés' : 'Recevez vos rappels (papiers, entretien) par email'}
         </div>
         <button onClick={() => setOpen(!open)} style={btnSmall}>{open ? 'Fermer' : current ? 'Modifier' : 'Activer'}</button>
@@ -399,7 +401,7 @@ function CategoryTotals({ history }: { history: LogEntry[] }) {
   if (!rows.length) return null
   return (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-      {rows.map(r => <span key={r.c.id} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', background: '#151515', borderRadius: '8px', padding: '4px 8px' }}>{r.c.icon} {r.c.label} 12 mois : <b style={{ color: 'white' }}>{fmtMoney(r.total)}</b></span>)}
+      {rows.map(r => <span key={r.c.id} style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.7)', background: 'var(--c-surface2)', borderRadius: '8px', padding: '4px 8px' }}>{r.c.icon} {r.c.label} 12 mois : <b style={{ color: 'var(--c-text)' }}>{fmtMoney(r.total)}</b></span>)}
     </div>
   )
 }
@@ -493,28 +495,28 @@ function DocModal({ doc, token, busy, onClose, onSave, onDelete }: { doc: Partia
       </Grid>
 
       <div style={{ marginTop: '14px' }}>
-        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Photos du document</span>
+        <span style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Photos du document</span>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
           {files.map(file => (
-            <div key={file.path} style={{ position: 'relative', width: '84px', height: '84px', borderRadius: '10px', overflow: 'hidden', background: '#151515', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div key={file.path} style={{ position: 'relative', width: '84px', height: '84px', borderRadius: '10px', overflow: 'hidden', background: 'var(--c-surface2)', border: '1px solid rgba(var(--c-fg-rgb),0.1)' }}>
               <a href={file.url ?? '#'} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', height: '100%' }}>
                 {file.type.startsWith('image/') && file.url
                   ? <img src={file.url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white', fontSize: '12px', fontWeight: 700 }}>PDF</span>}
+                  : <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--c-text)', fontSize: '12px', fontWeight: 700 }}>PDF</span>}
               </a>
-              <button onClick={() => remove(file.path)} aria-label="Supprimer" style={{ position: 'absolute', top: '4px', right: '4px', width: '22px', height: '22px', borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.7)', color: 'white', cursor: 'pointer', fontSize: '12px' }}>×</button>
+              <button onClick={() => remove(file.path)} aria-label="Supprimer" style={{ position: 'absolute', top: '4px', right: '4px', width: '22px', height: '22px', borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.7)', color: 'var(--c-text)', cursor: 'pointer', fontSize: '12px' }}>×</button>
             </div>
           ))}
           {pending.map((file, i) => (
-            <div key={i} style={{ width: '84px', height: '84px', borderRadius: '10px', background: '#151515', border: '1px dashed rgba(67,188,201,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--mk-action)', textAlign: 'center', padding: '4px', boxSizing: 'border-box', overflow: 'hidden' }}>{file.name}</div>
+            <div key={i} style={{ width: '84px', height: '84px', borderRadius: '10px', background: 'var(--c-surface2)', border: '1px dashed rgba(67,188,201,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--c-link)', textAlign: 'center', padding: '4px', boxSizing: 'border-box', overflow: 'hidden' }}>{file.name}</div>
           ))}
-          <label style={{ width: '84px', height: '84px', borderRadius: '10px', border: '1px dashed rgba(255,255,255,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>
+          <label style={{ width: '84px', height: '84px', borderRadius: '10px', border: '1px dashed rgba(var(--c-fg-rgb),0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', color: 'rgba(var(--c-fg-rgb),0.6)', fontSize: '11px' }}>
             <span style={{ fontSize: '20px' }}>{uploading ? '⏳' : '📷'}</span>{uploading ? 'Envoi…' : 'Ajouter'}
             <input type="file" accept="image/*,application/pdf" multiple disabled={uploading} onChange={e => { pick(e.target.files); e.target.value = '' }} style={{ display: 'none' }} />
           </label>
         </div>
-        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '6px' }}>Stockées de façon privée. Seuls vous et MecaLIK pouvez les voir.</div>
-        {fileError && <div style={{ fontSize: '12px', color: '#FF6B6B', marginTop: '6px' }}>{fileError}</div>}
+        <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.35)', marginTop: '6px' }}>Stockées de façon privée. Seuls vous et MecaLIK pouvez les voir.</div>
+        {fileError && <div style={{ fontSize: '12px', color: 'var(--c-danger-text)', marginTop: '6px' }}>{fileError}</div>}
       </div>
       <Footer busy={busy || uploading} canSave onSave={() => onSave(f, pending)} onDelete={onDelete} deleteLabel="Supprimer" />
     </Sheet>
@@ -586,12 +588,14 @@ function LogModal({ log, busy, onClose, onSave, onDelete }: { log: Partial<LogEn
 // ── UI primitives ────────────────────────────────────────────────────────────
 
 function PageShell({ children, onBack }: { children: React.ReactNode; onBack?: () => void }) {
+  const { mode } = useCustTheme()
   return (
-    <main style={{ background: '#0A0A0A', minHeight: '100vh', color: 'white', fontFamily: 'Outfit, sans-serif', padding: onBack ? '0 16px 60px' : '90px 16px 60px' }}>
+    <main data-mk-theme={mode} style={{ background: 'var(--c-bg)', minHeight: '100vh', color: 'var(--c-text)', fontFamily: 'Outfit, sans-serif', padding: onBack ? '0 16px 60px' : '90px 16px 60px' }}>
       {onBack && (
-        <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(10,10,10,0.9)', backdropFilter: 'blur(12px)', margin: '0 -16px 16px', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'var(--c-bar)', backdropFilter: 'blur(12px)', margin: '0 -16px 16px', padding: '12px 16px', borderBottom: '1px solid rgba(var(--c-fg-rgb),0.05)', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={onBack} style={iconBtn} aria-label="Retour"><ArrowLeft size={15} /></button>
-          <span style={{ fontWeight: 600, fontSize: '16px' }}>Mon garage</span>
+          <span style={{ fontWeight: 600, fontSize: '16px', flex: 1 }}>Mon garage</span>
+          <ThemeButton />
         </div>
       )}
       <div style={{ maxWidth: '860px', margin: '0 auto' }}>{children}</div>
@@ -599,27 +603,27 @@ function PageShell({ children, onBack }: { children: React.ReactNode; onBack?: (
   )
 }
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{children}</div>
+  return <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--c-text)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{children}</div>
 }
 function Muted({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, marginBottom: '6px' }}>{children}</div>
+  return <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.45)', lineHeight: 1.5, marginBottom: '6px' }}>{children}</div>
 }
 function Stat({ label, value }: { label: string; value: string }) {
-  return <div style={{ ...card, margin: 0 }}><div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)' }}>{label}</div><div style={{ fontSize: '18px', fontWeight: 800, color: 'white', marginTop: '4px' }}>{value}</div></div>
+  return <div style={{ ...card, margin: 0 }}><div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.45)' }}>{label}</div><div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--c-text)', marginTop: '4px' }}>{value}</div></div>
 }
 function Grid({ children }: { children: React.ReactNode }) {
   return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginTop: '10px' }}>{children}</div>
 }
 function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
-  return <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: wide ? '1 / -1' : undefined }}><span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>{children}</label>
+  return <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: wide ? '1 / -1' : undefined }}><span style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.5)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>{children}</label>
 }
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', zIndex: 150 }} />
-      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto', background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.08)', borderTopLeftRadius: '20px', borderTopRightRadius: '20px', padding: '18px 18px 28px', zIndex: 151, boxSizing: 'border-box' }}>
+      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--c-surface)', border: '1px solid rgba(var(--c-fg-rgb),0.08)', borderTopLeftRadius: '20px', borderTopRightRadius: '20px', padding: '18px 18px 28px', zIndex: 151, boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div style={{ fontSize: '17px', fontWeight: 700, color: 'white' }}>{title}</div>
+          <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--c-text)' }}>{title}</div>
           <button onClick={onClose} style={iconBtn}><X size={15} /></button>
         </div>
         {children}
@@ -630,22 +634,24 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
 function Footer({ busy, canSave, onSave, onDelete, deleteLabel }: { busy: boolean; canSave: boolean; onSave: () => void; onDelete?: () => void; deleteLabel?: string }) {
   return (
     <div style={{ display: 'flex', gap: '8px', marginTop: '16px', alignItems: 'center' }}>
-      {onDelete && <button disabled={busy} onClick={onDelete} style={{ ...btnGhost, color: '#FF6B6B', borderColor: 'rgba(255,107,107,0.3)' }}><Trash2 size={13} /> {deleteLabel}</button>}
+      {onDelete && <button disabled={busy} onClick={onDelete} style={{ ...btnGhost, color: 'var(--c-danger-text)', borderColor: 'rgba(255,107,107,0.3)' }}><Trash2 size={13} /> {deleteLabel}</button>}
       <button disabled={busy || !canSave} onClick={onSave} style={{ ...btnPrimary, flex: 1, opacity: busy || !canSave ? 0.5 : 1 }}>{busy ? 'Enregistrement…' : 'Enregistrer'}</button>
     </div>
   )
 }
 
-const card: React.CSSProperties = { background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '16px', marginBottom: '12px', boxSizing: 'border-box', width: '100%', fontFamily: 'inherit' }
-const input: React.CSSProperties = { background: '#151515', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: 'white', padding: '10px 12px', fontSize: '14px', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box', outline: 'none' }
+/** Status colours for text — readable in day and night mode */
+const STATUS_TEXT: Record<string, string> = { overdue: 'var(--c-danger-text)', soon: 'var(--c-warn)', ok: 'var(--c-success-text)', unknown: 'rgba(var(--c-fg-rgb),0.35)' }
+const card: React.CSSProperties = { background: 'var(--c-surface)', border: '1px solid rgba(var(--c-fg-rgb),0.07)', borderRadius: '16px', padding: '16px', marginBottom: '12px', boxSizing: 'border-box', width: '100%', fontFamily: 'inherit' }
+const input: React.CSSProperties = { background: 'var(--c-surface2)', border: '1px solid rgba(var(--c-fg-rgb),0.1)', borderRadius: '10px', color: 'var(--c-text)', padding: '10px 12px', fontSize: '14px', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box', outline: 'none' }
 const btnPrimary: React.CSSProperties = { background: 'var(--mk-action)', color: '#0A0A0A', border: 'none', borderRadius: '10px', padding: '11px 16px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }
-const btnGhost: React.CSSProperties = { background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '9px 14px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '6px' }
-const btnSmall: React.CSSProperties = { background: '#151515', color: 'white', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '6px 10px', fontWeight: 600, fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }
-const iconBtn: React.CSSProperties = { background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', width: '30px', height: '30px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }
-const linkBtn: React.CSSProperties = { background: 'none', border: 'none', color: 'var(--mk-action)', fontSize: '12px', cursor: 'pointer', padding: 0, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '4px' }
+const btnGhost: React.CSSProperties = { background: 'transparent', color: 'var(--c-text)', border: '1px solid rgba(var(--c-fg-rgb),0.15)', borderRadius: '10px', padding: '9px 14px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '6px' }
+const btnSmall: React.CSSProperties = { background: 'var(--c-surface2)', color: 'var(--c-text)', border: '1px solid rgba(var(--c-fg-rgb),0.12)', borderRadius: '8px', padding: '6px 10px', fontWeight: 600, fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }
+const iconBtn: React.CSSProperties = { background: 'rgba(var(--c-fg-rgb),0.05)', color: 'rgba(var(--c-fg-rgb),0.7)', border: '1px solid rgba(var(--c-fg-rgb),0.08)', borderRadius: '8px', width: '30px', height: '30px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }
+const linkBtn: React.CSSProperties = { background: 'none', border: 'none', color: 'var(--c-link)', fontSize: '12px', cursor: 'pointer', padding: 0, fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: '4px' }
 const chip = (sel: boolean): React.CSSProperties => ({
   padding: '8px 12px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
-  background: sel ? 'rgba(67,188,201,0.12)' : '#111111', color: sel ? 'var(--mk-action)' : 'rgba(255,255,255,0.75)',
-  border: sel ? '1px solid rgba(67,188,201,0.45)' : '1px solid rgba(255,255,255,0.08)', fontWeight: sel ? 600 : 400,
+  background: sel ? 'rgba(67,188,201,0.12)' : 'var(--c-surface2)', color: sel ? 'var(--c-link)' : 'rgba(var(--c-fg-rgb),0.75)',
+  border: sel ? '1px solid rgba(67,188,201,0.45)' : '1px solid rgba(var(--c-fg-rgb),0.08)', fontWeight: sel ? 600 : 400,
 })
 

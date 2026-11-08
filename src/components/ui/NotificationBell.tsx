@@ -57,27 +57,27 @@ export default function NotificationBell() {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button onClick={toggle} aria-label="Notifications" style={{
-        width: '40px', height: '40px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+        width: '40px', height: '40px', background: 'rgba(var(--c-fg-rgb),0.04)', border: '1px solid rgba(var(--c-fg-rgb),0.07)',
         borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative',
       }}>
-        <Bell size={16} color="rgba(255,255,255,0.7)" />
+        <Bell size={16} color="rgba(var(--c-fg-rgb),0.7)" />
         {unread > 0 && (
           <span style={{ position: 'absolute', top: 4, right: 4, minWidth: '16px', height: '16px', padding: '0 4px', boxSizing: 'border-box',
-            background: '#FF4444', borderRadius: '8px', border: '2px solid #0A0A0A', color: 'white', fontSize: '9px', fontWeight: 700,
+            background: '#FF4444', borderRadius: '8px', border: '2px solid var(--c-bg)', color: 'white', fontSize: '9px', fontWeight: 700,
             display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread > 9 ? '9+' : unread}</span>
         )}
       </button>
       {open && (
         <div style={{ position: 'absolute', right: 0, top: '48px', width: 'min(320px, calc(100vw - 32px))', maxHeight: '420px', overflowY: 'auto',
-          background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', boxShadow: '0 16px 40px rgba(0,0,0,0.6)', zIndex: 60 }}>
-          <div style={{ padding: '12px 14px', fontSize: '13px', fontWeight: 700, color: 'white', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>Notifications</div>
-          {items.length === 0 && <div style={{ padding: '18px 14px', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Aucune notification pour le moment. Vos rappels de papiers et d'entretien apparaîtront ici.</div>}
+          background: 'var(--c-surface)', border: '1px solid rgba(var(--c-fg-rgb),0.1)', borderRadius: '14px', boxShadow: '0 16px 40px rgba(0,0,0,0.6)', zIndex: 60 }}>
+          <div style={{ padding: '12px 14px', fontSize: '13px', fontWeight: 700, color: 'var(--c-text)', borderBottom: '1px solid rgba(var(--c-fg-rgb),0.06)' }}>Notifications</div>
+          {items.length === 0 && <div style={{ padding: '18px 14px', fontSize: '13px', color: 'rgba(var(--c-fg-rgb),0.5)' }}>Aucune notification pour le moment. Vos rappels de papiers et d'entretien apparaîtront ici.</div>}
           {items.map(n => (
             <a key={n.id} href={n.booking_id ? `/booking/${n.booking_id}` : '/dashboard/voitures'}
-              style={{ display: 'block', padding: '11px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', textDecoration: 'none', background: n.is_read ? 'transparent' : 'rgba(67,188,201,0.06)' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'white' }}>{n.title}</div>
-              {n.body && <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px', lineHeight: 1.4 }}>{n.body}</div>}
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '4px' }}>{ago(n.created_at)}</div>
+              style={{ display: 'block', padding: '11px 14px', borderBottom: '1px solid rgba(var(--c-fg-rgb),0.05)', textDecoration: 'none', background: n.is_read ? 'transparent' : 'rgba(67,188,201,0.06)' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--c-text)' }}>{n.title}</div>
+              {n.body && <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.6)', marginTop: '2px', lineHeight: 1.4 }}>{n.body}</div>}
+              <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.35)', marginTop: '4px' }}>{ago(n.created_at)}</div>
             </a>
           ))}
         </div>

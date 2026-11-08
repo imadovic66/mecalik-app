@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useTranslation } from 'react-i18next'
+import { useCustTheme } from '../../lib/custTheme'
 import { supabase } from '../../lib/supabase'
 import { serviceIdFromName } from '../../lib/serviceUtils'
 import {
@@ -49,12 +50,12 @@ const SERVICE_VISUALS: Record<string, ServiceVisual> = {
   diagnostic: { icon: Search,        gradient: 'linear-gradient(135deg, #0E7490 0%, #155E75 100%)', color: '#06B6D4' },
   pneus:      { icon: Disc,          gradient: 'linear-gradient(135deg, #422006 0%, #57340a 100%)', color: '#D97706' },
   lavage:     { icon: Sparkles,      gradient: 'linear-gradient(135deg, #312E81 0%, #3730A3 100%)', color: '#818CF8' },
-  urgence:    { icon: AlertTriangle, gradient: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', color: '#FF4444' },
+  urgence:    { icon: AlertTriangle, gradient: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)', color: 'var(--c-danger-text)' },
 }
 const FALLBACK_VISUAL: ServiceVisual = {
   icon: Wrench,
-  gradient: 'linear-gradient(135deg, #1F1F1F 0%, #2A2A2A 100%)',
-  color: 'rgba(255,255,255,0.5)',
+  gradient: 'var(--c-surface2)',
+  color: 'rgba(var(--c-fg-rgb),0.5)',
 }
 const getVisual = (name: string) => SERVICE_VISUALS[serviceIdFromName(name)] ?? FALLBACK_VISUAL
 
@@ -68,6 +69,7 @@ const FILTER_OPTIONS = [
 type FilterId = typeof FILTER_OPTIONS[number]['id']
 
 export default function MyHistory() {
+  const { mode } = useCustTheme()
   const { user }    = useAuth()
   const { t, i18n } = useTranslation()
   const navigate    = useNavigate()
@@ -173,19 +175,19 @@ export default function MyHistory() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '10px 12px', borderRadius: '8px',
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-    color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
+    background: 'rgba(var(--c-fg-rgb),0.05)', border: '1px solid rgba(var(--c-fg-rgb),0.1)',
+    color: 'var(--c-text)', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
     fontFamily: 'Outfit, sans-serif',
   }
   const labelStyle: React.CSSProperties = {
-    fontSize: '11px', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase',
+    fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.45)', textTransform: 'uppercase',
     letterSpacing: '0.06em', display: 'block', marginBottom: '5px',
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', justifyContent: 'center' }}>
+    <div data-mk-theme={mode} style={{ minHeight: '100vh', background: 'var(--c-bg)', display: 'flex', justifyContent: 'center' }}>
       <div style={{
-        width: '100%', maxWidth: '480px', background: '#0A0A0A',
+        width: '100%', maxWidth: '480px', background: 'var(--c-bg)',
         minHeight: '100vh', position: 'relative', paddingBottom: '90px',
         boxShadow: '0 0 80px rgba(0,0,0,0.6)',
       }}>
@@ -193,23 +195,23 @@ export default function MyHistory() {
         {/* ═══ TOP BAR ═══ */}
         <div style={{
           position: 'sticky', top: 0, zIndex: 50,
-          background: 'rgba(10,10,10,0.85)', backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
+          background: 'var(--c-bar)', backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(var(--c-fg-rgb),0.04)',
           padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px',
         }}>
           <button onClick={() => navigate('/dashboard')} style={{
             width: '36px', height: '36px',
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+            background: 'rgba(var(--c-fg-rgb),0.04)', border: '1px solid rgba(var(--c-fg-rgb),0.07)',
             borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer',
           }}>
-            <ArrowLeft size={15} color="rgba(255,255,255,0.7)" />
+            <ArrowLeft size={15} color="rgba(var(--c-fg-rgb),0.7)" />
           </button>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '17px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em' }}>
+            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '17px', fontWeight: 600, color: 'var(--c-text)', letterSpacing: '-0.01em' }}>
               {t('customer.historyTitle')}
             </div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+            <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.4)' }}>
               {totalEntries} service{totalEntries !== 1 ? 's' : ''}
             </div>
           </div>
@@ -218,9 +220,9 @@ export default function MyHistory() {
             disabled={cars.length === 0}
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
-              background: cars.length === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(67,188,201,0.1)',
+              background: cars.length === 0 ? 'rgba(var(--c-fg-rgb),0.04)' : 'rgba(67,188,201,0.1)',
               border: '1px solid rgba(67,188,201,0.25)',
-              color: cars.length === 0 ? 'rgba(255,255,255,0.3)' : '#43BCC9',
+              color: cars.length === 0 ? 'rgba(var(--c-fg-rgb),0.3)' : '#43BCC9',
               padding: '7px 12px', borderRadius: '9px',
               fontSize: '12px', fontWeight: 600, cursor: cars.length === 0 ? 'not-allowed' : 'pointer',
             }}
@@ -235,20 +237,20 @@ export default function MyHistory() {
           {/* ── Stats ── */}
           {totalEntries > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '20px' }}>
-              <div style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '14px 16px' }}>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+              <div style={{ background: 'var(--c-surface)', border: '1px solid rgba(var(--c-fg-rgb),0.06)', borderRadius: '14px', padding: '14px 16px' }}>
+                <div style={{ fontSize: '10px', color: 'rgba(var(--c-fg-rgb),0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
                   {t('customer.interventions')}
                 </div>
-                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '22px', fontWeight: 700, color: '#43BCC9', letterSpacing: '-0.02em' }}>
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '22px', fontWeight: 700, color: 'var(--c-link)', letterSpacing: '-0.02em' }}>
                   {totalEntries}
                 </div>
               </div>
-              <div style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '14px 16px' }}>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+              <div style={{ background: 'var(--c-surface)', border: '1px solid rgba(var(--c-fg-rgb),0.06)', borderRadius: '14px', padding: '14px 16px' }}>
+                <div style={{ fontSize: '10px', color: 'rgba(var(--c-fg-rgb),0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
                   {t('customer.totalSpent')}
                 </div>
-                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '22px', fontWeight: 700, color: '#00DD88', letterSpacing: '-0.02em' }}>
-                  {totalSpent} <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>MAD</span>
+                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '22px', fontWeight: 700, color: 'var(--c-success-text)', letterSpacing: '-0.02em' }}>
+                  {totalSpent} <span style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.4)', fontWeight: 400 }}>MAD</span>
                 </div>
               </div>
             </div>
@@ -263,9 +265,9 @@ export default function MyHistory() {
                   onClick={() => setFilter(f.id)}
                   style={{
                     flexShrink: 0, padding: '7px 14px', borderRadius: '20px',
-                    border: filter === f.id ? '1px solid rgba(67,188,201,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    border: filter === f.id ? '1px solid rgba(67,188,201,0.4)' : '1px solid rgba(var(--c-fg-rgb),0.08)',
                     background: filter === f.id ? 'rgba(67,188,201,0.1)' : 'transparent',
-                    color: filter === f.id ? '#43BCC9' : 'rgba(255,255,255,0.55)',
+                    color: filter === f.id ? 'var(--c-link)' : 'rgba(var(--c-fg-rgb),0.55)',
                     fontSize: '12px', fontWeight: filter === f.id ? 600 : 500,
                     cursor: 'pointer', whiteSpace: 'nowrap',
                   }}
@@ -278,7 +280,7 @@ export default function MyHistory() {
 
           {/* ── Loading ── */}
           {loading && (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>
+            <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(var(--c-fg-rgb),0.4)', fontSize: '13px' }}>
               {t('common.loading')}
             </div>
           )}
@@ -299,10 +301,10 @@ export default function MyHistory() {
               }}>
                 <ClockIcon size={22} color="#43BCC9" />
               </div>
-              <div style={{ fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '4px', fontFamily: 'Space Grotesk, sans-serif' }}>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--c-text)', marginBottom: '4px', fontFamily: 'Space Grotesk, sans-serif' }}>
                 {t('customer.noHistory')}
               </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', maxWidth: '260px', margin: '0 auto 20px', lineHeight: 1.5 }}>
+              <div style={{ fontSize: '12px', color: 'rgba(var(--c-fg-rgb),0.45)', maxWidth: '260px', margin: '0 auto 20px', lineHeight: 1.5 }}>
                 Aucun historique. Ajoutez un service passé ou réservez une prestation.
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -311,7 +313,7 @@ export default function MyHistory() {
                   disabled={cars.length === 0}
                   style={{
                     padding: '9px 16px', borderRadius: '9px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-                    background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(var(--c-fg-rgb),0.08)', color: 'var(--c-text)', border: '1px solid rgba(var(--c-fg-rgb),0.12)',
                   }}
                 >+ Ajouter un service</button>
                 <button
@@ -327,7 +329,7 @@ export default function MyHistory() {
 
           {/* ── No filter match ── */}
           {!loading && allItems.length > 0 && filtered.length === 0 && (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '13px', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+            <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(var(--c-fg-rgb),0.4)', fontSize: '13px', border: '1px dashed rgba(var(--c-fg-rgb),0.08)', borderRadius: '14px' }}>
               {t('customer.noHistoryFilter')}
             </div>
           )}
@@ -335,7 +337,7 @@ export default function MyHistory() {
           {/* ── Year-grouped timeline ── */}
           {!loading && filtered.length > 0 && sortedYears.map(year => (
             <div key={year} style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px', paddingLeft: '4px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(var(--c-fg-rgb),0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px', paddingLeft: '4px' }}>
                 {year}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -349,9 +351,9 @@ export default function MyHistory() {
                       <div
                         key={item.id}
                         onClick={() => navigate(`/booking/${b.id}`)}
-                        style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-                        onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}
+                        style={{ background: 'var(--c-surface)', border: '1px solid rgba(var(--c-fg-rgb),0.06)', borderRadius: '14px', padding: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(var(--c-fg-rgb),0.12)')}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(var(--c-fg-rgb),0.06)')}
                       >
                         <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: visual.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
                           <div style={{ position: 'absolute', top: '-15px', right: '-15px', width: '60px', height: '60px', background: `radial-gradient(circle, ${visual.color}33 0%, transparent 70%)`, borderRadius: '50%', pointerEvents: 'none' }} />
@@ -359,22 +361,22 @@ export default function MyHistory() {
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                            <div style={{ fontSize: '14px', fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--c-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {t('services.' + serviceIdFromName(b.service_name))}
                             </div>
-                            <span style={{ fontSize: '9px', padding: '2px 5px', borderRadius: '3px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0, background: 'rgba(67,188,201,0.12)', color: '#43BCC9' }}>MECALIK</span>
-                            <span style={{ fontSize: '9px', padding: '2px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em', flexShrink: 0, background: isCompleted ? 'rgba(0,221,136,0.08)' : 'rgba(255,68,68,0.08)', color: isCompleted ? '#00DD88' : '#FF4444' }}>
+                            <span style={{ fontSize: '9px', padding: '2px 5px', borderRadius: '3px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0, background: 'rgba(67,188,201,0.12)', color: 'var(--c-link)' }}>MECALIK</span>
+                            <span style={{ fontSize: '9px', padding: '2px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em', flexShrink: 0, background: isCompleted ? 'rgba(0,221,136,0.08)' : 'rgba(255,68,68,0.08)', color: isCompleted ? 'var(--c-success-text)' : 'var(--c-danger-text)' }}>
                               {t(`status.${b.status}`)}
                             </span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.4)', flexWrap: 'wrap' }}>
                             <Calendar size={10} />
                             <span>{new Date(b.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                            {b.amount_ttc != null && (<><Dot /><span style={{ color: 'rgba(255,255,255,0.6)' }}>{b.amount_ttc} MAD</span></>)}
-                            {b.rating != null && (<><Dot /><span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><Star size={10} fill="#F0C040" color="#F0C040" /><span style={{ color: '#F0C040' }}>{b.rating}</span></span></>)}
+                            {b.amount_ttc != null && (<><Dot /><span style={{ color: 'rgba(var(--c-fg-rgb),0.6)' }}>{b.amount_ttc} MAD</span></>)}
+                            {b.rating != null && (<><Dot /><span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><Star size={10} fill="#F0C040" color="#F0C040" /><span style={{ color: 'var(--c-warn)' }}>{b.rating}</span></span></>)}
                           </div>
                         </div>
-                        <ArrowRight size={15} color="rgba(255,255,255,0.3)" style={{ flexShrink: 0 }} />
+                        <ArrowRight size={15} color="rgba(var(--c-fg-rgb),0.3)" style={{ flexShrink: 0 }} />
                       </div>
                     )
                   }
@@ -383,24 +385,24 @@ export default function MyHistory() {
                   const s = item.raw
                   const carLabel = getCarLabel(s.car_id)
                   return (
-                    <div key={item.id} style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #1F1F1F 0%, #2A2A2A 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Wrench size={18} color="rgba(255,255,255,0.5)" />
+                    <div key={item.id} style={{ background: 'var(--c-surface)', border: '1px solid rgba(var(--c-fg-rgb),0.06)', borderRadius: '14px', padding: '14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'var(--c-surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Wrench size={18} color="rgba(var(--c-fg-rgb),0.5)" />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                          <div style={{ fontSize: '14px', fontWeight: 600, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.service_name}</div>
-                          <span style={{ fontSize: '9px', padding: '2px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }}>EXTERNE</span>
+                          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--c-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.service_name}</div>
+                          <span style={{ fontSize: '9px', padding: '2px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0, background: 'rgba(var(--c-fg-rgb),0.06)', color: 'rgba(var(--c-fg-rgb),0.45)' }}>EXTERNE</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.4)', flexWrap: 'wrap' }}>
                           <Calendar size={10} />
                           <span>{new Date(s.service_date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                           {s.mileage && (<><Dot /><span>{s.mileage.toLocaleString('fr-FR')} km</span></>)}
                           {s.provider && (<><Dot /><span>{s.provider}</span></>)}
                           {carLabel && (<><Dot /><span>🚗 {carLabel}</span></>)}
-                          {s.cost != null && (<><Dot /><span style={{ color: 'rgba(255,255,255,0.6)' }}>{s.cost} MAD</span></>)}
+                          {s.cost != null && (<><Dot /><span style={{ color: 'rgba(var(--c-fg-rgb),0.6)' }}>{s.cost} MAD</span></>)}
                         </div>
-                        {s.notes && <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '4px', fontStyle: 'italic' }}>"{s.notes}"</div>}
+                        {s.notes && <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.35)', marginTop: '4px', fontStyle: 'italic' }}>"{s.notes}"</div>}
                       </div>
                     </div>
                   )
@@ -414,8 +416,8 @@ export default function MyHistory() {
         <div style={{
           position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: '480px',
-          background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(16px)',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          background: 'var(--c-bar)', backdropFilter: 'blur(16px)',
+          borderTop: '1px solid rgba(var(--c-fg-rgb),0.06)',
           padding: '10px 18px 22px',
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', zIndex: 50,
         }}>
@@ -427,8 +429,8 @@ export default function MyHistory() {
           ] as const).map(({ Icon, labelKey, active, onClick }, i) => (
             <button key={i} onClick={onClick} style={{ background: 'transparent', border: 'none', cursor: onClick ? 'pointer' : 'default', display: 'flex', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: active ? '6px 14px' : '4px', borderRadius: '10px', background: active ? 'rgba(67,188,201,0.1)' : 'transparent', transition: 'all 0.2s' }}>
-                <Icon size={20} color={active ? '#43BCC9' : 'rgba(255,255,255,0.4)'} />
-                <span style={{ fontSize: '10px', fontWeight: active ? 600 : 400, color: active ? '#43BCC9' : 'rgba(255,255,255,0.4)' }}>{t(labelKey)}</span>
+                <Icon size={20} color={active ? '#43BCC9' : 'rgba(var(--c-fg-rgb),0.4)'} />
+                <span style={{ fontSize: '10px', fontWeight: active ? 600 : 400, color: active ? 'var(--c-link)' : 'rgba(var(--c-fg-rgb),0.4)' }}>{t(labelKey)}</span>
               </div>
             </button>
           ))}
@@ -437,17 +439,17 @@ export default function MyHistory() {
         {/* ═══ ADD MODAL ═══ */}
         {showModal && (
           <div onClick={() => setShowModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: '#111114', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: 'var(--c-surface)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'white', margin: 0 }}>🔧 Ajouter un service</h3>
-                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '22px', cursor: 'pointer', lineHeight: 1 }}>×</button>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--c-text)', margin: 0 }}>🔧 Ajouter un service</h3>
+                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(var(--c-fg-rgb),0.4)', fontSize: '22px', cursor: 'pointer', lineHeight: 1 }}>×</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
                   <label style={labelStyle}>Véhicule *</label>
                   <select value={newEntry.car_id} onChange={e => setNewEntry(p => ({ ...p, car_id: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
                     {cars.map(car => (
-                      <option key={car.id} value={car.id} style={{ background: '#111114' }}>
+                      <option key={car.id} value={car.id} style={{ background: 'var(--c-surface)' }}>
                         {car.brand} {car.model}{car.license_plate ? ` (${car.license_plate})` : ''}
                       </option>
                     ))}
@@ -485,5 +487,5 @@ export default function MyHistory() {
 }
 
 function Dot() {
-  return <span style={{ width: '2px', height: '2px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'inline-block', flexShrink: 0 }} />
+  return <span style={{ width: '2px', height: '2px', borderRadius: '50%', background: 'rgba(var(--c-fg-rgb),0.2)', display: 'inline-block', flexShrink: 0 }} />
 }

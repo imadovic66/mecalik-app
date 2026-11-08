@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useTranslation } from 'react-i18next'
+import { useCustTheme } from '../../lib/custTheme'
+import { ThemeSegment } from '../../components/ui/ThemeToggle'
 import { supabase } from '../../lib/supabase'
 import {
   ArrowLeft, Edit3, Check, X, Phone, Mail, User,
@@ -11,6 +13,7 @@ import {
 } from 'lucide-react'
 
 export default function MyProfile() {
+  const { mode } = useCustTheme()
   const { user, profile, signOut } = useAuth()
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -85,9 +88,9 @@ export default function MyProfile() {
     || 'MECALIK'
 
   return (
-    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', justifyContent: 'center' }}>
+    <div data-mk-theme={mode} style={{ minHeight: '100vh', background: 'var(--c-bg)', display: 'flex', justifyContent: 'center' }}>
       <div style={{
-        width: '100%', maxWidth: '480px', background: '#0A0A0A',
+        width: '100%', maxWidth: '480px', background: 'var(--c-bg)',
         minHeight: '100vh', position: 'relative', paddingBottom: '90px',
         boxShadow: '0 0 80px rgba(0,0,0,0.6)',
       }}>
@@ -95,27 +98,27 @@ export default function MyProfile() {
         {/* ═══ TOP BAR ═══ */}
         <div style={{
           position: 'sticky', top: 0, zIndex: 50,
-          background: 'rgba(10,10,10,0.85)',
+          background: 'var(--c-bar)',
           backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
+          borderBottom: '1px solid rgba(var(--c-fg-rgb),0.04)',
           padding: '14px 18px',
           display: 'flex', alignItems: 'center', gap: '12px',
         }}>
           <button onClick={() => navigate('/dashboard')} style={{
             width: '36px', height: '36px',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'rgba(var(--c-fg-rgb),0.04)',
+            border: '1px solid rgba(var(--c-fg-rgb),0.07)',
             borderRadius: '10px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer',
           }}>
-            <ArrowLeft size={15} color="rgba(255,255,255,0.7)" />
+            <ArrowLeft size={15} color="rgba(var(--c-fg-rgb),0.7)" />
           </button>
 
           <div style={{ flex: 1 }}>
             <div style={{
               fontFamily: 'Space Grotesk, sans-serif',
-              fontSize: '17px', fontWeight: 600, color: 'white', letterSpacing: '-0.01em',
+              fontSize: '17px', fontWeight: 600, color: 'var(--c-text)', letterSpacing: '-0.01em',
             }}>
               Mon profil
             </div>
@@ -124,9 +127,9 @@ export default function MyProfile() {
           {!editing ? (
             <button onClick={() => setEditing(true)} style={{
               display: 'flex', alignItems: 'center', gap: '5px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              color: 'rgba(255,255,255,0.7)',
+              background: 'rgba(var(--c-fg-rgb),0.04)',
+              border: '1px solid rgba(var(--c-fg-rgb),0.07)',
+              color: 'rgba(var(--c-fg-rgb),0.7)',
               padding: '7px 12px', borderRadius: '10px',
               fontSize: '12px', fontWeight: 500, cursor: 'pointer',
             }}>
@@ -136,19 +139,19 @@ export default function MyProfile() {
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={cancelEdit} style={{
                 width: '32px', height: '32px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
+                background: 'rgba(var(--c-fg-rgb),0.04)',
+                border: '1px solid rgba(var(--c-fg-rgb),0.07)',
                 borderRadius: '10px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer',
               }}>
-                <X size={14} color="rgba(255,255,255,0.6)" />
+                <X size={14} color="rgba(var(--c-fg-rgb),0.6)" />
               </button>
               <button onClick={saveProfile} disabled={saving} style={{
                 display: 'flex', alignItems: 'center', gap: '5px',
-                background: saving ? 'rgba(255,255,255,0.06)' : '#43BCC9',
+                background: saving ? 'rgba(var(--c-fg-rgb),0.06)' : '#43BCC9',
                 border: 'none',
-                color: saving ? 'rgba(255,255,255,0.3)' : '#0A0A0A',
+                color: saving ? 'rgba(var(--c-fg-rgb),0.3)' : '#0A0A0A',
                 padding: '7px 14px', borderRadius: '10px',
                 fontSize: '12px', fontWeight: 600,
                 cursor: saving ? 'not-allowed' : 'pointer',
@@ -180,13 +183,13 @@ export default function MyProfile() {
             </div>
             <div style={{
               fontFamily: 'Space Grotesk, sans-serif',
-              fontSize: '20px', fontWeight: 600, color: 'white',
+              fontSize: '20px', fontWeight: 600, color: 'var(--c-text)',
               letterSpacing: '-0.015em', marginBottom: '4px',
             }}>
               {name || 'Votre nom'}
             </div>
             {memberSince && (
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.4)' }}>
                 Membre depuis {memberSince}
               </div>
             )}
@@ -195,12 +198,12 @@ export default function MyProfile() {
           {/* PERSONAL INFO */}
           <SectionLabel>Informations personnelles</SectionLabel>
           <div style={{
-            background: '#0F0F0F',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--c-surface)',
+            border: '1px solid rgba(var(--c-fg-rgb),0.06)',
             borderRadius: '16px', overflow: 'hidden', marginBottom: '20px',
           }}>
             <ProfileRow
-              icon={<User size={14} color="rgba(255,255,255,0.45)" />}
+              icon={<User size={14} color="rgba(var(--c-fg-rgb),0.45)" />}
               label="Nom complet"
               value={name}
               editing={editing}
@@ -209,7 +212,7 @@ export default function MyProfile() {
               placeholder="Votre nom"
             />
             <ProfileRow
-              icon={<Phone size={14} color="rgba(255,255,255,0.45)" />}
+              icon={<Phone size={14} color="rgba(var(--c-fg-rgb),0.45)" />}
               label="Téléphone"
               value={phone}
               editing={editing}
@@ -219,7 +222,7 @@ export default function MyProfile() {
               type="tel"
             />
             <ProfileRow
-              icon={<Mail size={14} color="rgba(255,255,255,0.45)" />}
+              icon={<Mail size={14} color="rgba(var(--c-fg-rgb),0.45)" />}
               label="Email"
               value={user?.email || ''}
               editing={false}
@@ -232,30 +235,30 @@ export default function MyProfile() {
           {/* REFERRAL */}
           <SectionLabel>Parrainage</SectionLabel>
           <div style={{
-            background: '#0F0F0F',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--c-surface)',
+            border: '1px solid rgba(var(--c-fg-rgb),0.06)',
             borderRadius: '16px', padding: '16px', marginBottom: '20px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px',
           }}>
             <div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.4)', marginBottom: '4px' }}>
                 Votre code de parrainage
               </div>
               <div style={{
                 fontFamily: 'monospace',
-                fontSize: '18px', fontWeight: 700, color: 'white', letterSpacing: '0.1em',
+                fontSize: '18px', fontWeight: 700, color: 'var(--c-text)', letterSpacing: '0.1em',
               }}>
                 {referralCode}
               </div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '4px' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.35)', marginTop: '4px' }}>
                 Partagez et gagnez des avantages
               </div>
             </div>
             <button onClick={copyReferral} style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              background: copied ? 'rgba(0,221,136,0.1)' : 'rgba(255,255,255,0.05)',
-              border: copied ? '1px solid rgba(0,221,136,0.2)' : '1px solid rgba(255,255,255,0.08)',
-              color: copied ? '#00DD88' : 'rgba(255,255,255,0.7)',
+              background: copied ? 'rgba(0,221,136,0.1)' : 'rgba(var(--c-fg-rgb),0.05)',
+              border: copied ? '1px solid rgba(0,221,136,0.2)' : '1px solid rgba(var(--c-fg-rgb),0.08)',
+              color: copied ? 'var(--c-success-text)' : 'rgba(var(--c-fg-rgb),0.7)',
               padding: '8px 14px', borderRadius: '10px',
               fontSize: '12px', fontWeight: 500, cursor: 'pointer',
               transition: 'all 0.2s', flexShrink: 0,
@@ -265,22 +268,26 @@ export default function MyProfile() {
             </button>
           </div>
 
+          {/* DISPLAY — day / night */}
+          <SectionLabel>Affichage</SectionLabel>
+          <div style={{ marginBottom: '20px' }}><ThemeSegment /></div>
+
           {/* NOTIFICATIONS */}
           <SectionLabel>Notifications</SectionLabel>
           <div style={{
-            background: '#0F0F0F',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--c-surface)',
+            border: '1px solid rgba(var(--c-fg-rgb),0.06)',
             borderRadius: '16px', overflow: 'hidden', marginBottom: '20px',
           }}>
             <ToggleRow
-              icon={<MessageCircle size={14} color="rgba(255,255,255,0.45)" />}
+              icon={<MessageCircle size={14} color="rgba(var(--c-fg-rgb),0.45)" />}
               label="Notifications WhatsApp"
               sublabel="Confirmations et mises à jour"
               value={notifWhatsapp}
               onChange={setNotifWhatsapp}
             />
             <ToggleRow
-              icon={<Bell size={14} color="rgba(255,255,255,0.45)" />}
+              icon={<Bell size={14} color="rgba(var(--c-fg-rgb),0.45)" />}
               label="Notifications SMS"
               sublabel="Rappels de rendez-vous"
               value={notifSMS}
@@ -292,23 +299,23 @@ export default function MyProfile() {
           {/* SUPPORT */}
           <SectionLabel>Aide & Support</SectionLabel>
           <div style={{
-            background: '#0F0F0F',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--c-surface)',
+            border: '1px solid rgba(var(--c-fg-rgb),0.06)',
             borderRadius: '16px', overflow: 'hidden', marginBottom: '20px',
           }}>
             <LinkRow
-              icon={<MessageCircle size={14} color="rgba(255,255,255,0.45)" />}
+              icon={<MessageCircle size={14} color="rgba(var(--c-fg-rgb),0.45)" />}
               label="Contacter le support"
               sublabel="WhatsApp · Réponse en 5 min"
               onClick={() => window.open('https://wa.me/212777348065', '_blank')}
             />
             <LinkRow
-              icon={<FileText size={14} color="rgba(255,255,255,0.45)" />}
+              icon={<FileText size={14} color="rgba(var(--c-fg-rgb),0.45)" />}
               label="Conditions générales"
               onClick={() => {}}
             />
             <LinkRow
-              icon={<Shield size={14} color="rgba(255,255,255,0.45)" />}
+              icon={<Shield size={14} color="rgba(var(--c-fg-rgb),0.45)" />}
               label="Politique de confidentialité"
               onClick={() => {}}
               last
@@ -318,7 +325,7 @@ export default function MyProfile() {
           {/* APP INFO */}
           <div style={{
             textAlign: 'center', padding: '8px 0 16px',
-            fontSize: '11px', color: 'rgba(255,255,255,0.2)',
+            fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.2)',
           }}>
             MecaLIK · Version 1.0.0
           </div>
@@ -330,7 +337,7 @@ export default function MyProfile() {
             border: '1px solid rgba(255,68,68,0.15)',
             borderRadius: '14px',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            color: '#FF4444', fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+            color: 'var(--c-danger-text)', fontSize: '14px', fontWeight: 600, cursor: 'pointer',
           }}>
             <LogOut size={16} />
             {t('common.logout')}
@@ -341,8 +348,8 @@ export default function MyProfile() {
         <div style={{
           position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: '480px',
-          background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(16px)',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          background: 'var(--c-bar)', backdropFilter: 'blur(16px)',
+          borderTop: '1px solid rgba(var(--c-fg-rgb),0.06)',
           padding: '10px 18px 22px',
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', zIndex: 50,
         }}>
@@ -364,10 +371,10 @@ export default function MyProfile() {
                 background: active ? 'rgba(67,188,201,0.1)' : 'transparent',
                 transition: 'all 0.2s',
               }}>
-                <Icon size={20} color={active ? '#43BCC9' : 'rgba(255,255,255,0.4)'} />
+                <Icon size={20} color={active ? '#43BCC9' : 'rgba(var(--c-fg-rgb),0.4)'} />
                 <span style={{
                   fontSize: '10px', fontWeight: active ? 600 : 400,
-                  color: active ? '#43BCC9' : 'rgba(255,255,255,0.4)',
+                  color: active ? 'var(--c-link)' : 'rgba(var(--c-fg-rgb),0.4)',
                 }}>
                   {t(labelKey)}
                 </span>
@@ -388,7 +395,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       fontSize: '10px', fontWeight: 600,
-      color: 'rgba(255,255,255,0.4)',
+      color: 'rgba(var(--c-fg-rgb),0.4)',
       textTransform: 'uppercase', letterSpacing: '0.08em',
       marginBottom: '10px', paddingLeft: '4px',
     }}>
@@ -415,13 +422,13 @@ function ProfileRow({
   return (
     <div style={{
       padding: '14px 16px',
-      borderBottom: last ? 'none' : '1px solid rgba(255,255,255,0.04)',
+      borderBottom: last ? 'none' : '1px solid rgba(var(--c-fg-rgb),0.04)',
       display: 'flex', alignItems: 'center', gap: '12px',
     }}>
       <div style={{ flexShrink: 0, marginTop: '1px' }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: '10px', color: 'rgba(255,255,255,0.4)',
+          fontSize: '10px', color: 'rgba(var(--c-fg-rgb),0.4)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px',
         }}>
           {label}
@@ -435,14 +442,14 @@ function ProfileRow({
             style={{
               background: 'transparent', border: 'none',
               borderBottom: '1px solid rgba(67,188,201,0.4)',
-              color: 'white', fontSize: '14px', outline: 'none',
+              color: 'var(--c-text)', fontSize: '14px', outline: 'none',
               width: '100%', paddingBottom: '2px', fontFamily: 'inherit',
             }}
           />
         ) : (
           <div style={{
             fontSize: '14px',
-            color: value ? 'white' : 'rgba(255,255,255,0.3)',
+            color: value ? 'var(--c-text)' : 'rgba(var(--c-fg-rgb),0.3)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {value || placeholder || '—'}
@@ -466,23 +473,23 @@ function ToggleRow({
   return (
     <div style={{
       padding: '14px 16px',
-      borderBottom: last ? 'none' : '1px solid rgba(255,255,255,0.04)',
+      borderBottom: last ? 'none' : '1px solid rgba(var(--c-fg-rgb),0.04)',
       display: 'flex', alignItems: 'center', gap: '12px',
     }}>
       <div style={{ flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '14px', color: 'white', marginBottom: sublabel ? '2px' : '0' }}>
+        <div style={{ fontSize: '14px', color: 'var(--c-text)', marginBottom: sublabel ? '2px' : '0' }}>
           {label}
         </div>
         {sublabel && (
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{sublabel}</div>
+          <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.4)' }}>{sublabel}</div>
         )}
       </div>
       <button
         onClick={() => onChange(!value)}
         style={{
           width: '44px', height: '24px', borderRadius: '12px',
-          background: value ? '#43BCC9' : 'rgba(255,255,255,0.1)',
+          background: value ? '#43BCC9' : 'rgba(var(--c-fg-rgb),0.1)',
           border: 'none', cursor: 'pointer',
           position: 'relative', transition: 'background 0.2s', flexShrink: 0,
         }}
@@ -513,21 +520,21 @@ function LinkRow({
       onClick={onClick}
       style={{
         padding: '14px 16px',
-        borderBottom: last ? 'none' : '1px solid rgba(255,255,255,0.04)',
+        borderBottom: last ? 'none' : '1px solid rgba(var(--c-fg-rgb),0.04)',
         display: 'flex', alignItems: 'center', gap: '12px',
         cursor: 'pointer',
       }}
     >
       <div style={{ flexShrink: 0 }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '14px', color: 'white', marginBottom: sublabel ? '2px' : '0' }}>
+        <div style={{ fontSize: '14px', color: 'var(--c-text)', marginBottom: sublabel ? '2px' : '0' }}>
           {label}
         </div>
         {sublabel && (
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{sublabel}</div>
+          <div style={{ fontSize: '11px', color: 'rgba(var(--c-fg-rgb),0.4)' }}>{sublabel}</div>
         )}
       </div>
-      <ChevronRight size={15} color="rgba(255,255,255,0.3)" />
+      <ChevronRight size={15} color="rgba(var(--c-fg-rgb),0.3)" />
     </div>
   )
 }

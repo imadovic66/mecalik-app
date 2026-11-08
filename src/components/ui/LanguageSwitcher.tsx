@@ -14,8 +14,8 @@ export default function LanguageSwitcher({ style }: { style?: React.CSSPropertie
     <div style={{
       display: 'flex',
       alignItems: 'center',
-      background: 'rgba(255,255,255,0.06)',
-      border: '1px solid rgba(255,255,255,0.12)',
+      background: 'rgba(var(--c-fg-rgb),0.06)',
+      border: '1px solid rgba(var(--c-fg-rgb),0.12)',
       borderRadius: '8px',
       overflow: 'hidden',
       flexShrink: 0,
@@ -26,10 +26,10 @@ export default function LanguageSwitcher({ style }: { style?: React.CSSPropertie
           key={lang}
           onClick={() => switchTo(lang)}
           style={{
-            background: current === lang ? 'rgba(255,255,255,0.15)' : 'transparent',
+            background: current === lang ? 'rgba(var(--c-fg-rgb),0.15)' : 'transparent',
             border: 'none',
-            borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.12)' : 'none',
-            color: current === lang ? '#ffffff' : 'rgba(255,255,255,0.45)',
+            borderLeft: i > 0 ? '1px solid rgba(var(--c-fg-rgb),0.12)' : 'none',
+            color: current === lang ? '#ffffff' : 'rgba(var(--c-fg-rgb),0.45)',
             cursor: current === lang ? 'default' : 'pointer',
             fontFamily: 'Outfit, sans-serif',
             fontSize: '12px',
