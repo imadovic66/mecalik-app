@@ -158,7 +158,7 @@ export default function CustomerDashboard() {
         {/* ═══ TOP BAR — CAFU model: day/night, centred logo, notifications ═══ */}
         <div className="mkc-top">
           <ThemeButton />
-          <div className="mkc-logo">Meca<b>LIK</b></div>
+          <img src={mode === 'light' ? '/brand/logo-day.png' : '/brand/logo-night.png'} alt="MecaLIK" style={{ height: '28px', width: 'auto' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <NotificationBell />
           </div>

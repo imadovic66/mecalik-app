@@ -68,8 +68,7 @@ export default function Navbar() {
           }}
         >
           <Link to="/" className="flex items-center">
-            <img src="/logo.jpg" alt="MecaLIK"
-              style={{ height: '32px', width: '108px', objectFit: 'cover', borderRadius: '999px' }} />
+            <img src="/brand/logo-night.png" alt="MecaLIK" style={{ height: '26px', width: 'auto' }} />
           </Link>
 
           <div className="hidden lg:flex items-center gap-1">
