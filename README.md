@@ -1,73 +1,102 @@
-# React + TypeScript + Vite
+# MecaLIK
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+On-demand mobile mechanic platform for Casablanca. Book a certified technician to come to you — oil changes, battery replacements, diagnostics, tyre services, car washes, and 24/7 emergency roadside assistance.
 
-Currently, two official plugins are available:
+## Tech stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Layer        | Technology                              |
+|--------------|-----------------------------------------|
+| Framework    | React 18 + TypeScript + Vite            |
+| Styling      | Tailwind CSS + inline styles            |
+| Routing      | React Router v6                         |
+| Backend      | Supabase (Postgres + Auth + Realtime)   |
+| i18n         | react-i18next (fr / en)                 |
+| Charts       | Recharts                                |
+| Icons        | Lucide React                            |
+| Push notifs  | Web Push API via `/api/notify`          |
+| Deployment   | Vercel                                  |
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # production build
+npx tsc --noEmit   # type check
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Environment variables (`.env.local`):
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
+
+## Project structure
+
+```
+src/
+├── components/
+│   ├── home/                    # Landing page sections
+│   │   ├── HeroSection.tsx      # Hero headline, CTA, mechanic photo
+│   │   ├── ServicesSection.tsx  # 6 service cards grid
+│   │   ├── HowItWorksSection.tsx
+│   │   ├── ReviewsSection.tsx   # Customer reviews + live activity
+│   │   └── CtaSection.tsx       # Bottom WhatsApp CTA
+│   └── ui/
+│       ├── BookingModal.tsx     # 3-step booking flow (service → form → confirm)
+│       ├── Navbar.tsx
+│       └── WhatsAppFAB.tsx      # Floating WhatsApp button
+├── hooks/
+│   └── usePushNotifications.ts
+├── lib/
+│   ├── constants.ts   # WHATSAPP_NUMBER, BOOKING_STATUSES, STATUS_COLORS, SERVICE_PRICES
+│   ├── sanitize.ts    # Input sanitization (strips HTML, limits length)
+│   ├── supabase.ts    # Supabase client (anon key from env vars)
+│   ├── types.ts       # TypeScript interfaces: Booking, Profile, Car, BookingFormData
+│   └── utils.ts       # getStatusColor, formatDate, generateReference, buildWhatsAppMessage
+├── locales/
+│   ├── fr.json        # French translations
+│   └── en.json        # English translations
+└── pages/
+    ├── admin/
+    │   ├── AdminDashboard.tsx   # Shell: auth check, data fetch, tab nav
+    │   └── tabs/
+    │       ├── OverviewTab.tsx      # KPIs, revenue chart, recent activity
+    │       ├── ReservationsTab.tsx  # Bookings table, status/mechanic updates
+    │       ├── ClientsTab.tsx       # Profiles list
+    │       ├── FinancesTab.tsx      # Financial dashboard, B2B/B2C, transactions
+    │       ├── ReviewsTab.tsx
+    │       └── NotificationsTab.tsx
+    ├── auth/
+    │   ├── Login.tsx
+    │   └── Signup.tsx
+    ├── dashboard/
+    │   └── CustomerDashboard.tsx    # Client portal (bookings, cars, profile)
+    ├── fleet/
+    │   └── FleetDashboard.tsx       # Fleet manager portal
+    ├── mechanic/
+    │   └── MechanicDashboard.tsx    # Mechanic job board + status actions
+    ├── Home.tsx                     # Landing page orchestrator
+    └── TrackBooking.tsx             # Guest booking tracker (no login required)
+```
+
+## Booking status flow
+
+```
+pending → confirmed → on_the_way → in_progress → completed
+                 └─────────────────────────────→ cancelled
+```
+
+Status transitions from the admin dashboard automatically send a WhatsApp notification and a push notification to the customer.
+
+## Services
+
+| Service     | Typical duration |
+|-------------|-----------------|
+| Lavage      | ~45 min         |
+| Vidange     | ~60 min         |
+| Batterie    | ~30 min         |
+| Pneus       | ~45 min         |
+| Diagnostic  | ~30 min         |
+| Urgence     | ASAP            |

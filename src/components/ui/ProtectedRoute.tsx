@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     return (
       <div className="min-h-screen bg-[#080808] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-2 border-[#43BCC9] border-t-transparent animate-spin" />
+          <div className="w-10 h-10 rounded-full border-2 border-[var(--mk-action)] border-t-transparent animate-spin" />
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>Chargement...</p>
         </div>
       </div>

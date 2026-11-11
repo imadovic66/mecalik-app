@@ -12,7 +12,8 @@ type InvoiceData = {
     services: Array<{
       date: string
       service: string
-      amount_ht: number
+      /** TTC — the amount the client actually pays for this service, VAT included. */
+      amount_ttc: number
     }>
   }>
   totals: {
@@ -100,7 +101,7 @@ export function generateInvoice(data: InvoiceData): void {
   doc.text('VÉHICULE', 20, y + 5.5)
   doc.text('SERVICE', 75, y + 5.5)
   doc.text('DATE', 130, y + 5.5)
-  doc.text('MONTANT HT', pageWidth - 20, y + 5.5, { align: 'right' })
+  doc.text('MONTANT TTC', pageWidth - 20, y + 5.5, { align: 'right' })
 
   y += 12
 
@@ -123,7 +124,7 @@ export function generateInvoice(data: InvoiceData): void {
       doc.text(service.service.substring(0, 25), 75, y + 1)
       doc.text(new Date(service.date).toLocaleDateString('fr-FR'), 130, y + 1)
       doc.setTextColor(255, 255, 255)
-      doc.text(`${service.amount_ht.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
+      doc.text(`${service.amount_ttc.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
 
       y += 8
       rowCount++
@@ -139,30 +140,30 @@ export function generateInvoice(data: InvoiceData): void {
   y += 8
   const totalsX = pageWidth - 80
 
-  doc.setFillColor(20, 20, 20)
-  doc.rect(totalsX - 5, y - 4, 80, 8, 'F')
-  doc.setTextColor(180, 180, 180)
-  doc.setFontSize(9)
-  doc.text('Total HT:', totalsX, y + 1)
-  doc.setTextColor(255, 255, 255)
-  doc.text(`${data.totals.ht.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
-  y += 9
-
-  doc.setFillColor(16, 16, 16)
-  doc.rect(totalsX - 5, y - 4, 80, 8, 'F')
-  doc.setTextColor(180, 180, 180)
-  doc.text('TVA (20%):', totalsX, y + 1)
-  doc.setTextColor(255, 255, 255)
-  doc.text(`${data.totals.tva.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
-  y += 9
-
+  // TTC leads — HT and TVA follow as components of it, not as additions.
   doc.setFillColor(...TEAL)
   doc.rect(totalsX - 5, y - 4, 80, 10, 'F')
   doc.setTextColor(8, 8, 8)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
-  doc.text('TOTAL TTC:', totalsX, y + 2)
+  doc.text('Total TTC:', totalsX, y + 2)
   doc.text(`${data.totals.ttc.toFixed(2)} MAD`, pageWidth - 20, y + 2, { align: 'right' })
+  y += 12
+
+  doc.setFillColor(20, 20, 20)
+  doc.rect(totalsX - 5, y - 4, 80, 8, 'F')
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(150, 150, 150)
+  doc.setFontSize(8.5)
+  doc.text('dont HT:', totalsX, y + 1)
+  doc.text(`${data.totals.ht.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
+  y += 9
+
+  doc.setFillColor(16, 16, 16)
+  doc.rect(totalsX - 5, y - 4, 80, 8, 'F')
+  doc.setTextColor(150, 150, 150)
+  doc.text('dont TVA (20%):', totalsX, y + 1)
+  doc.text(`${data.totals.tva.toFixed(2)} MAD`, pageWidth - 20, y + 1, { align: 'right' })
 
   // Footer
   y += 20
