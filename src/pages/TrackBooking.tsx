@@ -92,7 +92,7 @@ export default function TrackBooking() {
 
   const getStatusInfo = (status: string) => {
     const map: Record<string, any> = {
-      pending:     { icon: '⏳', color: '#F0C040', label: isFr ? 'En attente' : 'Pending',                desc: isFr ? 'Votre demande a été reçue. Confirmation dans 5 minutes.' : 'Request received. Confirmation within 5 minutes.' },
+      pending:     { icon: '⏳', color: '#F0C040', label: isFr ? 'En attente' : 'Pending',                desc: isFr ? 'Votre demande a été reçue. Nous vous confirmons rapidement.' : 'Request received. We will confirm shortly.' },
       confirmed:   { icon: '✅', color: '#43BCC9', label: isFr ? 'Confirmée' : 'Confirmed',               desc: isFr ? 'Votre intervention est confirmée. Technicien assigné.' : 'Service confirmed. Technician assigned.' },
       on_the_way:  { icon: '🚗', color: '#F0C040', label: isFr ? 'Mécanicien en route' : 'Mechanic on the way', desc: isFr ? 'Le technicien est en route vers votre adresse.' : 'The technician is on the way to your address.' },
       in_progress: { icon: '🔧', color: '#43BCC9', label: isFr ? 'En cours' : 'In progress',             desc: isFr ? 'Le technicien est sur place.' : 'Technician is on site.' },

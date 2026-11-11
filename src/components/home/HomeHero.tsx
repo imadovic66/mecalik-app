@@ -58,7 +58,7 @@ export default function HomeHero({ diagFrom }: { diagFrom: string | null }) {
           {/* Photo card */}
           <div className="lg:col-span-6 relative">
             <div className="relative overflow-hidden" style={{ borderRadius: 32, aspectRatio: '5 / 4', boxShadow: '0 30px 80px rgba(0,0,0,0.5)' }}>
-              <img src="/hero-photo.png" alt="Équipe et camionnette MecaLIK" className="absolute inset-0 w-full h-full object-cover" />
+              <img src="/hero-photo.jpg" alt="Équipe et camionnette MecaLIK" className="absolute inset-0 w-full h-full object-cover" />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%)' }} />
             </div>
             <div className="mk-float-chip" style={{ left: -12, bottom: 36 }}>

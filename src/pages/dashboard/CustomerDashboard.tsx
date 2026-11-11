@@ -728,7 +728,7 @@ export default function CustomerDashboard() {
             </div>
           </button>
           <a className="mkc-banner" href={`${WHATSAPP_URL}?text=${encodeURIComponent('Bonjour MecaLIK, ')}`} target="_blank" rel="noopener noreferrer">
-            <img src="/hero-photo.png" alt="" loading="lazy" />
+            <img src="/hero-photo.jpg" alt="" loading="lazy" />
             <div className="mkc-banner-shade">
               <span className="mkc-banner-tag">{i18n.language?.startsWith('en') ? 'MecaLIK mechanics' : 'Mécaniciens MecaLIK'}</span>
               <span className="mkc-banner-title">{i18n.language?.startsWith('en') ? 'A question? Message us on WhatsApp' : 'Une question ? Écrivez-nous sur WhatsApp'}</span>

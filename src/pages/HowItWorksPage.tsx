@@ -10,7 +10,7 @@ export default function HowItWorksPage() {
     <div style={{ background: '#0A0A0A', minHeight: '100vh' }}>
       <SEO
         title="Comment Ça Marche — 3 Étapes | MecaLIK Casablanca"
-        description="De la demande à l'intervention terminée en moins de 90 minutes. Décrivez votre besoin, recevez un devis exact, le technicien vient à vous. Simple et transparent."
+        description="Choisissez le service et votre voiture, voyez le prix estimé, et le technicien vient à vous. Simple et transparent."
         path="/comment-ca-marche"
       />
 

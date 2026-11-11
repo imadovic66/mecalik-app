@@ -306,7 +306,7 @@ export default function MyProfile() {
             <LinkRow
               icon={<MessageCircle size={14} color="rgba(var(--c-fg-rgb),0.45)" />}
               label="Contacter le support"
-              sublabel="WhatsApp · Réponse en 5 min"
+              sublabel="WhatsApp · Réponse rapide"
               onClick={() => window.open('https://wa.me/212777348065', '_blank')}
             />
             <LinkRow

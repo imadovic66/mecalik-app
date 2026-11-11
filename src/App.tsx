@@ -1,35 +1,38 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import WhatsAppFAB from './components/ui/WhatsAppFAB'
 import BookingModal from './components/ui/BookingModal'
 import Home from './pages/Home'
-import Services from './pages/Services'
-import Fleet from './pages/Fleet'
-import About from './pages/About'
 import Login from './pages/auth/Login'
 import Signup from './pages/auth/Signup'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
-import CustomerDashboard from './pages/dashboard/CustomerDashboard'
-import BookingConfirmation from './pages/dashboard/BookingConfirmation'
-import FleetDashboard from './pages/fleet/FleetDashboard'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import MyHistory from './pages/dashboard/MyHistory'
-import MyProfile from './pages/dashboard/MyProfile'
-import MechanicDashboard from './pages/mechanic/MechanicDashboard'
-import HowItWorksPage from './pages/HowItWorksPage'
-import Tarifs from './pages/Tarifs'
-import Flottes from './pages/Flottes'
-import FAQ from './pages/FAQ'
-import TrackBooking from './pages/TrackBooking'
-import GaragePage, { MyGarage } from './pages/GaragePage'
-import ReviewPage from './pages/ReviewPage'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import PublicRoute from './components/ui/PublicRoute'
 import { trackPageView } from './lib/analytics'
+
+// Pages other than the homepage and sign-in load on demand, so the first visit downloads far less.
+const Services = lazy(() => import('./pages/Services'))
+const Fleet = lazy(() => import('./pages/Fleet'))
+const About = lazy(() => import('./pages/About'))
+const CustomerDashboard = lazy(() => import('./pages/dashboard/CustomerDashboard'))
+const BookingConfirmation = lazy(() => import('./pages/dashboard/BookingConfirmation'))
+const FleetDashboard = lazy(() => import('./pages/fleet/FleetDashboard'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const MyHistory = lazy(() => import('./pages/dashboard/MyHistory'))
+const MyProfile = lazy(() => import('./pages/dashboard/MyProfile'))
+const MechanicDashboard = lazy(() => import('./pages/mechanic/MechanicDashboard'))
+const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage'))
+const Tarifs = lazy(() => import('./pages/Tarifs'))
+const Flottes = lazy(() => import('./pages/Flottes'))
+const FAQ = lazy(() => import('./pages/FAQ'))
+const TrackBooking = lazy(() => import('./pages/TrackBooking'))
+const GaragePage = lazy(() => import('./pages/GaragePage'))
+const MyGarage = lazy(() => import('./pages/GaragePage').then(m => ({ default: m.MyGarage })))
+const ReviewPage = lazy(() => import('./pages/ReviewPage'))
 
 // AppShell lives inside <BrowserRouter> so it can call useLocation
 function AppShell() {
@@ -69,6 +72,7 @@ function AppShell() {
       {!isDashboard && <Navbar />}
 
       <div className={isDashboard ? '' : 'pt-16'}>
+        <Suspense fallback={<div style={{ minHeight: '70vh', background: '#080808' }} />}>
         <Routes>
           <Route path="/"         element={<PublicRoute><Home /></PublicRoute>} />
           <Route path="/services" element={<PublicRoute><Services /></PublicRoute>} />
@@ -109,6 +113,7 @@ function AppShell() {
             <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>
           } />
         </Routes>
+        </Suspense>
 
         {!isDashboard && <Footer />}
         {!isDashboard && !location.pathname.startsWith('/garage') && <WhatsAppFAB />}

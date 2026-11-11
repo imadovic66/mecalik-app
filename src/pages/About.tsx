@@ -128,7 +128,7 @@ export default function About() {
             style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.08)' }}
           >
             {[
-              { value: '< 90 min', labelKey: 'about.stat1Label' },
+              { value: 'Casablanca', labelKey: 'about.stat1Label' },
               { value: '100%',     labelKey: 'about.stat2Label' },
               { value: '0 MAD',    labelKey: 'about.stat3Label' },
               { value: '7j/7',     labelKey: 'about.stat4Label' },

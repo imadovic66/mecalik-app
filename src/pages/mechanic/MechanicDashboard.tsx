@@ -138,7 +138,7 @@ export default function MechanicDashboard() {
     const booking = bookings.find(b => b.id === bookingId)
     if (booking?.user_id) {
       const CUSTOMER_MESSAGES: Record<string, { title: string; body: string }> = {
-        on_the_way:  { title: '🚗 Technicien en route',      body: 'Votre technicien arrive. Moins de 90 min.' },
+        on_the_way:  { title: '🚗 Technicien en route',      body: 'Votre technicien est en route.' },
         in_progress: { title: '🔧 Intervention démarrée',    body: "Le technicien est arrivé et commence l'intervention." },
         completed:   { title: '✅ Intervention terminée',    body: 'Votre véhicule est prêt ! Évaluez votre expérience.' },
       }
