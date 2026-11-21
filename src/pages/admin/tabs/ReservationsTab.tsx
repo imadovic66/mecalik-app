@@ -12,6 +12,7 @@ import { generateQuote } from '../../../utils/generateQuote'
 import { WHATSAPP_NUMBER } from '../../../lib/constants'
 import { computeQuoteTotals, getCustomerName, getCustomerPhone, getSourceBadge } from '../../../lib/bookingUtils'
 import NewBookingModal from './NewBookingModal'
+import QuoteReview from './QuoteReview'
 
 interface Props {
   bookings: Booking[]
@@ -105,6 +106,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
   const [approving, setApproving] = useState<string | null>(null)
   const [approvalResult, setApprovalResult] = useState<ApprovalResult | null>(null)
   const [showNewBooking, setShowNewBooking] = useState(false)
+  const [editQuote, setEditQuote] = useState<Record<string, boolean>>({})
 
   const quotePendingCount = bookings.filter(b => b.status === 'quote_pending').length
 
@@ -147,9 +149,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
     onRefresh()
   }
 
-  const handleRequestCorrection = async (booking: Booking) => {
-    const feedback = window.prompt('Que faut-il corriger dans ce devis ?')
-    if (feedback === null) return
+  const handleRequestCorrection = async (booking: Booking, feedback: string) => {
     await supabase.from('bookings').update({
       status: 'on_the_way',
       quote_feedback: feedback.trim() || null,
@@ -480,13 +480,23 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                   const {
                     materialsTTC: matTotal, labourTTC: labTotal, discountTTC: discTotal,
                     totalTTC: quoteTTC, totalHT: quoteHT, totalTVA: quoteTVA,
-                    labourHT, mechanicShare: mechanicPayout, mecalikShare: mecalikProfit,
                   } = computeQuoteTotals(details, booking.amount_ttc, booking.completed_at ?? null)
                   const vatTotal = details
                     .filter(d => normalizeDetailType(d.type) === 'vat')
                     .reduce((s, d) => s + (d.unit_price || 0) * (parseFloat(d.quantity || '1') || 1), 0)
                   return (
                     <div style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      {isQuotePending && (
+                        <QuoteReview
+                          booking={booking} details={details} submittedAgo={relativeTime(booking.quote_submitted_at)}
+                          approving={isApproving} editing={!!editQuote[booking.id]}
+                          onApprove={() => handleApprove(booking)}
+                          onCorrection={fb => handleRequestCorrection(booking, fb)}
+                          onReject={() => handleReject(booking)}
+                          onToggleEdit={() => setEditQuote(p => ({ ...p, [booking.id]: !p[booking.id] }))}
+                        />
+                      )}
+                      <div style={{ display: !isQuotePending || editQuote[booking.id] ? 'block' : 'none' }}>
                       {true && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '14px', padding: '10px 12px', background: 'rgba(67,188,201,0.05)', border: '1px solid rgba(67,188,201,0.15)', borderRadius: '8px' }}>
                           {booking.reference && <span>Réf <b style={{ color: 'white' }}>{booking.reference}</b></span>}
@@ -500,11 +510,6 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                               onBlur={async e => { const v = parseInt(e.target.value, 10); if (!isNaN(v) && v > 0 && v !== booking.odometer) { await supabase.from('bookings').update({ odometer: v }).eq('id', booking.id); onRefresh() } }}
                               style={{ width: '90px', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.2)', color: 'white', fontSize: '12px', fontFamily: 'inherit', outline: 'none' }} />
                           </span>
-                        </div>
-                      )}
-                      {isQuotePending && (
-                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#F0C040', marginBottom: '14px' }}>
-                          Devis soumis par {booking.technician_name || '—'} · {relativeTime(booking.quote_submitted_at)}
                         </div>
                       )}
                       <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', marginBottom: '14px' }}>
@@ -664,74 +669,7 @@ export default function ReservationsTab({ bookings, loading, mechanics, onSelect
                         </button>
                       </div>
 
-                      {isQuotePending && (
-                        <>
-                          {/* Devis totals (auto-computed TVA) */}
-                          <div style={{ marginTop: '14px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(240,192,64,0.05)', border: '1px solid rgba(240,192,64,0.2)' }}>
-                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#F0C040', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Total devis</div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '13px', color: 'white', fontWeight: 700 }}>TOTAL TTC</span>
-                                <span style={{ fontSize: '15px', color: '#F0C040', fontWeight: 800 }}>{Math.round(quoteTTC)} MAD</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>dont HT</span>
-                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{Math.round(quoteHT)} MAD</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>dont TVA (20%)</span>
-                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{Math.round(quoteTVA)} MAD</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Admin-only margin preview */}
-                          <div style={{ marginTop: '10px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                            <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Marge (admin uniquement)</div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>Matériaux (TTC)</span>
-                                <span style={{ fontSize: '12px', color: '#43BCC9', fontWeight: 600 }}>{Math.round(matTotal)} MAD</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>Main d'œuvre (HT)</span>
-                                <span style={{ fontSize: '12px', color: 'white', fontWeight: 600 }}>{Math.round(labourHT)} MAD</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>Part mécanicien 65%</span>
-                                <span style={{ fontSize: '12px', color: '#FF6B6B', fontWeight: 600 }}>{Math.round(mechanicPayout)} MAD</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}>Profit MecaLIK 35%</span>
-                                <span style={{ fontSize: '12px', color: '#43BCC9', fontWeight: 600 }}>{Math.round(mecalikProfit)} MAD</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Approval actions */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
-                            <button
-                              onClick={() => handleApprove(booking)}
-                              disabled={isApproving || quoteTTC <= 0}
-                              style={{ padding: '9px 18px', borderRadius: '9px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '12px', fontWeight: 700, cursor: isApproving ? 'wait' : 'pointer', fontFamily: 'Outfit, sans-serif', opacity: isApproving ? 0.7 : 1 }}
-                            >
-                              {isApproving ? 'Validation…' : '✅ Approuver & générer le devis'}
-                            </button>
-                            <button
-                              onClick={() => handleRequestCorrection(booking)}
-                              style={{ padding: '9px 16px', borderRadius: '9px', background: 'transparent', border: '1px solid rgba(240,192,64,0.4)', color: '#F0C040', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-                            >
-                              ↩️ Renvoyer pour correction
-                            </button>
-                            <button
-                              onClick={() => handleReject(booking)}
-                              style={{ padding: '9px 12px', borderRadius: '9px', background: 'transparent', border: 'none', color: '#FF4444', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-                            >
-                              ❌ Refuser
-                            </button>
-                          </div>
-                        </>
-                      )}
+                      </div>
                     </div>
                   )
                 })()}

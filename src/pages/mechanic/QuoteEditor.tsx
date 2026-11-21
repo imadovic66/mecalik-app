@@ -47,7 +47,10 @@ const inputStyle: React.CSSProperties = {
 
 export default function QuoteEditor({ booking, userId, onClose, onSubmitted }: Props) {
   const [lineItems, setLineItems] = useState<ServiceDetail[]>(
-    booking.service_details?.length ? booking.service_details : [{ type: 'material', name: '', quantity: '1', unit_price: 0 }]
+    booking.service_details?.length ? booking.service_details : [
+      { type: 'material', name: '', quantity: '1', unit_price: 0 },
+      { type: 'labor', name: "Main d'œuvre", quantity: '1', unit_price: 0 },
+    ]
   )
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -63,7 +66,16 @@ export default function QuoteEditor({ booking, userId, onClose, onSubmitted }: P
   const totals = computeQuoteTotals(lineItems)
   const { materialsTTC, labourTTC, discountTTC, totalTTC, totalHT, totalTVA, mechanicShare } = totals
 
-  const canSubmit = lineItems.length > 0 && totalTTC > 0 && !submitting
+  // What still blocks sending: every line needs a description and a price, and there must be a labour line
+  // (the mechanic's share is computed from it).
+  const problem =
+    lineItems.length === 0 ? 'Ajoutez au moins une ligne.'
+    : lineItems.some(l => !l.name?.trim()) ? 'Écrivez le nom de chaque ligne (ex. « Filtre à huile », « Diagnostic »).'
+    : lineItems.some(l => !(Number(l.unit_price) > 0)) ? 'Indiquez le prix de chaque ligne, ou supprimez les lignes vides.'
+    : !lineItems.some(l => l.type === 'labor') ? "Ajoutez une ligne « Main d'œuvre » : c'est elle qui détermine votre part."
+    : totalTTC <= 0 ? 'Le total doit être supérieur à 0.'
+    : null
+  const canSubmit = !problem && !submitting
 
   const handleSubmit = async () => {
     if (!canSubmit) return
@@ -75,7 +87,7 @@ export default function QuoteEditor({ booking, userId, onClose, onSubmitted }: P
       ? { notes_admin: booking.notes_admin ? `${booking.notes_admin} | Devis: ${trimmedNotes}` : `Devis: ${trimmedNotes}` }
       : {}
     const { error } = await supabase.from('bookings').update({
-      service_details: lineItems,
+      service_details: lineItems.map(l => ({ ...l, name: l.name.trim() })),
       amount_ttc: totalTTC,
       status: 'quote_pending',
       quote_submitted_at: new Date().toISOString(),
@@ -322,6 +334,11 @@ export default function QuoteEditor({ booking, userId, onClose, onSubmitted }: P
               </div>
             </div>
 
+            {problem && (
+              <div style={{ marginBottom: '10px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.3)', color: '#F0C040', fontSize: '13px', lineHeight: 1.4 }}>
+                {problem}
+              </div>
+            )}
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}

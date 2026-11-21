@@ -198,3 +198,51 @@
 .mkc-banner-title { color: #fff; font-size: 18px; font-weight: 800; line-height: 1.25; }
 .mkc-h2 { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: var(--c-text); letter-spacing: -0.01em; margin-bottom: 12px; }
 .mkc-tile .mkc-tile-badge { color: #fff; margin: 0; font-size: 10px; max-width: none; }
+
+/* ───────── Admin: quote review card ───────── */
+.mkq { background: #101216; border: 1px solid rgba(240,192,64,0.35); border-radius: 16px; padding: 20px; margin-bottom: 16px; font-family: 'Outfit', sans-serif; }
+.mkq-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.mkq-title { font-size: 20px; font-weight: 800; color: #fff; }
+.mkq-ref { font-family: monospace; font-size: 14px; font-weight: 600; color: #F0C040; margin-left: 8px; }
+.mkq-sub { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 3px; }
+.mkq-total { text-align: right; }
+.mkq-total span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,0.45); }
+.mkq-total b { font-size: 28px; font-weight: 800; color: #fff; line-height: 1.1; }
+.mkq-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 20px; margin-top: 16px; padding: 14px 16px; background: rgba(255,255,255,0.03); border-radius: 12px; }
+.mkq-info span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,0.4); margin-bottom: 3px; }
+.mkq-info div > div { font-size: 14.5px; color: #fff; line-height: 1.4; }
+.mkq-info a { text-decoration: none; font-weight: 600; }
+.mkq-checks { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.mkq-checks > div { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.4; padding: 10px 12px; border-radius: 10px; }
+.mkq-checks i { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-style: normal; font-weight: 800; font-size: 12px; color: #0A0A0A; }
+.mkq-checks .is-bad { background: rgba(255,90,95,0.10); color: #FF8A8E; } .mkq-checks .is-bad i { background: #FF5A5F; }
+.mkq-checks .is-warn { background: rgba(240,192,64,0.08); color: #F0C040; } .mkq-checks .is-warn i { background: #F0C040; }
+.mkq-lines { margin-top: 16px; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; }
+.mkq-row { display: grid; grid-template-columns: 1fr 70px 110px 120px; gap: 12px; align-items: center; padding: 13px 16px; font-size: 14.5px; color: rgba(255,255,255,0.8); border-top: 1px solid rgba(255,255,255,0.06); }
+.mkq-row > span:not(:first-child) { text-align: right; }
+.mkq-row-h { border-top: none; background: rgba(255,255,255,0.04); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,0.45); padding: 9px 16px; }
+.mkq-row em { font-style: normal; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-right: 10px; white-space: nowrap; }
+.mkq-row b { color: #fff; font-weight: 600; } .mkq-row small { color: rgba(255,255,255,0.5); font-weight: 400; }
+.mkq-missing { color: #FF8A8E !important; font-style: italic; }
+.mkq-empty { padding: 16px; color: rgba(255,255,255,0.5); font-size: 14px; }
+.mkq-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 14px; }
+.mkq-box { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 14px 16px; }
+.mkq-cap { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
+.mkq-kv { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: rgba(255,255,255,0.65); padding: 3px 0; }
+.mkq-kv b { color: #fff; font-weight: 600; }
+.mkq-kv-big { margin-top: 6px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 16px; color: #fff; font-weight: 700; } .mkq-kv-big b { font-size: 18px; font-weight: 800; color: #43BCC9; }
+.mkq-kv-sm { font-size: 12px; color: rgba(255,255,255,0.45); }
+.mkq-note { font-size: 14px; color: #fff; line-height: 1.45; white-space: pre-wrap; }
+.mkq-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.mkq-btn { padding: 12px 18px; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; border: 1px solid transparent; }
+.mkq-btn:disabled { opacity: .45; cursor: not-allowed; }
+.mkq-btn-teal { background: #43BCC9 !important; color: #062A2E; }
+.mkq-btn-amber { background: rgba(240,192,64,0.12) !important; color: #F0C040; border-color: rgba(240,192,64,0.45); }
+.mkq-btn-ghost { background: rgba(255,255,255,0.06) !important; color: rgba(255,255,255,0.85); }
+.mkq-btn-red { background: transparent !important; color: #FF6B6B; margin-left: auto; }
+.mkq-hint { margin-top: 10px; font-size: 12.5px; color: rgba(255,255,255,0.5); }
+.mkq-fix { margin-top: 16px; padding: 14px 16px; border-radius: 12px; background: rgba(240,192,64,0.06); border: 1px solid rgba(240,192,64,0.25); }
+.mkq-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.mkq-quick button { padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,0.07) !important; color: #fff; font-size: 13px; border: none; cursor: pointer; font-family: inherit; }
+.mkq-fix textarea { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; color: #fff; font-size: 14px; font-family: inherit; padding: 10px 12px; outline: none; resize: vertical; }
+@media (max-width: 640px) { .mkq-row { grid-template-columns: 1fr 90px; } .mkq-row > span:nth-child(2), .mkq-row > span:nth-child(3) { display: none; } .mkq-total { text-align: left; } .mkq-btn-red { margin-left: 0; } }
