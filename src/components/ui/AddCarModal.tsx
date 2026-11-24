@@ -19,11 +19,11 @@ const FUEL_TYPES = ['Essence', 'Diesel', 'Hybride', 'Électrique']
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  background: '#111111',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'var(--c-surface)',
+  border: '1px solid rgba(var(--c-fg-rgb),0.08)',
   borderRadius: '10px',
   padding: '12px 14px',
-  color: 'white',
+  color: 'var(--c-text)',
   fontSize: '14px',
   outline: 'none',
   fontFamily: 'inherit',
@@ -34,7 +34,7 @@ const labelStyle: React.CSSProperties = {
   fontSize: '11px',
   fontWeight: 600,
   letterSpacing: '0.08em',
-  color: 'rgba(255,255,255,0.4)',
+  color: 'rgba(var(--c-fg-rgb),0.4)',
   display: 'block',
   marginBottom: '6px',
   textTransform: 'uppercase',
@@ -120,7 +120,7 @@ export default function AddCarModal({ isOpen, onClose, onSuccess, editingCar }: 
         onClick={e => e.stopPropagation()}
         style={{
           background: '#0D0D0D',
-          border: '1px solid rgba(255,255,255,0.1)',
+          border: '1px solid rgba(var(--c-fg-rgb),0.1)',
           borderRadius: '20px',
           maxWidth: '480px',
           width: '100%',
@@ -135,13 +135,13 @@ export default function AddCarModal({ isOpen, onClose, onSuccess, editingCar }: 
           onClick={handleClose}
           style={{
             position: 'absolute', top: '20px', right: '20px',
-            background: 'rgba(255,255,255,0.05)', border: 'none',
+            background: 'rgba(var(--c-fg-rgb),0.05)', border: 'none',
             borderRadius: '50%', width: '32px', height: '32px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer',
           }}
         >
-          <X size={16} color="rgba(255,255,255,0.6)" />
+          <X size={16} color="rgba(var(--c-fg-rgb),0.6)" />
         </button>
 
         {/* Icon */}
@@ -151,17 +151,17 @@ export default function AddCarModal({ isOpen, onClose, onSuccess, editingCar }: 
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: '20px',
         }}>
-          <CarIcon size={22} color="#43BCC9" />
+          <CarIcon size={22} color="var(--mk-action)" />
         </div>
 
         <h2 style={{
           fontFamily: 'Space Grotesk, sans-serif',
-          fontSize: '22px', fontWeight: 600, color: 'white',
+          fontSize: '22px', fontWeight: 600, color: 'var(--c-text)',
           letterSpacing: '-0.02em', marginBottom: '6px',
         }}>
           {editingCar ? 'Modifier le véhicule' : 'Ajouter un véhicule'}
         </h2>
-        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', marginBottom: '28px' }}>
+        <p style={{ color: 'rgba(var(--c-fg-rgb),0.45)', fontSize: '13px', marginBottom: '28px' }}>
           {editingCar
             ? 'Mettez à jour les informations de votre véhicule'
             : 'Enregistrez votre voiture pour des réservations en un tap'}
@@ -236,7 +236,7 @@ export default function AddCarModal({ isOpen, onClose, onSuccess, editingCar }: 
           <div style={{
             marginTop: '16px', padding: '10px 14px',
             background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)',
-            borderRadius: '8px', color: '#FF4444', fontSize: '13px',
+            borderRadius: '8px', color: 'var(--mk-urgent)', fontSize: '13px',
           }}>
             {error}
           </div>
@@ -247,8 +247,8 @@ export default function AddCarModal({ isOpen, onClose, onSuccess, editingCar }: 
           disabled={!canSubmit}
           style={{
             marginTop: '24px', width: '100%',
-            background: canSubmit ? 'white' : 'rgba(255,255,255,0.06)',
-            color:      canSubmit ? '#080808' : 'rgba(255,255,255,0.25)',
+            background: canSubmit ? 'white' : 'rgba(var(--c-fg-rgb),0.06)',
+            color:      canSubmit ? '#080808' : 'rgba(var(--c-fg-rgb),0.25)',
             padding: '14px', borderRadius: '10px', border: 'none',
             fontSize: '14px', fontWeight: 600,
             cursor: canSubmit ? 'pointer' : 'not-allowed',

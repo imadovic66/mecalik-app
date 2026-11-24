@@ -10,7 +10,7 @@ export default function PublicRoute({ children }: Props) {
     return (
       <div className="min-h-screen bg-[#080808] flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: '#43BCC9', borderTopColor: 'transparent' }} />
+          style={{ borderColor: 'var(--mk-action)', borderTopColor: 'transparent' }} />
       </div>
     )
   }

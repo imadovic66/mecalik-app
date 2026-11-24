@@ -54,14 +54,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔐 Auth session:', session?.user?.email ?? 'none')
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
       else setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (event === 'PASSWORD_RECOVERY' && window.location.pathname !== '/nouveau-mot-de-passe') {
+          window.location.replace('/nouveau-mot-de-passe')
+        }
         setUser(session?.user ?? null)
         if (session?.user) fetchProfile(session.user.id)
         else { setProfile(null); setLoading(false) }

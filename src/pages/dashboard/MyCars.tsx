@@ -21,6 +21,18 @@ type Booking = {
   car_id: string | null
 }
 
+interface ServiceEntry {
+  id: string
+  car_id: string
+  service_name: string
+  service_date: string
+  mileage: number | null
+  provider: string | null
+  cost: number | null
+  notes: string | null
+  source: 'mecalik' | 'external'
+}
+
 export default function MyCars() {
   const { user }   = useAuth()
   const { t }      = useTranslation()
@@ -33,6 +45,16 @@ export default function MyCars() {
   const [showModal, setShowModal]         = useState(false)
   const [editingCar, setEditingCar]       = useState<Car | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [serviceHistory, setServiceHistory] = useState<Record<string, ServiceEntry[]>>({})
+  const [showHistoryModal, setShowHistoryModal] = useState<string | null>(null)
+  const [newHistoryEntry, setNewHistoryEntry] = useState({
+    service_name: '',
+    service_date: new Date().toISOString().substring(0, 10),
+    mileage: '',
+    provider: '',
+    cost: '',
+    notes: '',
+  })
 
   useEffect(() => {
     if (!user) return
@@ -43,7 +65,7 @@ export default function MyCars() {
   const fetchAll = async () => {
     if (!user) return
     setLoading(true)
-    const [carsRes, bookingsRes] = await Promise.all([
+    const [carsRes, bookingsRes, historyRes] = await Promise.all([
       supabase
         .from('cars').select('*').eq('user_id', user.id)
         .order('is_primary', { ascending: false })
@@ -53,9 +75,20 @@ export default function MyCars() {
         .select('id, reference, service_name, status, amount_ttc, created_at, completed_at, car_id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false }),
+      supabase
+        .from('service_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('service_date', { ascending: false }),
     ])
     setCars(carsRes.data ?? [])
     setBookings(bookingsRes.data ?? [])
+    const grouped: Record<string, ServiceEntry[]> = {}
+    ;(historyRes.data ?? []).forEach((h: ServiceEntry) => {
+      if (!grouped[h.car_id]) grouped[h.car_id] = []
+      grouped[h.car_id].push(h)
+    })
+    setServiceHistory(grouped)
     setLoading(false)
   }
 
@@ -285,6 +318,60 @@ export default function MyCars() {
                           </div>
                         )}
 
+                        {/* ── Service history (external + mecalik) ── */}
+                        <div style={{ marginBottom: '16px', paddingTop: '4px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                            <SectionLabel>Historique service</SectionLabel>
+                            <button
+                              onClick={e => { e.stopPropagation(); setShowHistoryModal(car.id) }}
+                              style={{
+                                padding: '5px 10px', borderRadius: '6px',
+                                background: 'rgba(67,188,201,0.08)', border: '1px solid rgba(67,188,201,0.25)',
+                                color: '#43BCC9', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                              }}
+                            >+ Ajouter</button>
+                          </div>
+                          {(serviceHistory[car.id] ?? []).length === 0 ? (
+                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', margin: 0, lineHeight: 1.5 }}>
+                              Aucun historique. Ajoutez vos services passés (autres garages, DIY) pour un suivi complet.
+                            </p>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {(serviceHistory[car.id] ?? []).map(entry => (
+                                <div key={entry.id} style={{
+                                  padding: '10px 12px', borderRadius: '8px',
+                                  background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                                }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'white' }}>{entry.service_name}</span>
+                                      {entry.source === 'mecalik' ? (
+                                        <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '3px', background: 'rgba(67,188,201,0.15)', color: '#43BCC9', fontWeight: 700 }}>MECALIK</span>
+                                      ) : (
+                                        <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>EXTERNE</span>
+                                      )}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                                      {new Date(entry.service_date).toLocaleDateString('fr-MA')}
+                                      {entry.mileage ? ` · ${entry.mileage.toLocaleString('fr-FR')} km` : ''}
+                                      {entry.provider ? ` · ${entry.provider}` : ''}
+                                    </div>
+                                    {entry.notes && (
+                                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '3px', fontStyle: 'italic' }}>
+                                        "{entry.notes}"
+                                      </div>
+                                    )}
+                                  </div>
+                                  {entry.cost != null && (
+                                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'white', flexShrink: 0, marginLeft: '10px' }}>{entry.cost} MAD</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
                         {/* Actions */}
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {!car.is_primary && (
@@ -406,6 +493,69 @@ export default function MyCars() {
         </div>
       </div>
 
+      {/* ═══ ADD SERVICE HISTORY MODAL ═══ */}
+      {showHistoryModal && (
+        <div
+          onClick={() => setShowHistoryModal(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: '#111114', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '440px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'white', margin: 0 }}>🔧 Ajouter un service</h3>
+              <button onClick={() => setShowHistoryModal(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer' }}>×</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {([
+                { label: 'Service effectué *', field: 'service_name', type: 'text',   placeholder: 'Ex: Vidange, Frein, Pneus...' },
+                { label: 'Date *',             field: 'service_date', type: 'date',   placeholder: '' },
+                { label: 'Kilométrage',        field: 'mileage',      type: 'number', placeholder: 'Ex: 85000' },
+                { label: 'Prestataire',        field: 'provider',     type: 'text',   placeholder: 'Ex: Garage XYZ, Soi-même...' },
+                { label: 'Coût (MAD)',         field: 'cost',         type: 'number', placeholder: 'Ex: 250' },
+                { label: 'Notes',              field: 'notes',        type: 'text',   placeholder: 'Détails optionnels...' },
+              ] as { label: string; field: string; type: string; placeholder: string }[]).map(({ label, field, type, placeholder }) => (
+                <div key={field}>
+                  <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '5px' }}>{label}</label>
+                  <input
+                    type={type}
+                    value={(newHistoryEntry as Record<string, string>)[field]}
+                    placeholder={placeholder}
+                    onChange={e => setNewHistoryEntry(prev => ({ ...prev, [field]: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '13px', outline: 'none', boxSizing: 'border-box', fontFamily: 'Outfit, sans-serif' }}
+                  />
+                </div>
+              ))}
+              <button
+                onClick={async () => {
+                  if (!newHistoryEntry.service_name || !newHistoryEntry.service_date || !user) return
+                  const { data } = await supabase.from('service_history').insert({
+                    car_id: showHistoryModal,
+                    user_id: user.id,
+                    service_name: newHistoryEntry.service_name,
+                    service_date: newHistoryEntry.service_date,
+                    mileage: newHistoryEntry.mileage ? parseInt(newHistoryEntry.mileage) : null,
+                    provider: newHistoryEntry.provider || null,
+                    cost: newHistoryEntry.cost ? parseFloat(newHistoryEntry.cost) : null,
+                    notes: newHistoryEntry.notes || null,
+                    source: 'external',
+                  }).select().single()
+                  if (data) {
+                    setServiceHistory(prev => ({
+                      ...prev,
+                      [showHistoryModal]: [data as ServiceEntry, ...(prev[showHistoryModal] ?? [])],
+                    }))
+                    setNewHistoryEntry({ service_name: '', service_date: new Date().toISOString().substring(0, 10), mileage: '', provider: '', cost: '', notes: '' })
+                    setShowHistoryModal(null)
+                  }
+                }}
+                style={{ marginTop: '6px', padding: '12px', borderRadius: '8px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+              >
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <AddCarModal
         isOpen={showModal}
         onClose={closeModal}
@@ -456,6 +606,7 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { color: string; bg: string }> = {
     completed:   { color: '#00DD88', bg: 'rgba(0,221,136,0.08)'   },
     in_progress: { color: '#43BCC9', bg: 'rgba(67,188,201,0.08)'  },
+    on_the_way:  { color: '#F0C040', bg: 'rgba(240,192,64,0.08)'  },
     confirmed:   { color: '#43BCC9', bg: 'rgba(67,188,201,0.08)'  },
     pending:     { color: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.04)' },
     cancelled:   { color: '#FF4444', bg: 'rgba(255,68,68,0.08)'   },

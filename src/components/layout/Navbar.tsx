@@ -11,7 +11,8 @@ import {
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const en = i18n.language?.startsWith('en')
   const navigate = useNavigate()
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
@@ -44,85 +45,88 @@ export default function Navbar() {
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/')
-
-  // ── PUBLIC NAVBAR ──
+  // ── PUBLIC NAVBAR — floating pill (CAFU model) ──
   if (!user) {
+    const links = [
+      { to: '/services',          label: t('nav.services') },
+      { to: '/tarifs',            label: t('nav.pricing') },
+      { to: '/comment-ca-marche', label: t('nav.howItWorks') },
+      { to: '/flottes',           label: t('nav.fleet') },
+      { to: '/a-propos',          label: t('nav.about') },
+    ]
+    const panne = () => { setMobileOpen(false); window.dispatchEvent(new CustomEvent('openBooking', { detail: { service: 'urgence' } })) }
+    const book = () => { setMobileOpen(false); window.dispatchEvent(new CustomEvent('openBooking')) }
     return (
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
-        style={{
-          background: scrolled ? 'rgba(8,8,8,0.95)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/">
-            <img src="/logo.jpg" alt="MecaLIK"
-              style={{ height: '36px', width: '120px', objectFit: 'cover', borderRadius: '6px' }} />
+      <nav className="fixed top-0 left-0 right-0 z-50 px-3 sm:px-5 pt-3">
+        <div
+          className="max-w-6xl mx-auto h-14 pl-4 pr-2 flex items-center justify-between rounded-full transition-all duration-300"
+          style={{
+            background: scrolled || mobileOpen ? 'rgba(18,18,22,0.92)' : 'rgba(18,18,22,0.6)',
+            backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: scrolled ? '0 10px 30px rgba(0,0,0,0.35)' : 'none',
+          }}
+        >
+          <Link to="/" className="flex items-center">
+            <img src="/brand/logo-night.png" alt="MecaLIK" style={{ height: '26px', width: 'auto' }} />
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
-            {[
-              { to: '/',         label: t('nav.home') },
-              { to: '/services', label: t('nav.services') },
-              { to: '/devis',    label: t('nav.pricing') },
-              { to: '/fleet',    label: t('nav.fleet') },
-              { to: '/about',    label: t('nav.about') },
-            ].map(item => (
+          <div className="hidden lg:flex items-center gap-1">
+            {links.map(item => (
               <Link key={item.to} to={item.to}
-                className="text-sm transition-colors"
+                className="text-sm px-3 py-2 rounded-full transition-colors"
                 style={{
-                  color: isActive(item.to) ? 'white' : 'rgba(255,255,255,0.5)',
-                  fontWeight: isActive(item.to) ? 500 : 400,
-                  borderBottom: isActive(item.to) ? '1px solid rgba(255,255,255,0.4)' : '1px solid transparent',
-                  paddingBottom: '2px',
+                  color: isActive(item.to) ? 'white' : 'rgba(255,255,255,0.6)',
+                  background: isActive(item.to) ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  fontWeight: isActive(item.to) ? 600 : 500,
                 }}>
                 {item.label}
               </Link>
             ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
-            <LanguageSwitcher />
-            <Link to="/login"
-              className="text-sm font-medium transition-colors"
-              style={{ color: 'rgba(255,255,255,0.55)' }}>
+          <div className="flex items-center gap-2">
+            <button onClick={panne}
+              className="hidden sm:flex items-center gap-2 text-sm font-semibold px-3 py-2 rounded-full"
+              style={{ color: '#FF5A5F' }}>
+              <span className="mk-dot-red" /> {en ? 'Breakdown?' : 'Panne ?'}
+            </button>
+            <div className="hidden lg:block"><LanguageSwitcher /></div>
+            <Link to="/login" className="hidden lg:block text-sm font-medium px-3 py-2"
+              style={{ color: 'rgba(255,255,255,0.7)' }}>
               {t('nav.login')}
             </Link>
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('openBooking'))}
-              className="flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition-colors"
-              style={{ background: '#43BCC9', color: '#080808' }}>
-              {t('nav.quickQuote')}
+            <button onClick={book}
+              className="font-bold px-5 py-2.5 rounded-full text-sm"
+              style={{ background: 'var(--mk-action)', color: '#062A2E' }}>
+              {en ? 'Book' : 'Réserver'}
+            </button>
+            <button className="lg:hidden flex items-center justify-center rounded-full"
+              style={{ width: 40, height: 40, color: 'rgba(255,255,255,0.85)', background: 'rgba(255,255,255,0.06)' }}
+              onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menu">
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
-
-          <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}
-            style={{ color: 'rgba(255,255,255,0.7)' }}>
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
         </div>
 
         {mobileOpen && (
-          <div className="md:hidden border-t px-6 py-4 space-y-3"
-            style={{ background: 'rgba(8,8,8,0.98)', borderColor: 'rgba(255,255,255,0.06)' }}>
-            {[
-              { to: '/',         label: t('nav.home') },
-              { to: '/services', label: t('nav.services') },
-              { to: '/devis',    label: t('nav.pricing') },
-              { to: '/fleet',    label: t('nav.fleet') },
-              { to: '/about',    label: t('nav.about') },
-            ].map(item => (
-              <Link key={item.to} to={item.to} className="block text-sm py-2"
-                style={{ color: 'rgba(255,255,255,0.7)' }}>
+          <div className="lg:hidden max-w-6xl mx-auto mt-2 rounded-3xl px-5 py-4"
+            style={{ background: 'rgba(18,18,22,0.97)', border: '1px solid rgba(255,255,255,0.08)', animation: 'slideIn 0.2s ease' }}>
+            {links.map(item => (
+              <Link key={item.to} to={item.to} className="block text-base py-2.5"
+                style={{ color: isActive(item.to) ? 'white' : 'rgba(255,255,255,0.75)' }}>
                 {item.label}
               </Link>
             ))}
-            <div className="pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <Link to="/login" className="block text-sm py-2" style={{ color: '#43BCC9' }}>
-                {t('nav.login')}
-              </Link>
+            <button onClick={panne} className="flex items-center gap-2 text-base font-semibold py-2.5" style={{ color: '#FF5A5F' }}>
+              <span className="mk-dot-red" /> {en ? 'Breakdown? Priority help' : 'Panne ? Intervention prioritaire'}
+            </button>
+            <div className="pt-3 mt-2 border-t flex items-center justify-between gap-3" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+              <div className="flex gap-4">
+                <Link to="/login" className="text-sm py-2" style={{ color: 'rgba(255,255,255,0.75)' }}>{t('nav.login')}</Link>
+                <Link to="/signup" className="text-sm py-2 font-semibold" style={{ color: 'var(--mk-action)' }}>{t('nav.signup')}</Link>
+              </div>
+              <LanguageSwitcher />
             </div>
           </div>
         )}
@@ -132,20 +136,20 @@ export default function Navbar() {
 
   // ── LOGGED-IN NAVBAR ──
   const navItems = profile?.role === 'admin' ? [
-    { to: '/admin',              icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
-    { to: '/admin?tab=bookings', icon: <ShoppingBag size={16} />,    label: 'Réservations' },
-    { to: '/admin?tab=customers',icon: <Users size={16} />,          label: 'Clients' },
+    { to: '/admin',              icon: <LayoutDashboard size={16} />, label: t('admin.dashboard') },
+    { to: '/admin?tab=bookings', icon: <ShoppingBag size={16} />,    label: t('admin.reservations') },
+    { to: '/admin?tab=customers',icon: <Users size={16} />,          label: t('admin.clients') },
   ] : profile?.role === 'fleet_manager' ? [
-    { to: '/fleet-dashboard',                  icon: <BarChart3 size={16} />, label: "Vue d'ensemble" },
-    { to: '/fleet-dashboard?tab=fleet',        icon: <Car size={16} />,       label: 'Ma flotte' },
-    { to: '/fleet-dashboard?tab=calendar',     icon: <Calendar size={16} />,  label: 'Planning' },
-    { to: '/fleet-dashboard?tab=reports',      icon: <FileText size={16} />,  label: 'Rapports' },
+    { to: '/fleet-dashboard',                  icon: <BarChart3 size={16} />, label: t('fleet.tabs.overview') },
+    { to: '/fleet-dashboard?tab=fleet',        icon: <Car size={16} />,       label: t('fleet.vehiclesCount') },
+    { to: '/fleet-dashboard?tab=calendar',     icon: <Calendar size={16} />,  label: t('fleet.tabs.reports') },
+    { to: '/fleet-dashboard?tab=reports',      icon: <FileText size={16} />,  label: t('fleet.reports.fleetReport') },
   ] : []
 
   const roleBadge = profile?.role === 'admin'
-    ? { label: 'Admin', color: '#43BCC9', bg: 'rgba(67,188,201,0.1)', border: 'rgba(67,188,201,0.2)' }
+    ? { label: 'Admin', color: 'var(--mk-action)', bg: 'rgba(67,188,201,0.1)', border: 'rgba(67,188,201,0.2)' }
     : profile?.role === 'fleet_manager'
-    ? { label: 'Flotte', color: '#F0C040', bg: 'rgba(240,192,64,0.1)', border: 'rgba(240,192,64,0.2)' }
+    ? { label: 'Flotte', color: 'var(--mk-premium)', bg: 'rgba(240,192,64,0.1)', border: 'rgba(240,192,64,0.2)' }
     : null
 
   const homePath = profile?.role === 'admin' ? '/admin'
@@ -199,7 +203,7 @@ export default function Navbar() {
                 border: '1px solid rgba(255,255,255,0.08)',
               }}>
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'rgba(67,188,201,0.2)', color: '#43BCC9' }}>
+                style={{ background: 'rgba(67,188,201,0.2)', color: 'var(--mk-action)' }}>
                 {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'U'}
               </div>
               <span className="text-sm font-medium max-w-24 truncate"
@@ -257,7 +261,7 @@ export default function Navbar() {
                 <div className="border-t pt-1" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                   <button onClick={handleSignOut}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                    style={{ color: '#FF4444' }}
+                    style={{ color: 'var(--mk-urgent)' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     <LogOut size={15} />
@@ -297,7 +301,7 @@ export default function Navbar() {
             </div>
             <button onClick={handleSignOut}
               className="flex items-center gap-2 text-sm"
-              style={{ color: '#FF4444' }}>
+              style={{ color: 'var(--mk-urgent)' }}>
               <LogOut size={15} />
               Déconnexion
             </button>

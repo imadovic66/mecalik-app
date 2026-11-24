@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /fleet-dashboard
+Disallow: /mechanic
+Disallow: /login
+Disallow: /signup
+Disallow: /track
+Disallow: /suivi
+Disallow: /booking
+Disallow: /avis
+
+Sitemap: https://mecalik.com/sitemap.xml

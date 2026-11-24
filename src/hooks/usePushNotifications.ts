@@ -62,7 +62,7 @@ export function usePushNotifications() {
 
       return true
     } catch (err) {
-      console.warn('Push subscribe error:', err)
+      if (import.meta.env.DEV) console.warn('Push subscribe error:', err)
       setPermission(typeof Notification !== 'undefined' ? Notification.permission : 'denied')
       return false
     }
@@ -81,7 +81,7 @@ export function usePushNotifications() {
 
       setSubscribed(false)
     } catch (err) {
-      console.warn('Push unsubscribe error:', err)
+      if (import.meta.env.DEV) console.warn('Push unsubscribe error:', err)
     }
   }
 
@@ -101,7 +101,7 @@ export function usePushNotifications() {
         body: JSON.stringify(opts),
       })
     } catch (err) {
-      console.warn('Notify API error:', err)
+      if (import.meta.env.DEV) console.warn('Notify API error:', err)
     }
   }
 

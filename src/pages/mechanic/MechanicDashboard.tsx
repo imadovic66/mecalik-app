@@ -4,9 +4,13 @@ import { useAuth } from '../../hooks/useAuth'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../../lib/supabase'
 import LanguageSwitcher from '../../components/ui/LanguageSwitcher'
+import { usePushNotifications } from '../../hooks/usePushNotifications'
+import QuoteEditor from './QuoteEditor'
+import type { ServiceDetail } from '../admin/adminShared'
+import { getMechanicShare, getCustomerName, getCustomerPhone, getSourceBadge } from '../../lib/bookingUtils'
 import {
   MapPin, MessageCircle, Navigation,
-  CheckCircle, Wrench, Star,
+  Wrench, Star,
   History, Wallet, User, Calendar,
 } from 'lucide-react'
 
@@ -28,19 +32,33 @@ type Booking = {
   confirmed_at: string | null
   completed_at: string | null
   user_id: string | null
+  notes_admin: string | null
+  service_details?: ServiceDetail[] | null
+  quote_feedback: string | null
+  quote_submitted_at: string | null
+  customer_name?: string | null
+  customer_phone?: string | null
+  source?: string | null
+  profiles?: { full_name?: string | null; phone?: string | null } | null
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  pending:     { label: 'pending',     color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
-  confirmed:   { label: 'confirmed',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
-  in_progress: { label: 'in_progress', color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
-  completed:   { label: 'completed',   color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88' },
-  cancelled:   { label: 'cancelled',   color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444' },
+  pending:       { label: 'pending',       color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
+  confirmed:     { label: 'confirmed',     color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
+  on_the_way:    { label: 'on_the_way',    color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
+  quote_pending: { label: 'quote_pending', color: '#F0C040', bg: 'rgba(240,192,64,0.08)',  dot: '#F0C040' },
+  quote_sent:    { label: 'quote_sent',    color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
+  in_progress:   { label: 'in_progress',   color: '#43BCC9', bg: 'rgba(67,188,201,0.08)',  dot: '#43BCC9' },
+  completed:     { label: 'completed',     color: '#00DD88', bg: 'rgba(0,221,136,0.08)',   dot: '#00DD88' },
+  cancelled:     { label: 'cancelled',     color: '#FF4444', bg: 'rgba(255,68,68,0.08)',   dot: '#FF4444' },
 }
 
-const NEXT_STATUS: Record<string, { label: string; next: string; color: string }> = {
-  confirmed:   { label: 'Démarrer le trajet',  next: 'in_progress', color: '#43BCC9' },
-  in_progress: { label: 'Terminer le service', next: 'completed',   color: '#00DD88' },
+// quote_pending has no direct action here — see the read-only panel in the job card instead
+const NEXT_STATUS: Record<string, { label: string; next: string; color: string; icon: string }> = {
+  pending:     { label: '✅ Accepter l\'intervention',     next: 'confirmed',   color: '#43BCC9', icon: 'check'  },
+  confirmed:   { label: '🚗 Je suis en route',            next: 'on_the_way',  color: '#F0C040', icon: 'car'    },
+  quote_sent:  { label: '🔧 Démarrer l\'intervention',     next: 'in_progress', color: '#43BCC9', icon: 'wrench' },
+  in_progress: { label: '✅ Terminer l\'intervention',     next: 'completed',   color: '#00DD88', icon: 'check'  },
 }
 
 type TabId = 'jobs' | 'history' | 'gains' | 'profil'
@@ -50,12 +68,17 @@ export default function MechanicDashboard() {
   const { t: i18nT } = useTranslation()
   const navigate = useNavigate()
 
+  const { subscribed, supported, subscribe, notify } = usePushNotifications()
+
   const [tab, setTab]               = useState<TabId>('jobs')
   const [bookings, setBookings]     = useState<Booking[]>([])
   const [loading, setLoading]       = useState(true)
   const [isOnline, setIsOnline]     = useState(true)
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [quoteEditorJob, setQuoteEditorJob] = useState<Booking | null>(null)
+  const [odoJob, setOdoJob]         = useState<Booking | null>(null)
+  const [odoValue, setOdoValue]     = useState('')
 
   // ── Auth guard (imperative) ──
   useEffect(() => {
@@ -81,10 +104,9 @@ export default function MechanicDashboard() {
   useEffect(() => {
     if (!profile?.full_name) return
     const channel = supabase
-      .channel(`mechanic-${profile.full_name}`)
+      .channel(`mechanic-bookings-${profile.full_name}`)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'bookings',
-        filter: `technician_name=eq.${profile.full_name}`,
       }, () => fetchBookings())
       .subscribe()
     return () => { supabase.removeChannel(channel) }
@@ -97,34 +119,55 @@ export default function MechanicDashboard() {
     const name = profile.full_name || user.email || ''
     const { data } = await supabase
       .from('bookings')
-      .select('*')
+      .select('*, profiles!bookings_user_id_fkey(full_name, phone)')
       .eq('technician_name', name)
       .order('created_at', { ascending: false })
     setBookings(data || [])
     setLoading(false)
   }
 
-  const updateStatus = async (bookingId: string, newStatus: string) => {
+  const updateStatus = async (bookingId: string, newStatus: string, odometer?: number | null) => {
     setUpdatingId(bookingId)
-    const updates: Record<string, string> = { status: newStatus }
+    const updates: Record<string, string | number> = { status: newStatus }
+    if (odometer != null && odometer > 0) updates.odometer = Math.round(odometer)
     if (newStatus === 'in_progress') updates.confirmed_at  = new Date().toISOString()
     if (newStatus === 'completed')   updates.completed_at  = new Date().toISOString()
     await supabase.from('bookings').update(updates).eq('id', bookingId)
+
+    // ── Notify customer on status change ──────────────────────────────────
+    const booking = bookings.find(b => b.id === bookingId)
+    if (booking?.user_id) {
+      const CUSTOMER_MESSAGES: Record<string, { title: string; body: string }> = {
+        on_the_way:  { title: '🚗 Technicien en route',      body: 'Votre technicien est en route.' },
+        in_progress: { title: '🔧 Intervention démarrée',    body: "Le technicien est arrivé et commence l'intervention." },
+        completed:   { title: '✅ Intervention terminée',    body: 'Votre véhicule est prêt ! Évaluez votre expérience.' },
+      }
+      const msg = CUSTOMER_MESSAGES[newStatus]
+      if (msg) {
+        notify({
+          user_id: booking.user_id,
+          title: msg.title,
+          body: msg.body,
+          url: `/booking/${bookingId}`,
+        })
+      }
+    }
+
     await fetchBookings()
     setUpdatingId(null)
   }
 
-  const activeJobs    = bookings.filter(b => ['confirmed', 'in_progress', 'pending'].includes(b.status))
+  const activeJobs    = bookings.filter(b => ['confirmed', 'on_the_way', 'quote_pending', 'quote_sent', 'in_progress', 'pending'].includes(b.status))
   const historyJobs   = bookings.filter(b => ['completed', 'cancelled'].includes(b.status))
   const completedJobs = bookings.filter(b => b.status === 'completed')
 
-  const totalEarnings = completedJobs.reduce((s, b) => s + ((b.amount_ttc || 0) * 0.6), 0)
+  const totalEarnings = completedJobs.reduce((s, b) => s + getMechanicShare(b.service_details, b.amount_ttc, b.completed_at), 0)
   const now = new Date()
   const thisMonthCompleted = completedJobs.filter(b => {
     const d = new Date(b.created_at)
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
   })
-  const thisMonthEarnings = thisMonthCompleted.reduce((s, b) => s + ((b.amount_ttc || 0) * 0.6), 0)
+  const thisMonthEarnings = thisMonthCompleted.reduce((s, b) => s + getMechanicShare(b.service_details, b.amount_ttc, b.completed_at), 0)
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Technicien'
   const ratedJobs = completedJobs.filter(b => b.rating)
@@ -192,6 +235,59 @@ export default function MechanicDashboard() {
           </div>
         </div>
 
+        {/* ═══ iPHONE: notifications only work from the home-screen app ═══ */}
+        {!supported && /iPhone|iPad|iPod/i.test(navigator.userAgent) && !(window.navigator as Navigator & { standalone?: boolean }).standalone && (
+          <div style={{
+            margin: '12px 16px 0', padding: '12px 16px', borderRadius: '12px',
+            background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.3)',
+            color: '#F0C040', fontSize: '13px', lineHeight: 1.5,
+          }}>
+            📲 <b>Pour recevoir les nouvelles interventions sur iPhone</b> : dans Safari, touchez <b>Partager</b> (carré avec flèche) → <b>Sur l'écran d'accueil</b>. Ouvrez ensuite MecaLIK depuis l'icône et activez les notifications.
+          </div>
+        )}
+
+        {/* ═══ PUSH NOTIFICATION PROMPT ═══ */}
+        {supported && !subscribed && (
+          <div style={{
+            margin: '12px 16px 0',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            background: 'rgba(67,188,201,0.08)',
+            border: '1px solid rgba(67,188,201,0.2)',
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', gap: '12px',
+          }}>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'white', marginBottom: '2px' }}>
+                🔔 Activer les notifications
+              </div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
+                Recevez une alerte instantanée quand une nouvelle mission vous est assignée
+              </div>
+            </div>
+            <button
+              onClick={subscribe}
+              style={{
+                padding: '8px 14px', borderRadius: '8px',
+                background: '#43BCC9', border: 'none',
+                color: '#0A0A0A', fontSize: '12px', fontWeight: 700,
+                cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              Activer
+            </button>
+          </div>
+        )}
+        {supported && subscribed && (
+          <div style={{
+            margin: '8px 16px 0',
+            fontSize: '11px', color: 'rgba(255,255,255,0.3)',
+            display: 'flex', alignItems: 'center', gap: '4px',
+          }}>
+            🔔 Notifications activées
+          </div>
+        )}
+
         {/* ═══ CONTENT ═══ */}
         <div style={{ padding: '20px 18px' }}>
 
@@ -241,13 +337,13 @@ export default function MechanicDashboard() {
                     return (
                       <div key={job.id} style={{
                         background: '#0F0F0F',
-                        border: job.status === 'in_progress'
+                        border: (job.status === 'in_progress' || job.status === 'on_the_way')
                           ? '1px solid rgba(67,188,201,0.3)'
                           : '1px solid rgba(255,255,255,0.07)',
                         borderRadius: '16px', overflow: 'hidden', transition: 'all 0.2s',
                       }}>
                         {/* In-progress top accent */}
-                        {job.status === 'in_progress' && (
+                        {(job.status === 'in_progress' || job.status === 'on_the_way') && (
                           <div style={{ height: '2px', background: 'linear-gradient(90deg, #43BCC9 0%, rgba(67,188,201,0.2) 100%)' }} />
                         )}
 
@@ -255,25 +351,48 @@ export default function MechanicDashboard() {
                         <div onClick={() => setExpandedJob(isExpanded ? null : job.id)} style={{ padding: '16px', cursor: 'pointer' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              {/* Status pill */}
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 9px', borderRadius: '5px', background: status.bg, marginBottom: '10px' }}>
-                                <span style={{
-                                  width: '5px', height: '5px', borderRadius: '50%', background: status.dot,
-                                  animation: job.status === 'in_progress' ? 'mechPulse 2s infinite' : 'none',
-                                }} />
-                                <span style={{ fontSize: '9px', fontWeight: 600, color: status.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                                  {i18nT(`status.${job.status}`)}
-                                </span>
+                              {/* Status pill + channel badge */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 9px', borderRadius: '5px', background: status.bg }}>
+                                  <span style={{
+                                    width: '5px', height: '5px', borderRadius: '50%', background: status.dot,
+                                    animation: (job.status === 'in_progress' || job.status === 'on_the_way') ? 'mechPulse 2s infinite' : 'none',
+                                  }} />
+                                  <span style={{ fontSize: '9px', fontWeight: 600, color: status.color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                    {i18nT(`status.${job.status}`)}
+                                  </span>
+                                </div>
+                                {(() => {
+                                  const badge = getSourceBadge(job.source)
+                                  return (
+                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 7px', borderRadius: '5px', background: badge.bg, color: badge.color }}>
+                                      {badge.emoji} {badge.label}
+                                    </span>
+                                  )
+                                })()}
                               </div>
 
-                              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '17px', fontWeight: 600, color: 'white', marginBottom: '6px', letterSpacing: '-0.01em' }}>
+                              <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '17px', fontWeight: 600, color: 'white', marginBottom: '2px', letterSpacing: '-0.01em' }}>
                                 {job.service_name}
+                              </div>
+
+                              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>
+                                {getCustomerName(job)}
                               </div>
 
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                   <MapPin size={11} /> {job.address}
                                 </span>
+                                {getCustomerPhone(job) && (
+                                  <a
+                                    href={`tel:${getCustomerPhone(job)}`}
+                                    onClick={e => e.stopPropagation()}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--mk-action)', textDecoration: 'none' }}
+                                  >
+                                    📞 {getCustomerPhone(job)}
+                                  </a>
+                                )}
                                 <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
                                   {job.reference}
                                 </span>
@@ -284,7 +403,7 @@ export default function MechanicDashboard() {
                             {job.amount_ttc && (
                               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                 <div style={{ fontSize: '16px', fontWeight: 700, color: '#00DD88', fontFamily: 'Space Grotesk, sans-serif' }}>
-                                  {Math.round(job.amount_ttc * 0.6)} MAD
+                                  {Math.round(getMechanicShare(job.service_details, job.amount_ttc, job.completed_at))} MAD
                                 </div>
                                 <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>{i18nT('mechanic.yourPart')}</div>
                               </div>
@@ -343,9 +462,33 @@ export default function MechanicDashboard() {
                             </div>
 
                             {/* Main CTA */}
+                            {job.status === 'on_the_way' && (
+                              <button
+                                onClick={() => setQuoteEditorJob(job)}
+                                style={{
+                                  width: '100%', marginTop: '10px', padding: '13px',
+                                  background: '#43BCC9', color: '#080808',
+                                  border: 'none', borderRadius: '12px',
+                                  fontSize: '14px', fontWeight: 700, cursor: 'pointer',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                  fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em',
+                                }}
+                              >
+                                📝 Créer le devis
+                              </button>
+                            )}
+                            {job.status === 'quote_pending' && (
+                              <div style={{
+                                marginTop: '10px', padding: '13px', borderRadius: '12px', textAlign: 'center',
+                                background: 'rgba(240,192,64,0.08)', border: '1px solid rgba(240,192,64,0.25)',
+                                color: '#F0C040', fontSize: '13px', fontWeight: 600,
+                              }}>
+                                ⏳ En attente de validation
+                              </div>
+                            )}
                             {nextAction && (
                               <button
-                                onClick={() => updateStatus(job.id, nextAction.next)}
+                                onClick={() => nextAction.next === 'completed' ? (setOdoValue(''), setOdoJob(job)) : updateStatus(job.id, nextAction.next)}
                                 disabled={isUpdating}
                                 style={{
                                   width: '100%', marginTop: '10px', padding: '13px',
@@ -358,14 +501,13 @@ export default function MechanicDashboard() {
                                   fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.01em',
                                 }}
                               >
-                                {isUpdating ? i18nT('mechanic.updating') : (
-                                  <>
-                                    {nextAction.next === 'in_progress' && <Navigation size={16} />}
-                                    {nextAction.next === 'completed'   && <CheckCircle size={16} />}
-                                    {nextAction.next === 'in_progress' ? i18nT('mechanic.startRoute') : i18nT('mechanic.endService')}
-                                  </>
-                                )}
+                                {isUpdating ? i18nT('mechanic.updating') : nextAction.label}
                               </button>
+                            )}
+                            {job.status === 'completed' && (
+                              <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '13px', color: 'rgba(255,255,255,0.4)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                                ✓ {i18nT('status.completed')}
+                              </div>
                             )}
                           </div>
                         )}
@@ -392,7 +534,7 @@ export default function MechanicDashboard() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {historyJobs.map(job => {
                     const status = STATUS_CONFIG[job.status] || STATUS_CONFIG.completed
-                    const earned = job.amount_ttc ? Math.round(job.amount_ttc * 0.6) : null
+                    const earned = job.amount_ttc ? Math.round(getMechanicShare(job.service_details, job.amount_ttc, job.completed_at)) : null
                     return (
                       <div key={job.id} style={{ background: '#0F0F0F', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -475,7 +617,7 @@ export default function MechanicDashboard() {
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
                         <div style={{ fontSize: '14px', fontWeight: 700, color: '#00DD88', fontFamily: 'Space Grotesk, sans-serif' }}>
-                          +{Math.round((job.amount_ttc || 0) * 0.6)} MAD
+                          +{Math.round(getMechanicShare(job.service_details, job.amount_ttc, job.completed_at))} MAD
                         </div>
                         <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
                           {i18nT('mechanic.on')} {job.amount_ttc} MAD
@@ -607,6 +749,39 @@ export default function MechanicDashboard() {
           ::-webkit-scrollbar { display: none; }
         `}</style>
       </div>
+
+      {odoJob && (
+        <>
+          <div onClick={() => setOdoJob(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200 }} />
+          <div style={{ position: 'fixed', left: '50%', bottom: 0, transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: '#0F0F0F', borderTopLeftRadius: '20px', borderTopRightRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', padding: '20px 18px 30px', zIndex: 201, boxSizing: 'border-box' }}>
+            <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '18px', fontWeight: 700, color: 'white' }}>Kilométrage au compteur</div>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)', margin: '6px 0 14px', lineHeight: 1.5 }}>
+              Lisez le compteur du véhicule avant de clôturer. Il sert à calculer le prochain entretien du client.
+            </div>
+            <input type="number" inputMode="numeric" autoFocus value={odoValue} onChange={e => setOdoValue(e.target.value)} placeholder="Ex : 128450"
+              style={{ width: '100%', boxSizing: 'border-box', background: '#151515', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px', color: 'white', padding: '14px', fontSize: '22px', fontWeight: 700, fontFamily: 'inherit', outline: 'none' }} />
+            <button
+              disabled={!odoValue || Number(odoValue) <= 0 || updatingId === odoJob.id}
+              onClick={async () => { const j = odoJob; setOdoJob(null); await updateStatus(j.id, 'completed', Number(odoValue)) }}
+              style={{ width: '100%', marginTop: '14px', padding: '14px', borderRadius: '12px', border: 'none', fontWeight: 700, fontSize: '15px', fontFamily: 'Space Grotesk, sans-serif', cursor: 'pointer', background: odoValue && Number(odoValue) > 0 ? '#00DD88' : 'rgba(255,255,255,0.06)', color: odoValue && Number(odoValue) > 0 ? '#080808' : 'rgba(255,255,255,0.3)' }}>
+              ✅ Terminer l'intervention
+            </button>
+            <button onClick={async () => { const j = odoJob; setOdoJob(null); await updateStatus(j.id, 'completed', null) }}
+              style={{ width: '100%', marginTop: '8px', padding: '10px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              Compteur illisible — terminer sans kilométrage
+            </button>
+          </div>
+        </>
+      )}
+
+      {quoteEditorJob && user && (
+        <QuoteEditor
+          booking={quoteEditorJob}
+          userId={user.id}
+          onClose={() => setQuoteEditorJob(null)}
+          onSubmitted={fetchBookings}
+        />
+      )}
     </div>
   )
 }

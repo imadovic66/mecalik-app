@@ -1,21 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://nggvlwiisvvjczpyccfj.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nZ3Zsd2lpc3Z2amN6cHljY2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTA3ODksImV4cCI6MjA5MDYyNjc4OX0.qjYAD4YVjEMANIVXfvfbj5O6VvkXqagwZIo_6sbrQ6Y'
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  if (import.meta.env.DEV) console.warn('Missing Supabase env vars — check .env file')
 }
 
-// Standard client — respects RLS (used for customer / mechanic / fleet operations)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Admin client — bypasses RLS via service role key (used only in AdminDashboard)
-// Set VITE_SUPABASE_SERVICE_KEY in .env and Vercel env vars (Settings → Environment Variables)
-export const supabaseAdmin = supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } })
-  : supabase // fallback: same as anon (RLS applies — add a Supabase admin policy as alternative)
 
 export type Car = {
   id: string
@@ -64,7 +56,7 @@ export type Database = {
           user_id: string
           car_id: string | null
           service: string
-          status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled'
+          status: 'pending' | 'confirmed' | 'on_the_way' | 'in_progress' | 'completed' | 'cancelled'
           address: string
           scheduled_at: string | null
           price: number | null

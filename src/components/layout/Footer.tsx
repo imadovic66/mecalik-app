@@ -1,24 +1,21 @@
 import { MapPin, Phone, Mail, AtSign } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { isServiceComingSoon } from '../../data/serviceStatus'
 
-const serviceLinks = [
-  'Lavage Auto',
-  'Vidange & Filtres',
-  'Batterie',
-  'Pneus',
-  'Diagnostic',
-  'Urgence 24/7',
-]
+// Active services first, coming-soon last
+const SERVICE_IDS = ['vidange', 'batterie', 'diagnostic', 'urgence', 'pneus', 'lavage'] as const
 
 const companyLinksBase = [
-  { labelKey: 'landing.footerAbout',  href: '/about' },
+  { labelKey: 'landing.footerAbout',  href: '/a-propos' },
   { labelKey: 'landing.footerFleets', href: '/fleet' },
+  { labelKey: 'landing.footerFaq',    href: '/faq' },
   { labelKey: 'landing.footerContact2', href: '/contact' },
   { labelKey: null, label: 'WhatsApp', href: 'https://wa.me/212777348065' },
 ] as const
 
 export default function Footer() {
   const { t } = useTranslation()
+  const serviceLinks = SERVICE_IDS.map(id => ({ id, label: t(`services.${id}`), comingSoon: isServiceComingSoon(id) }))
   const companyLinks = companyLinksBase.map(item =>
     item.labelKey ? { label: t(item.labelKey), href: item.href } : { label: item.label, href: item.href }
   )
@@ -61,14 +58,6 @@ export default function Footer() {
               >
                 <AtSign size={16} color="rgba(255,255,255,0.55)" />
               </a>
-              <a
-                href="tel:+212777348065"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200"
-                style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-                aria-label="Appeler MecaLIK"
-              >
-                <Phone size={16} color="rgba(255,255,255,0.55)" />
-              </a>
             </div>
           </div>
 
@@ -78,10 +67,13 @@ export default function Footer() {
               Services
             </p>
             <ul className="flex flex-col gap-3">
-              {serviceLinks.map((label) => (
-                <li key={label}>
+              {serviceLinks.map(({ id, label, comingSoon }) => (
+                <li key={id}>
                   <span className="text-[rgba(255,255,255,0.45)] text-sm hover:text-white transition-colors cursor-pointer">
                     {label}
+                    {comingSoon && (
+                      <span className="text-xs" style={{ color: 'var(--mk-text-muted)' }}> (bientôt)</span>
+                    )}
                   </span>
                 </li>
               ))}
@@ -114,20 +106,17 @@ export default function Footer() {
             </p>
             <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
-                <MapPin size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
+                <MapPin size={16} color="var(--mk-action)" className="flex-shrink-0 mt-0.5" />
                 <span className="text-[rgba(255,255,255,0.45)] text-sm">{t('landing.footerLocation')}</span>
               </div>
               <div className="flex items-start gap-3">
-                <Phone size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
-                <a
-                  href="tel:+212777348065"
-                  className="text-[rgba(255,255,255,0.45)] text-sm hover:text-white transition-colors"
-                >
+                <Phone size={16} color="var(--mk-action)" className="flex-shrink-0 mt-0.5" />
+                <span className="text-[rgba(255,255,255,0.45)] text-sm">
                   +212 777 348 065
-                </a>
+                </span>
               </div>
               <div className="flex items-start gap-3">
-                <Mail size={16} color="#43BCC9" className="flex-shrink-0 mt-0.5" />
+                <Mail size={16} color="var(--mk-action)" className="flex-shrink-0 mt-0.5" />
                 <a
                   href="mailto:contact@mecalik.com"
                   className="text-[rgba(255,255,255,0.45)] text-sm hover:text-white transition-colors"
