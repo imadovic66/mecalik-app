@@ -1,12 +1,14 @@
 /** Factures — the persisted invoice register: filterable table, PDF re-print, edit, mark paid. */
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import {
   type Invoice, type PaymentStatus, PAYMENT_STATUS_CONFIG,
-  invoiceTotals, sumInvoiceTotals, isBillable, printInvoiceDocument, formatInvoiceDate,
+  invoiceTotals, invoiceLineItems, sumInvoiceTotals, isBillable, printInvoiceDocument, formatInvoiceDate,
 } from '../../../../lib/invoices'
 import { inPeriod } from './period'
+import { ttcToHT, mechanicRate } from '../../../../lib/bookingUtils'
+import { normalizeDetailType } from '../../adminShared'
 import { fmtMAD, PaymentPill, PAYMENT_METHODS, inputStyle, labelStyle, cardStyle, pillButton } from './ui'
 
 type Filter = 'all' | 'unpaid' | 'paid' | 'month'
@@ -49,6 +51,7 @@ export default function InvoicesSection({ invoices, mechanics, loading, error, o
   const [filter, setFilter] = useState<Filter>('all')
   const [editing, setEditing] = useState<Invoice | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [detailId, setDetailId] = useState<string | null>(null)
 
   const rows = useMemo(() => {
     const test = FILTERS.find(f => f.key === filter)!.test
@@ -67,6 +70,17 @@ export default function InvoicesSection({ invoices, mechanics, loading, error, o
       .eq('payment_status', 'unpaid')
     setBusyId(null)
     if (err) { window.alert(`Impossible de marquer la facture comme payée : ${err.message}`); return }
+    onChanged()
+  }
+
+  const markMechanicPaid = async (inv: Invoice) => {
+    setBusyId(inv.id)
+    const { error: err } = await supabase.from('invoices')
+      .update({ mechanic_paid: true, mechanic_paid_at: new Date().toISOString() })
+      .eq('id', inv.id)
+      .eq('mechanic_paid', false)
+    setBusyId(null)
+    if (err) { window.alert(`Impossible d'enregistrer le versement : ${err.message}`); return }
     onChanged()
   }
 
@@ -126,7 +140,8 @@ export default function InvoicesSection({ invoices, mechanics, loading, error, o
                   const t = invoiceTotals(inv)
                   const void_ = !isBillable(inv)
                   return (
-                    <tr key={inv.id} style={{ opacity: void_ ? 0.45 : 1 }}>
+                    <Fragment key={inv.id}>
+                    <tr style={{ opacity: void_ ? 0.45 : 1 }}>
                       <td style={{ ...td, fontFamily: 'monospace', color: 'white' }}>{inv.invoice_number}</td>
                       <td style={td}>{formatInvoiceDate(inv.invoice_date)}</td>
                       <td style={{ ...td, color: 'white', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{inv.customer_name || '—'}</td>
@@ -138,6 +153,10 @@ export default function InvoicesSection({ invoices, mechanics, loading, error, o
                       <td style={td}><PaymentPill status={inv.payment_status} /></td>
                       <td style={td}>
                         <div style={{ display: 'flex', gap: '5px' }}>
+                          <button style={{ ...actionBtn, ...(detailId === inv.id ? { borderColor: 'rgba(67,188,201,0.5)', color: '#43BCC9' } : {}) }}
+                            onClick={() => setDetailId(detailId === inv.id ? null : inv.id)}>
+                            {detailId === inv.id ? '▲ Fermer' : '🔎 Répartition'}
+                          </button>
                           <button style={actionBtn} onClick={() => printInvoiceDocument(inv)}>📄 PDF</button>
                           <button style={actionBtn} onClick={() => setEditing(inv)}>✏️ Modifier</button>
                           {inv.payment_status === 'unpaid' && (
@@ -152,6 +171,14 @@ export default function InvoicesSection({ invoices, mechanics, loading, error, o
                         </div>
                       </td>
                     </tr>
+                    {detailId === inv.id && (
+                      <tr>
+                        <td colSpan={10} style={{ padding: '0 12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', whiteSpace: 'normal' }}>
+                          <InvoiceBreakdown inv={inv} busy={busyId === inv.id} onMechanicPaid={() => markMechanicPaid(inv)} />
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   )
                 })}
               </tbody>
@@ -312,6 +339,114 @@ function EditInvoiceModal({ invoice, mechanics, onClose, onSaved }: {
           <button onClick={save} disabled={saving} style={{ padding: '10px 20px', borderRadius: '8px', background: '#43BCC9', border: 'none', color: '#0A0A0A', fontSize: '13px', fontWeight: 700, cursor: saving ? 'wait' : 'pointer', fontFamily: 'Outfit, sans-serif', opacity: saving ? 0.7 : 1 }}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Where the money of one invoice goes: parts, TVA, mechanic, MecaLIK.
+
+const box: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '14px 16px' }
+const cap: React.CSSProperties = { fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }
+const kv: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', gap: '14px', fontSize: '13.5px', color: 'rgba(255,255,255,0.7)', padding: '4px 0' }
+const kvB: React.CSSProperties = { color: 'white', fontWeight: 600, fontFamily: 'Space Grotesk, sans-serif', whiteSpace: 'nowrap' }
+
+function InvoiceBreakdown({ inv, busy, onMechanicPaid }: { inv: Invoice; busy: boolean; onMechanicPaid: () => void }) {
+  const t = invoiceTotals(inv)
+  const lines = invoiceLineItems(inv)
+  const rate = mechanicRate(inv.invoice_date)
+  const pct = Math.round(rate * 100)
+  const materialsHT = ttcToHT(t.materialsTTC)
+  const labourNetTTC = Math.max(0, t.labourTTC - t.discountTTC)
+  const labourTVA = labourNetTTC - t.labourHT
+  const tech = inv.technician_name || 'le mécanicien'
+  const billable = isBillable(inv)
+
+  return (
+    <div style={{ background: '#101216', border: '1px solid rgba(67,188,201,0.3)', borderRadius: '14px', padding: '18px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+        <div style={{ fontSize: '16px', fontWeight: 800, color: 'white' }}>
+          Répartition de la facture <span style={{ fontFamily: 'monospace', fontSize: '13px', color: '#43BCC9', marginLeft: '6px' }}>{inv.invoice_number}</span>
+        </div>
+        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
+          Le client paie <b style={{ color: 'white', fontSize: '18px', fontFamily: 'Space Grotesk, sans-serif' }}>{fmtMAD(t.totalTTC)}</b> TTC
+        </div>
+      </div>
+
+      {/* The four destinations of the money */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+        {[
+          { label: 'Pièces et fournitures', sub: 'hors taxe', value: materialsHT, color: 'white' },
+          { label: 'TVA (20 %)', sub: 'collectée pour l\'État', value: t.totalTVA, color: '#F0C040' },
+          { label: `À verser à ${tech}`, sub: `${pct} % de la main d'œuvre HT`, value: t.mechanicShare, color: '#FF8A8E' },
+          { label: 'Part MecaLIK', sub: `${100 - pct} % de la main d'œuvre HT`, value: t.mecalikShare, color: '#43BCC9' },
+        ].map(c => (
+          <div key={c.label} style={box}>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>{c.label}</div>
+            <div style={{ fontSize: '22px', fontWeight: 800, color: c.color, fontFamily: 'Space Grotesk, sans-serif', margin: '4px 0 2px' }}>{fmtMAD(c.value)}</div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{c.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px' }}>
+        {/* Lines */}
+        <div style={box}>
+          <div style={cap}>Lignes de la facture (TTC)</div>
+          {lines.map((l, i) => {
+            const type = normalizeDetailType(l.type)
+            const qty = parseFloat(String(l.quantity ?? '1')) || 1
+            const label = type === 'labor' ? "Main d'œuvre" : type === 'discount' ? 'Remise' : 'Pièce'
+            const color = type === 'labor' ? '#F0C040' : type === 'discount' ? '#FF6B6B' : '#43BCC9'
+            return (
+              <div key={i} style={kv}>
+                <span><span style={{ fontSize: '10px', fontWeight: 700, color, border: `1px solid ${color}55`, borderRadius: '5px', padding: '1px 6px', marginRight: '8px' }}>{label}</span>{l.name || '—'}{qty !== 1 ? ` × ${l.quantity}` : ''}</span>
+                <span style={kvB}>{type === 'discount' ? '−' : ''}{fmtMAD((Number(l.unit_price) || 0) * qty)}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Calculation */}
+        <div style={box}>
+          <div style={cap}>Calcul</div>
+          <div style={kv}><span>Pièces TTC</span><span style={kvB}>{fmtMAD(t.materialsTTC)}</span></div>
+          <div style={{ ...kv, fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}><span>dont HT {fmtMAD(materialsHT)}</span><span>dont TVA {fmtMAD(t.materialsTTC - materialsHT)}</span></div>
+          <div style={{ ...kv, marginTop: '6px' }}><span>Main d'œuvre TTC{t.discountTTC > 0 ? ' (après remise)' : ''}</span><span style={kvB}>{fmtMAD(labourNetTTC)}</span></div>
+          <div style={{ ...kv, fontSize: '12px', color: 'rgba(255,255,255,0.45)' }}><span>dont HT {fmtMAD(t.labourHT)}</span><span>dont TVA {fmtMAD(labourTVA)}</span></div>
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+          <div style={kv}><span>Main d'œuvre HT à partager</span><span style={kvB}>{fmtMAD(t.labourHT)}</span></div>
+          <div style={kv}><span>{tech} ({pct} %)</span><span style={{ ...kvB, color: '#FF8A8E' }}>{fmtMAD(t.mechanicShare)}</span></div>
+          <div style={kv}><span>MecaLIK ({100 - pct} %)</span><span style={{ ...kvB, color: '#43BCC9' }}>{fmtMAD(t.mecalikShare)}</span></div>
+        </div>
+
+        {/* Payment to the mechanic */}
+        <div style={box}>
+          <div style={cap}>Versement à {tech}</div>
+          <div style={kv}><span>Sa part sur la main d'œuvre</span><span style={kvB}>{fmtMAD(t.mechanicShare)}</span></div>
+          <div style={kv}><span>S'il a avancé les pièces : + pièces TTC</span><span style={kvB}>{fmtMAD(t.materialsTTC)}</span></div>
+          <div style={{ ...kv, borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: '6px', paddingTop: '8px' }}>
+            <span>Total s'il a payé toutes les pièces</span><span style={{ ...kvB, fontSize: '15px' }}>{fmtMAD(t.mechanicShare + t.materialsTTC)}</span>
+          </div>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.45, margin: '8px 0 12px' }}>
+            Le système ne sait pas qui a acheté les pièces : remboursez-lui seulement celles qu'il a payées.
+          </div>
+          {!billable ? (
+            <div style={{ fontSize: '13px', color: '#FF8888' }}>Facture annulée : rien à verser.</div>
+          ) : inv.mechanic_paid ? (
+            <div style={{ fontSize: '13px', color: '#00DD88', fontWeight: 700 }}>✓ Part versée{inv.mechanic_paid_at ? ` le ${formatInvoiceDate(inv.mechanic_paid_at)}` : ''}</div>
+          ) : (
+            <button onClick={onMechanicPaid} disabled={busy || inv.payment_status !== 'paid'}
+              title={inv.payment_status !== 'paid' ? 'Marquez d\'abord la facture comme payée par le client' : undefined}
+              style={{ padding: '10px 14px', borderRadius: '9px', border: 'none', background: '#43BCC9', color: '#062A2E', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', opacity: busy || inv.payment_status !== 'paid' ? 0.45 : 1 }}>
+              {busy ? '…' : `Marquer sa part (${fmtMAD(t.mechanicShare)}) comme versée`}
+            </button>
+          )}
+          {billable && !inv.mechanic_paid && inv.payment_status !== 'paid' && (
+            <div style={{ fontSize: '12px', color: '#F0C040', marginTop: '8px' }}>Le client n'a pas encore payé cette facture.</div>
+          )}
         </div>
       </div>
     </div>
